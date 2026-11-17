@@ -1,0 +1,10 @@
+draw.io v30.0.4
+
+upstream distribution does not include a NOTICE file at pinned tag
+
+Upstream repository: https://github.com/jgraph/drawio
+Pinned revision: v30.0.4 (88ee1f5ab4d40603a8f3aaa0d9d6dc3794c6b3f0)
+License: Apache-2.0; LICENSE is reproduced from the upstream v30.0.4 LICENSE file.
+
+The vendored runtime is an allowlisted subset of draw.io's upstream web application.
+The exact included files and their SHA-256 hashes are recorded in resources/drawio/manifest.json.

@@ -1,0 +1,165 @@
+.writing-guidance-entry {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  align-self: center;
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 9px;
+  margin-right: 8px;
+  border: 1px solid #d7e1ee;
+  border-radius: 7px;
+  background: #f9fbff;
+  color: #4c617c;
+  font:
+    12px / 1.5 "Microsoft YaHei",
+    sans-serif;
+  cursor: pointer;
+}
+.writing-guidance-card {
+  position: fixed;
+  z-index: 1100;
+  width: 326px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 155px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #dfe6f0;
+  border-radius: var(--ui-radius-window, 12px);
+  background: #fff;
+  box-shadow: 0 12px 40px #223d6224;
+  color: #293648;
+  font:
+    13px / 1.7 "Microsoft YaHei",
+    sans-serif;
+  scrollbar-width: thin;
+}
+.writing-guidance-card[hidden] {
+  display: none;
+}
+.writing-guidance-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  color: #8493a5;
+  font-size: 11px;
+}
+.writing-guidance-card header span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.writing-guidance-card header svg {
+  color: #0071e3;
+}
+.writing-guidance-card button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 6px 8px;
+  font: inherit;
+  color: inherit;
+}
+.writing-guidance-card button:hover {
+  background: #f0f5fc;
+}
+.writing-guidance-card button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.writing-guidance-card button:focus-visible,
+.writing-guidance-entry:focus-visible,
+.writing-guidance-card summary:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 2px;
+}
+.writing-guidance-card h2 {
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 0 0 9px;
+}
+.writing-guidance-card p {
+  font-size: 13px;
+  color: #52647a;
+  margin: 0 0 16px;
+  line-height: 1.65;
+}
+.writing-guidance-card .writing-guidance-choice {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid #e8edf4;
+  border-radius: 10px;
+}
+.writing-guidance-card small {
+  font-size: 10px;
+  color: #8b9aac;
+}
+.writing-guidance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.writing-guidance-card .primary-button {
+  color: white;
+  background: #0071e3;
+  padding: 7px 12px;
+}
+.writing-guidance-card .primary-button:hover {
+  background: #0063c8;
+}
+.writing-guidance-card footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #edf1f6;
+  padding-top: 12px;
+  margin-top: 16px;
+  font-size: 11px;
+}
+.writing-guidance-card footer button {
+  color: #1969b8;
+  padding: 0;
+}
+.writing-guidance-ring {
+  position: fixed;
+  z-index: 1099;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 2px solid #3187ed;
+  border-radius: 7px;
+  box-shadow: 0 0 0 3px #d9eaff70;
+}
+@media print {
+  .writing-guidance-card,
+  .writing-guidance-entry,
+  .writing-guidance-ring {
+    display: none !important;
+  }
+}
+
+.writing-guidance-related {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.writing-guidance-related button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #536d89;
+  font-size: 11px;
+  background: #f4f7fb;
+}

@@ -1,0 +1,21 @@
+.app-dialog-host .standard-dialog-overlay {
+  z-index: 10000;
+  --standard-dialog-overlay: rgb(15 23 42 / 20%);
+}
+
+.app-dialog__message {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+
+.app-dialog__prompt {
+  display: grid;
+  gap: 12px;
+}
+
+.app-dialog__prompt input {
+  width: 100%;
+  min-width: 0;
+}

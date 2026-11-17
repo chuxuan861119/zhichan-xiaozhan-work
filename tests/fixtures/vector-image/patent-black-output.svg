@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#fff"/>
+  <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="4" d="M120 80v610h980M120 560h980M120 430h980M120 300h980M120 170h980" opacity=".18"/>
+    <path stroke-width="8" d="M120 690C220 670 260 540 350 530S500 610 590 420 740 220 830 270 950 500 1100 130"/>
+    <path stroke-width="7" stroke-dasharray="18 13" d="M120 640C230 600 280 350 390 390S540 570 660 500 790 250 900 330 1010 450 1100 240"/>
+  </g>
+  <g fill="#000" font-family="Arial, sans-serif" font-size="34">
+    <text x="560" y="770">时间 / s</text>
+    <text x="36" y="410" transform="rotate(-90 36 410)">响应强度 / a.u.</text>
+    <text x="160" y="125">实验组</text>
+    <text x="160" y="175">对照组</text>
+  </g>
+  <path d="M120 115h30" stroke="#000" stroke-width="8"/>
+  <path d="M120 165h30" stroke="#000" stroke-width="7" stroke-dasharray="12 8"/>
+</svg>

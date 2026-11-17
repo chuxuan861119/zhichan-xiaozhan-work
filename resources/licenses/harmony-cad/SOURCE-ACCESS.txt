@@ -1,0 +1,21 @@
+鸿蒙离线 CAD 转换组件源码及许可说明
+
+Pyodide 0.29.3 按 Mozilla Public License 2.0 发布。
+本应用分发未经修改的 Pyodide JavaScript/WASM 运行库。
+其对应源码（包括构建脚本和依赖包构建配方）可免费获取：
+https://github.com/pyodide/pyodide/tree/0.29.3
+https://github.com/pyodide/pyodide/archive/refs/tags/0.29.3.tar.gz
+构建说明：https://pyodide.org/en/0.29.3/development/building-from-sources.html
+依赖包配方：https://github.com/pyodide/pyodide-recipes
+上述受 MPL 保护的源码按 MPL 2.0 提供；完整许可见 PYODIDE-MPL-2.0.txt。
+本应用的使用条款不限制接收者依据 MPL 对上述源码享有的权利。
+
+CPython 3.13.2 源码及许可：
+https://github.com/python/cpython/tree/v3.13.2
+https://github.com/python/cpython/blob/v3.13.2/LICENSE
+完整许可见 CPYTHON-3.13.2-LICENSE.txt。
+
+ACadSharp、CSUtilities、.NET、字体和 Python 依赖包的原始许可通知，
+保留在离线运行库及本应用 THIRD_PARTY_NOTICES.txt 中。
+运行库版本及文件校验值由平台 CAD 清单固定；升级或修改受 MPL
+保护的运行库时，须重新核对并提供与分发版本对应的源码及说明。

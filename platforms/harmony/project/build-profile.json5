@@ -1,0 +1,17 @@
+{
+  "app": {
+    "products": [{
+      "name": "default",
+      "compatibleSdkVersion": "6.0.0(20)",
+      "compatibleSdkVersionStage": "release",
+      "runtimeOS": "HarmonyOS",
+      "buildOption": {"nativeLib": {"collectAllLibs": true, "debugSymbol": {"strip": false}}}
+    }],
+    "buildModeSet": [{"name": "debug"}, {"name": "release"}],
+    "signingConfigs": []
+  },
+  "modules": [
+    {"name": "electron", "srcPath": "./electron", "targets": [{"name": "default", "applyToProducts": ["default"]}]},
+    {"name": "web_engine", "srcPath": "./web_engine"}
+  ]
+}

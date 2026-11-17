@@ -1,0 +1,31 @@
+.recovery-center .standard-dialog__body > p {
+  color: var(--ui-color-text-secondary, #64748b);
+}
+
+.recovery-center__tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 8px 0 16px;
+  background: var(--ui-color-surface-subtle, #f1f5f9);
+  border-radius: 999px;
+}
+
+.recovery-center__tabs button {
+  min-height: var(--ui-control-height, 32px);
+  padding: 4px 16px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ui-color-text-secondary, #64748b);
+  background: transparent;
+}
+
+.recovery-center__tabs button[aria-selected="true"] {
+  color: #2563eb;
+  background: var(--ui-color-surface, #fff);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 8%);
+}
+
+.recovery-center [role="status"] p {
+  overflow-wrap: anywhere;
+}

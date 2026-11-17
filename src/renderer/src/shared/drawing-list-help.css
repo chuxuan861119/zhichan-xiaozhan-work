@@ -1,0 +1,290 @@
+.drawing-list-help {
+  position: fixed;
+  top: auto;
+  right: auto;
+  width: 540px;
+  max-width: 100%;
+  overflow: hidden;
+}
+.drawing-list-help .brand-corner {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+.drawing-list-help .brand-corner img {
+  top: -164px;
+  opacity: 0.16;
+}
+.drawing-list-help .example-heading {
+  margin-top: 28px;
+}
+.drawing-list-help .registry {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  color: #737a85;
+  font-size: 12px;
+  align-items: center;
+}
+.drawing-list-help .registry span {
+  border: 1px solid #e4e8ee;
+  border-radius: 6px;
+  padding: 4px 9px;
+  background: #fff;
+  color: #535f6c;
+}
+.drawing-list-help .sample {
+  background: #f6f8fa;
+  border: 1px solid #eceff3;
+  border-radius: 12px;
+  padding: 22px;
+  font-size: 15px;
+  line-height: 2;
+  color: #646e7a;
+}
+.drawing-list-help .sample p {
+  margin: 0;
+}
+.drawing-list-help .sample h4 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 13px;
+  color: #343b45;
+  font-weight: 600;
+}
+.drawing-list-help .sample em {
+  font-style: normal;
+  color: #7c3aed;
+}
+.drawing-list-help .sample-arrow {
+  text-align: center;
+  color: #8a98aa;
+  font-size: 22px;
+  line-height: 1;
+  margin: 10px 0;
+}
+.drawing-list-help .sample-note {
+  font-size: 12px;
+  color: #737a85;
+  margin: 12px 0 0;
+}
+.drawing-list-help .sample-note::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7c3aed;
+  margin-right: 7px;
+  vertical-align: middle;
+}
+.drawing-list-help .usage {
+  margin: 24px 0 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #737a85;
+}
+.drawing-list-help .usage strong {
+  color: #343b45;
+  font-weight: 600;
+}
+.drawing-list-help .result {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #737a85;
+}
+.drawing-list-help.compact-panel {
+  width: 360px;
+  padding: 22px;
+}
+.drawing-list-help.compact-panel .brand-corner {
+  width: 76px;
+  height: 76px;
+}
+.drawing-list-help.compact-panel .brand-corner img {
+  opacity: 0.8;
+}
+.drawing-list-help [hidden] {
+  display: none !important;
+}
+.drawing-list-help[aria-label="附图标记填入说明书说明"] .details > .sample:first-of-type {
+  min-width: 0;
+}
+.drawing-list-help[aria-label="附图标记填入说明书说明"] .mark-row {
+  grid-template-columns: 80px 1fr;
+}
+.drawing-list-help,
+.drawing-list-help.compact-panel {
+  width: max-content;
+  min-width: 0;
+  max-width: none;
+  height: auto;
+  flex: none;
+  align-self: flex-start;
+}
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .details > .sample p {
+  white-space: normal;
+}
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .details {
+  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr);
+}
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 8px;
+}
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .details > .example-heading,
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .details > .usage,
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .details > .result {
+  grid-column: 1 / -1;
+}
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .details > .sample {
+  min-width: 0;
+  padding: 16px 12px;
+}
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .sample-arrow {
+  align-self: center;
+  margin: 0;
+  transform: rotate(-90deg);
+}
+.drawing-list-help:not([aria-label="附图标记复制说明"]) .document-example {
+  padding: 8px 0;
+}
+.drawing-list-help {
+  width: 100%;
+  padding: 28px;
+}
+.drawing-list-help .context-label {
+  font-size: 12px;
+  color: #71839b;
+  margin: 0 0 12px;
+}
+.drawing-list-help .sample {
+  padding: 20px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.drawing-list-help .sample p + p {
+  margin-top: 8px;
+}
+.drawing-list-help .example-document p {
+  text-indent: 2em;
+}
+.drawing-list-help .legend-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.drawing-list-help .legend-list span {
+  border: 1px solid #e2e7ed;
+  border-radius: 7px;
+  padding: 6px 13px;
+  background: #fff;
+  font-size: 13px;
+}
+.drawing-list-help .result-label {
+  color: #8692a2;
+  font-size: 12px;
+  margin-top: 12px;
+}
+.drawing-list-help.compact-panel .context-label {
+  margin-bottom: 10px;
+}
+.drawing-list-help .usage {
+  margin-top: 20px;
+}
+.drawing-list-help .sample {
+  background: #fff;
+}
+.drawing-list-help .mark-table {
+  max-width: 320px;
+  margin: auto;
+}
+.drawing-list-help .mark-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  padding: 9px 8px;
+  border-bottom: 1px solid #e3e7ed;
+  color: #262b33;
+}
+.drawing-list-help .mark-row:last-child {
+  border-bottom: 0;
+}
+.drawing-list-help .mark-row > span:first-child,
+.drawing-list-help .table-head {
+  color: #79818d;
+}
+.drawing-list-help .explanation-row + .explanation-row {
+  border-top: 1px solid #e3e7ed;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.drawing-list-help .explanation-row strong {
+  display: block;
+  color: #262b33;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.drawing-list-help .explanation-row p,
+.drawing-list-help .document-example {
+  font-family: SimSun, "宋体", serif;
+  font-size: 16px;
+  line-height: 1.9;
+  color: #252a31;
+}
+.drawing-list-help .document-example {
+  padding: 8px 4px;
+}
+.drawing-list-help .document-example h5 {
+  font:
+    700 16px / 1.9 SimSun,
+    "宋体",
+    serif;
+  color: #252a31;
+  margin: 0 0 8px;
+  text-align: left;
+  text-indent: 2em;
+}
+.drawing-list-help .document-example p {
+  text-indent: 2em;
+}
+.drawing-list-help .document-example .no-indent {
+  text-indent: 0;
+}
+.drawing-list-help .document-example.inserted p {
+  color: #ff3028;
+}
+.drawing-list-help .keyword-block {
+  background: #e9eaec;
+  border-radius: 4px;
+  padding: 0 2px;
+  box-decoration-break: clone;
+}
+.clear-format-help.drawing-list-help,
+.clear-format-help.drawing-list-help.compact-panel {
+  width: max-content;
+  min-width: 0;
+  max-width: calc(100vw - 16px);
+  height: auto;
+  padding: 28px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.clear-format-help.drawing-list-help.compact-panel {
+  padding: 22px;
+}
+
+@media (max-width: 640px) {
+  .drawing-list-help:not([aria-label="附图标记复制说明"]) .details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .drawing-list-help:not([aria-label="附图标记复制说明"]) .sample-arrow {
+    margin: 10px 0;
+    transform: none;
+  }
+}

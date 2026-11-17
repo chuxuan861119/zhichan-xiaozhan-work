@@ -1,0 +1,387 @@
+{
+  "aom": {
+    "archive": [
+      "sources/release-aom-3.15.1.tar.gz",
+      "https://storage.googleapis.com/aom-releases/libaom-3.15.1.tar.gz",
+      "8CA0C52746174603500F0ADB6F2A215D69C9CA2AAB2ACB3CAA06FB791D8D01BF"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-aom-3.15.1/LICENSE",
+        "4764A286D8B2FAEAF42F4418E7D7A28D58FC8FD4D00A3D0A7F44B0A4099DE7F2"
+      ],
+      [
+        "licenses/components/release-aom-3.15.1/PATENTS",
+        "661FB8E504744E95587B556B94A58343448300606A41BEA8C7A9B97125696E61"
+      ]
+    ]
+  },
+  "archive": {
+    "archive": [
+      "sources/release-archive-3.8.9.tar.xz",
+      "https://github.com/libarchive/libarchive/releases/download/v3.8.9/libarchive-3.8.9.tar.xz",
+      "888C934F9D95648ECB9163DC8E23AB80A476ECB81A8F1154704A227B5B676DDE"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-archive-3.8.9/COPYING",
+        "30E556B3959E3985D66EFEFEC5EAAC51D4995053CAA1D3CFFE6EB916F146F229"
+      ]
+    ]
+  },
+  "cairo": {
+    "archive": [
+      "sources/release-cairo-1.18.6.tar.xz",
+      "https://cairographics.org/releases/cairo-1.18.6.tar.xz",
+      "1C767308174337A74694DA0F3EC069C271452163A1EF4540964C50C301F157D4"
+    ],
+    "notice": "Cairo source license selection: LGPL-2.1-or-later. The @img package README labels Cairo as MPL-2.0, but the authoritative Cairo 1.18.6 COPYING file offers LGPL-2.1 or MPL-1.1; this distribution selects LGPL-2.1-or-later and supplies its source.",
+    "materials": [
+      [
+        "licenses/components/release-cairo-1.18.6/COPYING",
+        "67228A9F7C5F9B67C58F556F1BE178F62DA4D9E2E6285318D8C74D567255ABDF"
+      ],
+      [
+        "licenses/components/release-cairo-1.18.6/COPYING-LGPL-2.1",
+        "9E9E8608C4CDDA51A78CC3A385F4EC9A2E4C96D5ECAD74AC8BCA5FCA3E563B7D"
+      ]
+    ]
+  },
+  "cgif": {
+    "archive": [
+      "sources/release-cgif-0.5.4.tar.gz",
+      "https://github.com/dloebl/cgif/archive/refs/tags/v0.5.4.tar.gz",
+      "83A70A15BC2DA41F081A44EBC58EE48E2E1D524A6D3FDB4A24064AFA08D5AD4D"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-cgif-0.5.4/LICENSE",
+        "7264DEDE477ABAB4AC3FE8236BEB8153845C04CCD33B18F281085087E219FC6D"
+      ]
+    ]
+  },
+  "exif": {
+    "archive": [
+      "sources/libexif-0.6.26.tar.xz",
+      "https://github.com/libexif/libexif/releases/download/v0.6.26/libexif-0.6.26.tar.xz",
+      "4A055ED6575E61CA46C3172BE3C753CC16C9BECD0F99EC71D58DD0E471476C0C"
+    ],
+    "materials": [
+      [
+        "licenses/components/exif/COPYING",
+        "36B6D3FA47916943FD5FEC313C584784946047EC1337A78B440E5992CB595F89"
+      ]
+    ]
+  },
+  "expat": {
+    "archive": [
+      "sources/release-expat-2.8.5.tar.xz",
+      "https://github.com/libexpat/libexpat/releases/download/R_2_8_5/expat-2.8.5.tar.xz",
+      "1E727B8933EC51A77A9A9D9AFCF8E688BCE45D907C13E36AB7393FE36E703182"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-expat-2.8.5/COPYING",
+        "31B15DE82AA19A845156169A17A5488BF597E561B2C318D159ED583139B25E87"
+      ]
+    ]
+  },
+  "ffi": {
+    "archive": [
+      "sources/release-ffi-3.8.0.tar.gz",
+      "https://github.com/libffi/libffi/releases/download/v3.8.0/libffi-3.8.0.tar.gz",
+      "7DA3E2D9A171EB0A038F592ECAD3FF2BB2550F3496D87B3B29AD0CF4430C0DB4"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-ffi-3.8.0/LICENSE",
+        "17B64DC60F3B6897A60F971E288B973F655C2EDCDF08B25F3C3DD5549857881C"
+      ]
+    ]
+  },
+  "fontconfig": {
+    "archive": [
+      "sources/release-fontconfig-2.18.3.tar.xz",
+      "https://gitlab.freedesktop.org/api/v4/projects/890/packages/generic/fontconfig/2.18.3/fontconfig-2.18.3.tar.xz",
+      "4F7B554A38CDF78C033F666C8871F3749E14A094F65A07F630C91ED0B43D35E3"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-fontconfig-2.18.3/COPYING",
+        "51A51AA9823704FD90BCCC616CDD17EBABB5B2B3E9CBDE886CA02C7002288067"
+      ]
+    ]
+  },
+  "freetype": {
+    "archive": [
+      "sources/freetype-2.14.3.tar.xz",
+      "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz",
+      "36BC4F1CC413335368EE656C42AFCA65C5A3987E8768CC28CF11BA775E785A5F"
+    ],
+    "materials": [
+      [
+        "licenses/components/freetype/LICENSE.TXT",
+        "BD36C8B474855FA294C2EC5C184544478EF3720AAD37D65A6296A4F264FD2D3B"
+      ],
+      [
+        "licenses/components/freetype/FTL.TXT",
+        "5A5EE54C5001BBAD1CDC1A57CC3DD4C42199B2DA09D39C7EE41FAB002D02967F"
+      ]
+    ]
+  },
+  "fribidi": {
+    "archive": [
+      "sources/release-fribidi-1.0.17.tar.xz",
+      "https://github.com/fribidi/fribidi/releases/download/v1.0.17/fribidi-1.0.17.tar.xz",
+      "6949DCDE27D41CEBAD1FD741FCAFC36D55A1020D2D872D4A6EB3914CAABBADA2"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-fribidi-1.0.17/COPYING",
+        "20E50FE7AAE3E56378EBF0417D9DE904F55A0E61E4DF315333E632A4D3555D95"
+      ]
+    ]
+  },
+  "glib": {
+    "archive": [
+      "sources/release-glib-2.90.0.tar.xz",
+      "https://download.gnome.org/sources/glib/2.90/glib-2.90.0.tar.xz",
+      "17D15CAC2AF80A33271127408E0ABC2748EB297C595C2A26409E81E14E7D1B8F"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-glib-2.90.0/LGPL-2.1-or-later.txt",
+        "FA6F36630BB1E0C571D34B2BBDF188D08495C9DBF58F28CAC112F303FC1F58FB"
+      ]
+    ]
+  },
+  "harfbuzz": {
+    "archive": [
+      "sources/release-harfbuzz-14.5.0.tar.xz",
+      "https://github.com/harfbuzz/harfbuzz/releases/download/14.5.0/harfbuzz-14.5.0.tar.xz",
+      "B7132E148358A45185C9FEAFD049DBAF243649D3C44414B3534D9C95D18592B9"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-harfbuzz-14.5.0/COPYING",
+        "BA8F810F2455C2F08E2D56BB49B72F37FCF68F1F4FADE38977CFD7372050AD64"
+      ]
+    ]
+  },
+  "heif": {
+    "archive": [
+      "sources/release-heif-1.23.5.tar.gz",
+      "https://github.com/strukturag/libheif/releases/download/v1.23.5/libheif-1.23.5.tar.gz",
+      "FD9036064C4432F0550D15072DDF34956A248279EE9AEAFF0FBA3FA0F77D8F1A"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-heif-1.23.5/COPYING",
+        "FA81CE652315B013359D6E8E4744335F31A50C7C192907176D3632F78A3B4596"
+      ]
+    ]
+  },
+  "highway": {
+    "archive": [
+      "sources/highway-1.4.0.tar.gz",
+      "https://github.com/google/highway/releases/download/1.4.0/highway-1.4.0.tar.gz",
+      "36F672AB48DDB3C8555E9E89E16FE400CD7D16C6EB455A1A3D0C146A63ABABDC"
+    ],
+    "materials": [
+      [
+        "licenses/components/highway/LICENSE",
+        "E340270D4F64384569A91D546ACB5B094D69CE47F0C015DB77ABB74DC6F815AF"
+      ]
+    ]
+  },
+  "imagequant": {
+    "archive": [
+      "sources/libimagequant-2.4.1.tar.gz",
+      "https://github.com/lovell/libimagequant/archive/refs/tags/v2.4.1.tar.gz",
+      "47D2A84B7B1052975C9D50A3D4E3CACBF57B43D84A4C3131210848EAD9964DFB"
+    ],
+    "buildRecipeSha256": "DA531249038E17F0674CEF6E5D4100E43BF8CDFB4F330BC2A590BFF50CD91913",
+    "materials": [
+      [
+        "licenses/components/imagequant/COPYRIGHT",
+        "7391BFBCDE4404CEFB9849553362C3AB436F929F5CC1ABB57071EC045590EE99"
+      ]
+    ]
+  },
+  "lcms": {
+    "archive": [
+      "sources/lcms2-2.19.1.tar.gz",
+      "https://github.com/mm2/Little-CMS/releases/download/lcms2.19.1/lcms2-2.19.1.tar.gz",
+      "BFC54F7BAB59FBC921012014A8032E4CBA4ABD46DB47D46B76416A8C0B2815C8"
+    ],
+    "materials": [
+      [
+        "licenses/components/lcms/LICENSE",
+        "6DBD60437F8EF91D8DE1F08AD75882547FD4931BFCC3566A0735F28DB1484D31"
+      ]
+    ]
+  },
+  "mozjpeg": {
+    "archive": [
+      "sources/mozjpeg-0826579.tar.gz",
+      "https://github.com/mozilla/mozjpeg/archive/0826579.tar.gz",
+      "B680167BD5D9AFEBDD576A12F8C49D2C9066A3B92EF96A2B2C5F7829B8600FE5"
+    ],
+    "commit": "08265790774cd0714832c9e675522acbe5581437",
+    "buildRecipeSha256": "375D19302F09DFA267651DCFD3DDB62862AB3A488862B6168CE755BB1A925860",
+    "materials": [
+      [
+        "licenses/components/mozjpeg/LICENSE.md",
+        "96F5B328ADBB78EEAAEC6980D73FD558CB1E4D62560ED615646BC3CF5E532430"
+      ]
+    ]
+  },
+  "pango": {
+    "archive": [
+      "sources/release-pango-1.58.2.tar.xz",
+      "https://download.gnome.org/sources/pango/1.58/pango-1.58.2.tar.xz",
+      "342385B6CA3B7C73455D7C80A13B7DBE4489E00BC3BD4C5BD6ED4DCE421E374A"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-pango-1.58.2/COPYING",
+        "D245807F90032872D1438D741ED21E2490E1175DC8AA3AFA5DDB6C8E529B58E5"
+      ]
+    ]
+  },
+  "pixman": {
+    "archive": [
+      "sources/pixman-0.46.4.tar.gz",
+      "https://cairographics.org/releases/pixman-0.46.4.tar.gz",
+      "D09C44EBC3BD5BEE7021C79F922FE8FB2FB57F7320F55E97FF9914D2346A591C"
+    ],
+    "materials": [
+      [
+        "licenses/components/pixman/COPYING",
+        "FAC9270F0987B96FF4533FCA3548C633E02083CBBA4A0172A3B149B2E4019793"
+      ]
+    ]
+  },
+  "png": {
+    "archive": [
+      "sources/libpng-1.6.58.tar.gz",
+      "https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.58.tar.gz",
+      "A9D4DF463D36A6E5F9C29BD6F4967312D17E996C1854F3511F833924EB1993CF"
+    ],
+    "buildRecipeSha256": "28EB403F51F0F7405249132CECFE82EA5C0EF97F1B32C5A65828814AE0D34775",
+    "materials": [
+      [
+        "licenses/components/png/LICENSE",
+        "BDB0A645EA18C60507D0368379B1AC5474B92255FCC2D115E07486A7672BA526"
+      ]
+    ]
+  },
+  "proxy-libintl": {
+    "archive": [
+      "sources/proxy-libintl-0.5.tar.gz",
+      "https://github.com/frida/proxy-libintl/archive/refs/tags/0.5.tar.gz",
+      "F7A1CBD7579BAAF575C66F9D99FB6295E9B0684A28B095967CFDA17857595303"
+    ],
+    "materials": [
+      [
+        "licenses/components/proxy-libintl/COPYING",
+        "D245807F90032872D1438D741ED21E2490E1175DC8AA3AFA5DDB6C8E529B58E5"
+      ]
+    ]
+  },
+  "rsvg": {
+    "archive": [
+      "sources/release-rsvg-2.63.2.tar.xz",
+      "https://download.gnome.org/sources/librsvg/2.63/librsvg-2.63.2.tar.xz",
+      "852B18E1A00B8605528825A27DC7748BFF2A5DD254028F59DC22A34EA57E81B6"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-rsvg-2.63.2/COPYING.LIB",
+        "DC626520DCD53A22F727AF3EE42C770E56C97A64FE3ADB063799D8AB032FE551"
+      ]
+    ]
+  },
+  "tiff": {
+    "archive": [
+      "sources/release-tiff-4.7.2.tar.gz",
+      "https://download.osgeo.org/libtiff/tiff-4.7.2.tar.gz",
+      "672BD7D10AEE4606171AFB864F3570B83340F6A33E2C186DC0512F7145FFDF6A"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-tiff-4.7.2/LICENSE.md",
+        "0E27C2382D7B8147972BBB746E04059A1152C8D0FDA9D03EF1399D1A433C4ADE"
+      ]
+    ]
+  },
+  "uhdr": {
+    "archive": [
+      "sources/release-uhdr-2.0.2.tar.gz",
+      "https://github.com/google/libultrahdr/archive/refs/tags/v2.0.2.tar.gz",
+      "AA8D193BB887C348C419780511DD03B374F4E07AF8812B6D3F80C8537CF1EF2C"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-uhdr-2.0.2/LICENSE",
+        "C9247B5CB07866938643CC238292434E6F2AF8642E1FCE10771C0E4CC7909316"
+      ]
+    ]
+  },
+  "vips": {
+    "archive": [
+      "sources/release-vips-8.18.7.tar.xz",
+      "https://github.com/libvips/libvips/releases/download/v8.18.7/vips-8.18.7.tar.xz",
+      "5BAAEAD3B0BB20FFDB9E9FF09AA9FDA08620923DF77B63B436654CB5E0B3BF94"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-vips-8.18.7/LICENSE",
+        "DC626520DCD53A22F727AF3EE42C770E56C97A64FE3ADB063799D8AB032FE551"
+      ]
+    ]
+  },
+  "webp": {
+    "archive": [
+      "sources/libwebp-1.6.0.tar.gz",
+      "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.6.0.tar.gz",
+      "E4AB7009BF0629FD11982D4C2AA83964CF244CFFBA7347ECD39019A9E38C4564"
+    ],
+    "materials": [
+      [
+        "licenses/components/webp/COPYING",
+        "5AEC868F669E384A22372A4E8A1A6CD7D44C64CD451F960CA69CC170D1E13ACF"
+      ],
+      [
+        "licenses/components/webp/PATENTS",
+        "CC3273E0694EA5896145E0677699B53471B03EA43021DDC50E7923FBB9F5023C"
+      ]
+    ]
+  },
+  "xml2": {
+    "archive": [
+      "sources/release-xml2-2.15.4.tar.xz",
+      "https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.4.tar.xz",
+      "98087FD181D9070724F3FBC65C7377DB03038EB92BD882374DAFF44940138821"
+    ],
+    "materials": [
+      [
+        "licenses/components/release-xml2-2.15.4/Copyright",
+        "5D4873884A890122A4B9B20AD56AC6F7DA1D796A5BFCF04A427970AC96217626"
+      ]
+    ]
+  },
+  "zlib-ng": {
+    "archive": [
+      "sources/zlib-ng-2.3.3.tar.gz",
+      "https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.3.3.tar.gz",
+      "F9C65AA9C852EB8255B636FD9F07CE1C406F061EC19A2E7D508B318CA0C907D1"
+    ],
+    "materials": [
+      [
+        "licenses/components/zlib-ng/LICENSE.md",
+        "6C9F0D975B41AFAA34D22F55BB8986CE69E5CB7AD327CB2B28820CD425EDF5EE"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+.dual-column-flow .margin-flow {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+.dual-column-flow .margin-flow.bottom {
+  mask-image: linear-gradient(transparent, #000 55%);
+}
+.dual-column-flow .margin-flow.top {
+  mask-image: linear-gradient(#000 45%, transparent);
+}
+.dual-column-flow.moving:not([data-margin="none"]) .margin-flow {
+  opacity: 1;
+  transition-duration: 0.09s;
+}
+.dual-column-flow .margin-strip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+}
+.dual-column-flow .margin-strip.left {
+  left: 12px;
+}
+.dual-column-flow .margin-strip.right {
+  right: 12px;
+}
+.dual-column-flow .margin-mark {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  display: block;
+  background: #75b5ec;
+}
+.dual-column-flow[data-margin="dust"] .margin-mark {
+  left: calc(2px + var(--lane) * 4px);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #6ca9dc;
+  box-shadow:
+    0 0 5px #76baf0aa,
+    0 0 9px #a4d7fa66;
+}
+.dual-column-flow[data-margin="dust"] .margin-mark::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 12px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #a4cce9;
+}
+.dual-column-flow[data-margin="threads"] .margin-mark {
+  width: 2px;
+  height: 23px;
+  border-radius: 3px;
+  background: linear-gradient(#67a6d9, #8fc4ed99, transparent);
+  box-shadow: 0 -3px 5px #97cff599;
+}
+.dual-column-flow.backward[data-margin="threads"] .margin-mark {
+  background: linear-gradient(transparent, #8fc4ed99, #67a6d9);
+  box-shadow: 0 3px 5px #97cff599;
+}
+.dual-column-flow[data-margin="ticks"] .margin-mark {
+  width: 11px;
+  height: 1px;
+  left: 2px;
+  background: #819eb7;
+  box-shadow: 0 11px 0 -0.1px #b4c7d6;
+}
+.dual-column-flow[data-margin="ticks"] .margin-strip {
+  border-left: 1px solid #dce7ef77;
+}
+.dual-column-flow[data-margin="chevrons"] .margin-mark {
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  background: none;
+  border-top: 1.5px solid #72a5ce;
+  border-left: 1.5px solid #72a5ce;
+  rotate: 45deg;
+}
+.dual-column-flow.backward[data-margin="chevrons"] .margin-mark {
+  rotate: 225deg;
+}
+[data-reduced-motion="true"] .dual-column-flow .margin-flow {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dual-column-flow .margin-flow {
+    display: none;
+  }
+}

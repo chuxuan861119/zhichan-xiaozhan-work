@@ -1,0 +1,1 @@
+export const AI_CORRECTION_PROMPT_VERSION = "2026-10-10.1";

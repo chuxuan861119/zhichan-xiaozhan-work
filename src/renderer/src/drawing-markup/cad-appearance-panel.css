@@ -1,0 +1,124 @@
+.cad-appearance {
+  min-width: 0;
+}
+.cad-appearance-row {
+  display: grid;
+  grid-template-columns: 2.5em minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+.cad-appearance-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--rail-line, #ddd);
+  border-radius: 8px;
+  padding: 0 8px;
+  background: var(--rail-surface, #fff);
+  min-width: 0;
+}
+.cad-appearance-control svg {
+  width: 32px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.cad-color-swatch {
+  width: 24px;
+  height: 14px;
+  border: 1px solid #8885;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.cad-appearance .cad-appearance-control select {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline-offset: 2px;
+  padding: 0 2px;
+}
+.cad-appearance .cad-appearance-row .cad-color-trigger {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border: 1px solid var(--rail-line, #ddd);
+  background: var(--rail-surface, #fff);
+}
+.cad-color-trigger > span {
+  flex: 1;
+  min-width: 0;
+}
+.cad-appearance-control.cad-color-trigger > svg {
+  width: 14px;
+  height: 14px;
+}
+.text-color-picker.cad-color-palette-layer .color-palette.text-color-palette {
+  max-width: calc(100vw - 16px);
+  z-index: var(--ui-layer-panel, 500);
+}
+.text-color-picker.cad-color-palette-layer .color-palette.text-color-palette,
+.custom-color-popup.cad-custom-color-popup {
+  --workbench-floating-shadow: 0 3px 8px rgb(20 32 50 / 14%), 0 16px 40px rgb(20 32 50 / 24%);
+  box-shadow: var(--workbench-floating-shadow);
+}
+.cad-color-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.cad-color-confirm-actions > button {
+  padding: 6px 14px;
+  border: 1px solid #d7dee8;
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  color: inherit;
+}
+.cad-color-confirm-actions > button:last-child {
+  color: #fff;
+  background: #0071e3;
+  border-color: #0071e3;
+}
+.cad-appearance:disabled {
+  opacity: 0.55;
+}
+
+@supports (appearance: base-select) {
+  .cad-appearance .cad-line-select {
+    --workbench-floating-shadow: 0 3px 8px rgb(20 32 50 / 12%), 0 12px 28px rgb(20 32 50 / 18%);
+  }
+  .cad-appearance .cad-line-select::picker(select) {
+    border: 0;
+    box-shadow: var(--workbench-floating-shadow);
+  }
+  .cad-appearance .cad-line-select option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .cad-appearance .cad-line-select option::checkmark {
+    display: none;
+  }
+  .cad-appearance .cad-line-select option::before {
+    content: "";
+    flex: 0 0 64px;
+    width: 64px;
+    height: 16px;
+    background: currentColor;
+    mask: var(--cad-line-sample) center / contain no-repeat;
+  }
+  .cad-appearance .cad-line-select option:not([style])::before {
+    background: none;
+  }
+}

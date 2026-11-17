@@ -1,0 +1,30 @@
+.patent-check-group__details {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.patent-check-group__details > summary {
+  width: fit-content;
+  color: #39745c;
+  cursor: pointer;
+}
+.patent-check-group__details > summary:focus-visible {
+  outline: 2px solid #39745c;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.patent-check-group__member {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid #dcebe3;
+}
+.patent-check-group__member > small {
+  color: #688073;
+}
+.patent-check-group__locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

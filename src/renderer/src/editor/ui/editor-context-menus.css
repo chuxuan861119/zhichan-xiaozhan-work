@@ -1,0 +1,190 @@
+.editor-menu-surface {
+  font:
+    13px / 1.4 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Microsoft YaHei",
+    sans-serif;
+  color: #22252b;
+  background: #fdfdfd;
+  border: 1px solid #d9dce1;
+  border-radius: var(--ui-radius-window, 12px);
+  box-shadow:
+    0 8px 28px #18233a24,
+    0 1px 3px #18233a12;
+  z-index: 1300;
+  user-select: none;
+  box-sizing: border-box;
+}
+.editor-menu-surface button,
+.editor-menu-surface select,
+.editor-menu-surface input {
+  font: inherit;
+  color: inherit;
+  box-sizing: border-box;
+}
+.editor-menu-surface button {
+  border: 0;
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.editor-menu-surface button:hover:not(:disabled) {
+  background: #edf0f4;
+}
+.editor-menu-surface button:focus-visible,
+.editor-menu-surface select:focus-visible {
+  outline: 2px solid #3884ec;
+  outline-offset: -2px;
+}
+.editor-menu-surface button[aria-pressed="true"] {
+  color: #0866ce;
+  background: #e5f0ff;
+}
+.editor-menu-surface button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.editor-menu-surface button.is-danger {
+  color: #bd353b;
+}
+.editor-menu-surface svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+  flex-shrink: 0;
+}
+.editor-selection-menu {
+  padding: 6px;
+  max-width: calc(100vw - 16px);
+}
+.editor-mini-format {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.editor-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.editor-mini-row button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 29px;
+  height: 29px;
+  padding: 4px;
+}
+.editor-mini-row select {
+  height: 29px;
+  max-width: 92px;
+  border: 1px solid #e2e4e8;
+  border-radius: 5px;
+  background: white;
+  padding: 2px 5px;
+}
+.editor-mini-row select[aria-label="字体"] {
+  width: 92px;
+}
+.editor-mini-row select[aria-label="字号"] {
+  width: 72px;
+}
+.editor-mini-color {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.editor-mini-color:hover {
+  background: #edf0f4;
+}
+.editor-mini-color:focus-within {
+  outline: 2px solid #3884ec;
+  outline-offset: -2px;
+}
+.editor-mini-color .editor-mini-color-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+.editor-mini-divider {
+  height: 17px;
+  border-left: 1px solid #e1e4e8;
+  margin: 0 2px;
+}
+.editor-context-menu {
+  position: fixed;
+  width: 310px;
+  padding: 5px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.editor-context-menu > button,
+.editor-context-submenu > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 30px;
+  padding: 5px 8px;
+  text-align: left;
+}
+.editor-context-menu .editor-mini-format {
+  padding: 3px 2px 7px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid #e9ebef;
+}
+.editor-object-tools .editor-mini-row {
+  flex-wrap: wrap;
+}
+.editor-object-tools .editor-mini-row button {
+  flex-shrink: 0;
+}
+.editor-context-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  flex-shrink: 0;
+}
+.editor-context-menu kbd {
+  margin-left: auto;
+  color: #858a93;
+  font-size: 11px;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.editor-context-menu hr {
+  border: 0;
+  border-top: 1px solid #e7e9ee;
+  margin: 5px 7px;
+}
+.editor-context-chevron {
+  margin-left: auto;
+}
+.editor-context-submenu {
+  position: fixed;
+  width: 280px;
+  padding: 5px;
+  margin: 0;
+  z-index: 1301;
+}
+.editor-context-submenu .editor-mini-row {
+  flex-wrap: wrap;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .editor-menu-surface button {
+    transition: background-color 0.1s ease-in-out;
+  }
+}

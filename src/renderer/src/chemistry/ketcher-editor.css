@@ -1,0 +1,454 @@
+.ketcher-editor-shell {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 520px;
+  overflow: hidden;
+  border: 1px solid #d7dbe1;
+  border-radius: 12px;
+  background: #fafbfd;
+}
+
+.ketcher-editor-guide,
+.ketcher-editor-tool-hint {
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  padding: 6px 10px;
+  color: #37526d;
+  font-size: 13px;
+  line-height: 1.45;
+  pointer-events: none;
+  background: rgb(239 247 255 / 94%);
+  border: 1px solid #b9d8f2;
+  border-radius: 5px;
+}
+
+.ketcher-editor-operation-error {
+  pointer-events: auto;
+  z-index: 3;
+}
+
+.ketcher-editor-guide {
+  top: 64px;
+  left: 56px;
+}
+
+.ketcher-editor-tool-hint {
+  right: 12px;
+  bottom: 12px;
+}
+
+/* Ketcher uses height: 100% internally; min-height alone leaves its canvas at zero height. */
+.ketcher-editor-shell > .ketcher-runtime-host,
+.ketcher-runtime-host > div {
+  height: 100%;
+}
+.ketcher-editor-shell > .spatial-presence {
+  position: absolute;
+  inset: 0;
+  z-index: 22;
+  pointer-events: none;
+}
+
+.ketcher-editor-state {
+  display: grid;
+  min-height: 520px;
+  padding: 24px;
+  color: #52606d;
+  text-align: center;
+  place-content: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #d7dbe1;
+  border-radius: 6px;
+}
+
+/*
+ * Ketcher 3.17 的工具栏滚动容器缺陷：
+ * - 右侧工具栏（RightToolbar）的滚动容器在 flex 布局下未受高度约束，
+ *   scrollHeight === clientHeight，设置 scrollTop 无效，箭头点击无反应。
+ * - 左右两侧容器都使用 scroll-behavior: smooth，单次点击滚动距离又很小
+ *   （一个按钮组高度），导致移动缓慢。
+ * 这里强制容器高度封顶（内容可溢出 → scrollTop 生效），并关闭平滑动画
+ * （点击立即到位，配合下方 JS 的大步长滚动）。
+ */
+[data-testid="left-toolbar-buttons"],
+[data-testid="right-toolbar"] > div:first-child {
+  max-height: 100%;
+  scroll-behavior: auto !important;
+}
+
+/*
+ * 左侧工具栏布局定制：
+ * - 去掉左侧 ▲▼ 滚动箭头（左侧按钮已缩短到不溢出，箭头不再需要）。
+ * - "反应加号"及以下按钮由 JS 移入底部横向托盘 .ketcher-toolbar-extras，
+ *   托盘作为底部工具栏 Group 的第一个子元素，环模板（苯环等）自动右移让位。
+ */
+[data-testid="left-toolbar"] > div:not([data-testid="left-toolbar-buttons"]) {
+  display: none;
+}
+
+.ketcher-toolbar-extras {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-right: 4px;
+}
+
+.ketcher-editor-shell .ketcher-toolbar-extras,
+.ketcher-editor-shell .ketcher-right-toolbar-extras {
+  position: absolute;
+  z-index: 5;
+  bottom: 56px;
+  left: 10px;
+  display: none;
+  flex-wrap: wrap;
+  max-width: calc(100% - 20px);
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--ui-window-border, #d5d9e0);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--ui-shadow-dialog, 0 10px 28px rgb(20 25 35 / 10%));
+}
+
+.ketcher-editor-shell .ketcher-right-toolbar-extras {
+  bottom: 108px;
+}
+
+.ketcher-editor-shell.is-advanced-tools-open .ketcher-toolbar-extras,
+.ketcher-editor-shell.is-advanced-tools-open .ketcher-right-toolbar-extras {
+  display: flex;
+}
+
+.ketcher-editor-shell .ketcher-more-tools-button {
+  position: absolute;
+  z-index: 20;
+  bottom: 8px;
+  left: 10px;
+  height: 34px;
+  padding: 4px 10px;
+  color: #415873;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #dbe2eb;
+  background: #f4f6f9;
+}
+
+/* Ketcher keeps both modes mounted and switches the native wrapper's display.
+ * The extra molecular tools belong only to the active small-molecule canvas. */
+.ketcher-editor-shell:has(
+  [class*="Editor-module_editorsWrapper"]:not([style*="display: none"]) .Ketcher-polymer-editor-root
+) .ketcher-more-tools-button {
+  display: none;
+}
+
+.ketcher-editor-shell .ketcher-template-toolbar {
+  margin-left: 96px;
+  padding-left: 8px;
+}
+
+.ketcher-editor-shell [data-testid="left-toolbar-buttons"],
+.ketcher-editor-shell [data-testid="right-toolbar"] > div:first-child {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ketcher-toolbar-extras > *,
+.ketcher-right-toolbar-extras > * {
+  display: contents;
+}
+
+/* 右侧列中原本由 ▲▼ 翻页隐藏的“任意原子 / 扩展元素表”。 */
+.ketcher-right-toolbar-extras {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-right: 4px;
+}
+
+/* 环模板与左侧扩展工具分组：仅留出间距和分割线，按钮沿用 Ketcher 原生尺寸。 */
+.ketcher-template-toolbar {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid #cad3dd;
+}
+
+[data-testid="right-toolbar"] [data-testid="arrow-scroll-right-button"],
+[data-testid="right-toolbar"] [data-testid="arrow-scroll-left-button"] {
+  display: none;
+}
+
+/* Cl、Br 等双字母元素与单字母元素保持相同的按钮视觉中心。 */
+[data-testid="right-toolbar"] [class*="Atom-module_atom"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+[data-testid="right-toolbar"] [class*="Atom-module_atom"] > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Ketcher 的容器查询在嵌入式面板中会降至最小档；固定为常用图标尺寸。 */
+[data-testid="top-toolbar"] button {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+}
+
+[data-testid="top-toolbar"] button > svg {
+  top: 6px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+}
+
+/* “添加图片”没有次级操作；隐藏未来 Ketcher 版本可能附带的下拉箭头。 */
+.ketcher-editor-shell [data-testid="images-drop-down-button"] [data-testid="dropdown-expand"],
+.ketcher-editor-shell [data-testid="images"] + [data-testid="dropdown-expand"] {
+  display: none;
+}
+
+/* Ketcher 的原样式将周期表网格固定定位，致使最下两行溢出弹窗。 */
+.ketcher-editor-shell [class*="PeriodTable-module_elementsTable"] {
+  height: auto;
+  width: 640px;
+}
+
+.ketcher-editor-shell [class*="Dialog-module_dialog"] {
+  max-height: calc(100% - 16px);
+  max-width: calc(100% - 16px);
+  border: 1px solid var(--ui-window-border, #d5d9e0);
+  border-radius: 12px;
+  box-shadow: var(--ui-shadow-dialog, 0 10px 28px rgb(20 25 35 / 10%));
+}
+
+.ketcher-editor-shell [class*="PeriodTable-module_elementsTable"] > [class*="Dialog-module_body"] {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 8px;
+}
+
+.ketcher-editor-shell [class*="Dialog-module_header"],
+.ketcher-editor-shell [class*="Dialog-module_footer"] {
+  flex: 0 0 auto;
+}
+
+.ketcher-editor-shell [class*="PeriodTable-module_periodTable"] {
+  position: relative;
+}
+
+/* 元素符号以弹性盒垂直、水平居中；右上角原子序数伪元素仍保持绝对定位。 */
+.ketcher-editor-shell [class*="ElementsTable-module_button"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+/* Ketcher's upload/download controls are intentionally unavailable: drafts stay in .patdoc. */
+.ketcher-editor-shell [title^="Open..."],
+.ketcher-editor-shell [aria-label^="Open..."],
+.ketcher-editor-shell [title^="Save as..."],
+.ketcher-editor-shell [aria-label^="Save as..."],
+.ketcher-editor-shell [title^="Open…"],
+.ketcher-editor-shell [aria-label^="Open…"],
+.ketcher-editor-shell [title^="Save as…"],
+.ketcher-editor-shell [aria-label^="Save as…"],
+.ketcher-editor-shell [title^="Save As…"],
+.ketcher-editor-shell [aria-label^="Save As…"],
+.ketcher-editor-shell [title="3D Viewer"],
+.ketcher-editor-shell [title="Server settings"] {
+  display: none;
+}
+
+/* Keep the embedded editor's tool geometry and feedback inside its own surface. */
+.ketcher-editor-shell
+  :is(
+    [data-testid="top-toolbar"],
+    [data-testid="left-toolbar"],
+    [data-testid="right-toolbar"],
+    [data-testid="bottom-toolbar"]
+  )
+  button {
+  border-radius: 6px;
+  transition:
+    background-color var(--ui-motion-spatial, 400ms) ease-in-out,
+    color var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.ketcher-editor-shell
+  :is([data-testid="left-toolbar"], [data-testid="right-toolbar"], [data-testid="bottom-toolbar"])
+  button {
+  width: 32px;
+  height: 32px;
+  margin: 2px;
+}
+.ketcher-editor-shell
+  :is([data-testid="left-toolbar"], [data-testid="bottom-toolbar"])
+  button
+  > svg {
+  width: 22px;
+  height: 22px;
+  top: 5px;
+  left: 5px;
+}
+.ketcher-editor-shell :is([data-testid="left-toolbar"], [data-testid="right-toolbar"]) {
+  width: 44px;
+  margin-top: 10px;
+  padding: 0;
+}
+.ketcher-editor-shell
+  :is(
+    [class*="LeftToolbar-module_group__"],
+    [class*="RightToolbar-module_buttons__"],
+    [class*="BottomToolbar-module_group__"]
+  ) {
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(20 25 35 / 7%);
+}
+.ketcher-editor-shell [data-testid="top-toolbar"] {
+  min-height: 44px;
+  padding-inline: 6px;
+  box-shadow: none;
+  border-bottom: 1px solid #e2e7ee;
+  background: #fff;
+}
+.ketcher-editor-shell [data-testid="top-toolbar"] button {
+  flex-shrink: 0;
+  margin-inline: 2px;
+}
+.ketcher-editor-shell
+  [data-testid="top-toolbar"]
+  div:has(> button[data-testid$="-dropdown-triangle"]) {
+  display: inline-flex;
+  flex: 0 0 50px;
+  width: 50px;
+  margin-inline: 2px;
+}
+.ketcher-editor-shell
+  [data-testid="top-toolbar"]
+  div:has(> button[data-testid$="-dropdown-triangle"])
+  > button {
+  position: relative;
+  margin-inline: 0;
+}
+.ketcher-editor-shell
+  :is(
+    [data-testid="top-toolbar"],
+    [data-testid="left-toolbar"],
+    [data-testid="right-toolbar"],
+    [data-testid="bottom-toolbar"]
+  )
+  button {
+  pointer-events: auto;
+}
+.ketcher-editor-shell
+  :is(
+    [data-testid="top-toolbar"],
+    [data-testid="left-toolbar"],
+    [data-testid="right-toolbar"],
+    [data-testid="bottom-toolbar"]
+  )
+  button
+  > svg {
+  pointer-events: none;
+}
+.ketcher-editor-shell [data-testid="bottom-toolbar"] {
+  height: 44px;
+  padding: 4px 6px;
+  overflow: visible;
+  flex-wrap: nowrap;
+  overscroll-behavior: contain;
+}
+.ketcher-editor-shell [data-testid="bottom-toolbar"] > div {
+  width: 100%;
+  min-width: 0;
+}
+.ketcher-editor-shell .ketcher-template-toolbar {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 100px;
+  /* Native bottom groups reserve 6px below children; this scroll tray needs the full row. */
+  margin-bottom: 0;
+  padding-left: 10px;
+  border-left-color: #e2e7ee;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.ketcher-editor-shell .ketcher-template-toolbar::-webkit-scrollbar {
+  display: none;
+}
+.ketcher-editor-shell
+  :is(
+    [data-testid="top-toolbar"],
+    [data-testid="left-toolbar"],
+    [data-testid="right-toolbar"],
+    [data-testid="bottom-toolbar"]
+  )
+  button:not(:disabled, [class*="ActionButton-module_selected__"]):hover {
+  background-color: #edf1f6;
+}
+.ketcher-editor-shell button[class*="ActionButton-module_selected__"],
+.ketcher-editor-shell button[class*="ActionButton-module_selected__"]:hover,
+.ketcher-editor-shell .ketcher-more-tools-button[aria-expanded="true"] {
+  color: #1d5ec8;
+  background: #e8f1ff;
+}
+.ketcher-editor-shell button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+}
+.ketcher-editor-shell :is(.ketcher-toolbar-extras, .ketcher-right-toolbar-extras) {
+  z-index: 21;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity var(--ui-motion-spatial, 400ms) ease-in-out,
+    transform var(--ui-motion-spatial, 400ms) ease-in-out,
+    display var(--ui-motion-spatial, 400ms) allow-discrete;
+}
+.ketcher-editor-shell.is-advanced-tools-open
+  :is(.ketcher-toolbar-extras, .ketcher-right-toolbar-extras) {
+  opacity: 1;
+  transform: translateY(0);
+}
+.ketcher-editor-shell:not(.is-advanced-tools-open)
+  :is(.ketcher-toolbar-extras, .ketcher-right-toolbar-extras) {
+  pointer-events: none;
+}
+@starting-style {
+  .ketcher-editor-shell.is-advanced-tools-open
+    :is(.ketcher-toolbar-extras, .ketcher-right-toolbar-extras) {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ketcher-editor-shell button,
+  .ketcher-editor-shell :is(.ketcher-toolbar-extras, .ketcher-right-toolbar-extras) {
+    transition: none;
+  }
+}
+[data-reduced-motion="true"] .ketcher-editor-shell button,
+[data-reduced-motion="true"]
+  .ketcher-editor-shell
+  :is(.ketcher-toolbar-extras, .ketcher-right-toolbar-extras) {
+  transition: none;
+}

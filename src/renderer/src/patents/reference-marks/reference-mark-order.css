@@ -1,0 +1,77 @@
+.reference-mark-panel .reference-mark-panel__rows {
+  position: relative;
+}
+
+.reference-mark-panel .reference-mark-panel__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  box-shadow: none;
+  transform: none;
+  transition: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.reference-mark-panel .reference-mark-panel__drag-handle:focus-visible {
+  color: #007aff;
+  background: #e8f1ff;
+  box-shadow: none;
+}
+
+html[data-reference-mark-dragging="true"] .reference-mark-panel .reference-mark-panel__drag-handle {
+  pointer-events: none;
+}
+
+.reference-mark-panel .reference-mark-panel__drag-handle:active {
+  cursor: grabbing;
+}
+.reference-mark-panel .reference-mark-panel__drag-handle:disabled {
+  cursor: default;
+}
+.reference-mark-panel .reference-mark-panel__rows > .is-reordering {
+  opacity: 0.3;
+  outline: 1px dashed #007aff;
+  outline-offset: -1px;
+  border-radius: 10px;
+  background: #e8f1ff;
+}
+
+.reference-mark-drag-ghost {
+  position: fixed;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 1px solid #9cc6ff;
+  border-radius: 12px;
+  color: #1d1d1f;
+  background: #fff;
+  box-shadow:
+    0 12px 30px #152c4e26,
+    0 2px 6px #152c4e14;
+  transform: none;
+  overflow-wrap: anywhere;
+}
+
+.reference-mark-order-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

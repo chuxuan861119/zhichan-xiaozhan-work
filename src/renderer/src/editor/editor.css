@@ -1,0 +1,3652 @@
+.editor-paper {
+  width: var(--editor-page-width, 210mm);
+  min-height: var(--editor-page-height, 297mm);
+  margin: 24px auto 80px;
+  padding: var(--editor-page-margin-top, 25.4mm) var(--editor-page-margin-right, 31.7mm)
+    var(--editor-page-margin-bottom, 25.4mm) var(--editor-page-margin-left, 31.7mm);
+  background: #fff;
+  box-shadow: 0 2px 14px rgb(0 0 0 / 12%);
+  box-sizing: border-box;
+}
+
+/* Two-character inset plus room for a native marker and its normal text gap. */
+.patent-prosemirror ul,
+.patent-prosemirror ol {
+  padding-inline-start: 3em;
+  list-style-position: outside;
+}
+
+/* List markers provide indentation; retain the stored paragraph indent for leaving the list. */
+.patent-prosemirror li > p {
+  text-indent: 0 !important;
+}
+
+.editor-session {
+  display: none;
+}
+
+.patent-prosemirror.ProseMirror[data-table-end-active] {
+  caret-color: transparent;
+}
+
+.table-end-caret {
+  position: fixed;
+  width: 1px;
+  pointer-events: none;
+  z-index: 1;
+  animation: table-end-caret-blink 1s step-end infinite;
+}
+
+.table-end-caret[hidden] {
+  display: none;
+}
+
+@keyframes table-end-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-end-caret {
+    animation: none;
+  }
+}
+
+.editor-session.is-active {
+  display: block;
+}
+
+.patent-prosemirror,
+.editor-selection-overlay-host {
+  --editor-selection-background: rgb(37 99 235 / 22%);
+  --editor-inactive-selection-background: rgb(100 116 139 / 28%);
+  --editor-caret-color: #1d4ed8;
+}
+
+.patent-prosemirror {
+  min-height: calc(
+    var(--editor-page-height, 297mm) -
+    var(--editor-page-margin-top, 25.4mm) -
+    var(--editor-page-margin-bottom, 25.4mm)
+  );
+  color: #111827;
+  font-family: SimSun, "宋体", serif;
+  font-size: 14pt;
+  line-height: 1.8;
+  outline: none;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-break: strict;
+  text-justify: inter-character;
+  /* Follow center/right alignment too; justified paragraphs keep a start-aligned last line. */
+  text-align-last: auto;
+  text-spacing-trim: normal;
+  letter-spacing: normal;
+  caret-color: var(--editor-caret-color, #1d4ed8);
+}
+
+.patent-prosemirror ::selection {
+  color: inherit;
+  background: var(--editor-selection-background);
+}
+
+.patent-prosemirror u {
+  text-decoration-thickness: 0.75px;
+  text-underline-offset: 0.08em;
+}
+
+@media (forced-colors: active) {
+  .patent-prosemirror {
+    caret-color: CanvasText;
+  }
+
+  .patent-prosemirror ::selection {
+    color: HighlightText;
+    background: Highlight;
+  }
+}
+
+/* 编辑器失焦时，用逐行覆盖层保留可见选区。 */
+.editor-selection-overlay-host {
+  position: relative;
+}
+
+.editor-selection-overlay-host > .patent-prosemirror {
+  z-index: 1;
+}
+
+.editor-selection-overlay {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+.editor-selection-overlay[hidden] {
+  display: none;
+}
+
+.editor-selection-overlay__rect {
+  position: absolute;
+}
+
+.editor-selection-overlay[data-tone="active"] .editor-selection-overlay__rect {
+  background: var(--editor-selection-background);
+}
+
+.editor-selection-overlay[data-tone="background"] .editor-selection-overlay__rect {
+  background: var(--editor-inactive-selection-background);
+}
+
+@media (forced-colors: active) {
+  .editor-selection-overlay[data-tone="active"] .editor-selection-overlay__rect {
+    background: Highlight;
+  }
+
+  .editor-selection-overlay[data-tone="background"] .editor-selection-overlay__rect {
+    border: 1px solid GrayText;
+    background: transparent;
+  }
+}
+
+/* 上下标：缩小字号 + 行内偏移，不参与行高计算，避免撑开行距（对齐 Word 行为） */
+.patent-prosemirror sub,
+.patent-prosemirror sup {
+  font-size: 65%;
+  line-height: 0;
+  vertical-align: baseline;
+  position: relative;
+}
+
+.patent-prosemirror sup {
+  top: -0.45em;
+}
+
+.patent-prosemirror sub {
+  top: 0.3em;
+}
+
+/* 空光标进入上下标输入模式时，用与文字等比例的行内光标替代浏览器全高光标。 */
+.patent-prosemirror.has-script-input-caret {
+  caret-color: transparent;
+}
+
+.script-input-caret {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.script-input-caret::after {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 0.65em;
+  background: currentColor;
+  content: "";
+  animation: script-input-caret-blink 1s steps(1, end) infinite;
+}
+
+.script-input-caret[data-script-input-caret="superscript"]::after {
+  /* sup 的 0.45em 位移按其 65% 字号换算到父级字号。 */
+  bottom: 0.3em;
+}
+
+.script-input-caret[data-script-input-caret="subscript"]::after {
+  /* sub 的 0.3em 位移按其 65% 字号换算到父级字号。 */
+  bottom: -0.2em;
+}
+
+.script-input-caret[data-script-input-caret="normal"]::after {
+  height: 1em;
+  bottom: 0;
+}
+
+.patent-prosemirror:not(:focus) .script-input-caret::after {
+  visibility: hidden;
+}
+
+@keyframes script-input-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.patent-prosemirror p,
+.patent-prosemirror h1,
+.patent-prosemirror h2,
+.patent-prosemirror h3 {
+  margin: 0;
+}
+
+.patent-prosemirror h1 {
+  font-size: 20pt !important;
+}
+
+.patent-prosemirror h2 {
+  font-size: 17pt !important;
+}
+
+.patent-prosemirror h3 {
+  font-size: 14pt !important;
+}
+
+.patent-prosemirror p.is-editor-empty:first-child::before {
+  height: 0;
+  color: #667085;
+  content: attr(data-placeholder);
+  float: left;
+  pointer-events: none;
+}
+
+.page-break {
+  position: relative;
+  height: 28px;
+  margin: 24px -8mm;
+  border-top: 1px dashed #8b93a1;
+}
+
+.page-break::after {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  padding: 0 8px;
+  color: #737b88;
+  background: #fff;
+  content: "分页符";
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 11px;
+  transform: translateX(-50%);
+}
+
+.patent-figure {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  margin: 8mm 0;
+}
+
+.patent-figure.align-left {
+  align-items: flex-start;
+}
+
+.patent-figure.align-right {
+  align-items: flex-end;
+}
+
+/* Position only the live block-image frame, not its bitmap or surrounding text. */
+.patent-figure[data-node-view-wrapper] {
+  display: block;
+}
+
+.patent-figure[data-node-view-wrapper] > .image-selection-frame {
+  left: 50%;
+  transform: translateX(-50%);
+  transition:
+    left var(--ui-motion-spatial, 400ms) ease-in-out,
+    transform var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+.patent-figure[data-node-view-wrapper].align-left > .image-selection-frame {
+  left: 0;
+  transform: translateX(0);
+}
+
+.patent-figure[data-node-view-wrapper].align-right > .image-selection-frame {
+  left: 100%;
+  transform: translateX(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduced-motion="false"])
+    .patent-figure[data-node-view-wrapper]
+    > .image-selection-frame {
+    transition: none;
+  }
+}
+
+.patent-figure img,
+.patent-inline-figure img,
+.figure-preview-loading,
+.figure-preview-error {
+  max-width: 165mm;
+  max-height: 250mm;
+}
+
+.image-selection-frame {
+  position: relative;
+  max-width: 100%;
+  min-height: 10mm;
+}
+
+.image-selection-frame > img {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  object-fit: contain;
+  transition: transform var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-selection-frame,
+  .image-selection-frame > img {
+    transition: none;
+  }
+}
+
+.image-selection-frame .figure-preview-loading,
+.image-selection-frame .figure-preview-error {
+  width: 100%;
+  height: 100%;
+}
+
+.figure-preview-loading,
+.figure-preview-error {
+  display: grid;
+  min-height: 36mm;
+  place-items: center;
+  color: #737b88;
+  background: #f3f4f6;
+  border: 1px dashed #aeb4bd;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 12px;
+}
+
+.figure-preview-error {
+  gap: 8px;
+  align-content: center;
+  color: #b42318;
+  background: #fff7f6;
+  border-color: #f1aaa4;
+}
+
+.figure-preview-error button {
+  min-height: 28px;
+  padding: 0 10px;
+  color: #334155;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.image-selection-frame.is-selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.ProseMirror-selectednode > .patent-figure > .image-selection-frame,
+.ProseMirror-selectednode > .patent-inline-figure > .image-selection-frame {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.image-selection-frame__delete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  z-index: 3;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: #fff;
+  background: #dc2626;
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.image-selection-frame__delete::before {
+  position: absolute;
+  inset: -4px;
+  content: "";
+}
+
+.image-selection-frame__resize {
+  display: none;
+  position: absolute;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: #2563eb;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 6px rgb(15 23 42 / 25%);
+}
+
+.image-selection-frame__resize::before {
+  position: absolute;
+  inset: -5px;
+  content: "";
+}
+
+.image-selection-frame.is-selected > .image-selection-frame__delete,
+.ProseMirror-selectednode
+  > .patent-figure
+  > .image-selection-frame
+  > .image-selection-frame__delete,
+.ProseMirror-selectednode
+  > .patent-inline-figure
+  > .image-selection-frame
+  > .image-selection-frame__delete {
+  display: flex;
+}
+
+.image-selection-frame.is-selected > .image-selection-frame__resize,
+.ProseMirror-selectednode
+  > .patent-figure
+  > .image-selection-frame
+  > .image-selection-frame__resize,
+.ProseMirror-selectednode
+  > .patent-inline-figure
+  > .image-selection-frame
+  > .image-selection-frame__resize {
+  display: block;
+}
+
+.image-selection-frame__resize.is-top-left {
+  top: -7px;
+  left: -7px;
+  cursor: nwse-resize;
+}
+
+.image-selection-frame__resize.is-bottom-left {
+  bottom: -7px;
+  left: -7px;
+  cursor: nesw-resize;
+}
+
+.image-selection-frame__resize.is-bottom-right {
+  right: -7px;
+  bottom: -7px;
+  cursor: nwse-resize;
+}
+
+.image-selection-frame__delete:focus-visible,
+.image-selection-frame__resize:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 3px;
+}
+
+.patent-inline-figure {
+  display: inline-block;
+  position: relative;
+  max-width: 100%;
+  margin: 0 1.5mm;
+  vertical-align: baseline;
+  line-height: 0;
+}
+
+.chemical-structure {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  margin: 8mm 0;
+}
+
+.chemical-structure.align-left {
+  align-items: flex-start;
+}
+
+.chemical-structure.align-right {
+  align-items: flex-end;
+}
+
+.chemical-structure img {
+  display: block;
+  max-width: 165mm;
+  max-height: 250mm;
+  height: auto;
+  object-fit: contain;
+}
+
+.chemical-structure-preview-loading,
+.chemical-structure-preview-error {
+  display: grid;
+  min-height: 32mm;
+  place-items: center;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px dashed #aeb8c6;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 12px;
+}
+
+.chemical-structure-preview-error {
+  gap: 8px;
+  align-content: center;
+  color: #b42318;
+  background: #fff7f6;
+  border-color: #f1aaa4;
+}
+
+.chemical-structure-preview-error button {
+  min-height: 28px;
+  padding: 0 10px;
+  color: #334155;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.chemical-structure.is-selected img,
+.chemical-structure.is-selected .chemical-structure-preview-loading,
+.chemical-structure.is-selected .chemical-structure-preview-error {
+  background-color: rgb(37 99 235 / 12%);
+}
+
+/* 数学与化学公式（行内/块级）悬停与单击选中反馈 */
+.patent-prosemirror [data-type="inline-math"]:hover,
+.patent-prosemirror [data-type="block-math"]:hover {
+  background-color: rgb(37 99 235 / 6%);
+}
+
+.patent-prosemirror .ProseMirror-selectednode[data-type="inline-math"] {
+  background-color: rgb(37 99 235 / 15%);
+}
+
+.patent-prosemirror .ProseMirror-selectednode[data-type="block-math"] {
+  background-color: rgb(37 99 235 / 12%);
+}
+
+.patent-prosemirror .ProseMirror-selectednode[data-type="block-math"] .katex-display {
+  background-color: rgb(37 99 235 / 6%);
+}
+
+/* 长公式不撑宽白页，允许横向滚动 */
+.patent-prosemirror [data-type="block-math"] .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding: 2px 0;
+}
+
+.patent-prosemirror [data-type="block-math"] .katex-display::-webkit-scrollbar {
+  height: 6px;
+}
+
+.patent-prosemirror [data-type="block-math"] .katex-display::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.chemical-structure-tools {
+  display: grid;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px;
+  margin: 0;
+  background: #fff;
+  border: 1px solid #cbd0d7;
+  border-radius: 7px;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 12px;
+}
+
+.chemical-structure-tools label,
+.chemical-structure-alignments {
+  display: flex;
+  align-items: center;
+}
+
+.chemical-structure-tools label {
+  gap: 5px;
+}
+
+.chemical-structure-tools input[type="range"] {
+  width: 100%;
+}
+
+.chemical-structure-tools input[type="number"] {
+  min-width: 0;
+  width: 72px;
+  margin-left: auto;
+}
+
+.chemical-structure-alignments button {
+  flex: 1;
+}
+
+.chemical-structure-tools button {
+  height: 28px;
+  padding: 0 8px;
+  background: #f3f4f6;
+  border: 1px solid #d2d6dd;
+  border-radius: 4px;
+}
+
+.chemical-structure-alignments {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.chemical-structure-alignments button.is-active,
+.chemical-structure-tools .chemical-structure-edit {
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.patent-prosemirror .tableWrapper {
+  margin: calc(5mm - 36px) -36px;
+  padding: 36px;
+  overflow-x: auto;
+}
+
+.table-annotation {
+  line-height: 1.5;
+  color: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.table-annotation[hidden] {
+  display: none;
+}
+.table-annotation--name {
+  margin-bottom: 2mm;
+  font-weight: 600;
+  text-align: center;
+}
+.table-annotation--note {
+  margin-top: 2mm;
+  font-weight: 400;
+  text-align: left;
+}
+.table-annotation__text {
+  cursor: text;
+}
+.table-annotation.is-empty .table-annotation__text {
+  opacity: 0.45;
+  font-weight: 400;
+}
+.table-annotation__input {
+  display: none;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  border-radius: 0;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+}
+.table-annotation.is-editing .table-annotation__input {
+  display: block;
+}
+.table-annotation.is-editing .table-annotation__text {
+  display: none;
+}
+.table-rail-panel__dimension-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  padding: 8px 10px;
+  border: 1px solid #d9dde4;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.table-rail-panel__annotation-field textarea {
+  field-sizing: content;
+  width: 100%;
+  min-height: calc(1.5em + 18px);
+  line-height: 1.5;
+}
+
+.patent-prosemirror table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.patent-prosemirror td,
+.patent-prosemirror th {
+  position: relative;
+  min-width: 0;
+  padding: 2mm;
+  border: 1px solid #30343a;
+  vertical-align: top;
+}
+
+.patent-prosemirror .patent-table-cell-content {
+  min-width: 0;
+  min-height: 1.8em;
+  overflow-wrap: anywhere;
+}
+
+.patent-prosemirror td[data-padding-top-mm] > .patent-table-cell-content,
+.patent-prosemirror th[data-padding-top-mm] > .patent-table-cell-content {
+  min-height: 1em;
+}
+
+.patent-prosemirror tr[data-row-height-rule="at-least"] {
+  height: var(--patent-row-height);
+}
+
+.patent-prosemirror tr[data-row-height-rule="exact"] > td,
+.patent-prosemirror tr[data-row-height-rule="exact"] > th {
+  height: var(--patent-row-height);
+}
+
+.patent-prosemirror tr[data-row-height-rule="exact"] .patent-table-cell-content {
+  min-height: 0;
+  max-height: max(0px, calc(var(--patent-row-height) - var(--patent-cell-vertical-padding, 4mm)));
+  overflow: clip;
+}
+
+.patent-prosemirror tr[data-table-row-resize-preview="true"] {
+  height: var(--patent-row-height);
+}
+
+.patent-prosemirror tr[data-table-row-resize-preview="true"] .patent-table-cell-content {
+  max-height: none;
+  overflow: visible;
+}
+
+/* Match the blank-cell formatting committed by an upward resize, without editing the document. */
+.patent-prosemirror [data-table-row-resize-compact="true"] {
+  padding: 1mm 2mm !important;
+}
+
+.patent-prosemirror [data-table-row-resize-compact="true"] > .patent-table-cell-content {
+  min-height: 1em;
+}
+
+.patent-prosemirror [data-table-row-resize-compact="true"] > .patent-table-cell-content > p {
+  line-height: var(--table-resize-line-height) !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  text-indent: 0 !important;
+}
+
+.patent-prosemirror td[data-content-overflow="true"]::before,
+.patent-prosemirror th[data-content-overflow="true"]::before {
+  position: absolute;
+  z-index: 3;
+  top: 2px;
+  right: 2px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid #d97706;
+  border-left: 7px solid transparent;
+  content: "";
+  pointer-events: none;
+}
+
+.patent-prosemirror .column-resize-handle {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  right: -1px;
+  bottom: -2px;
+  width: 2px;
+  pointer-events: none;
+  background: #2563eb;
+}
+
+.patent-prosemirror.resize-cursor {
+  cursor: col-resize;
+}
+
+.table-formatting-controls .table-rail-panel__dimension-field {
+  grid-template-columns: minmax(76px, auto) minmax(0, 1fr);
+}
+
+.table-formatting-controls > .table-rail-panel__dimension-field {
+  grid-template-columns: 110px minmax(0, 1fr);
+}
+
+/* 单元格选择区域固定在左上角内侧，紧凑命中区不会覆盖正文输入位置。 */
+.table-selection-handle:not([data-table-selection-row]):not([data-table-selection-column]):not(
+  [data-table-selection-table]
+) {
+  top: 1px;
+  left: 1px;
+  width: 7px;
+  height: 7px;
+}
+
+/* Compact rows bring cell-selection hit areas close to column dividers. */
+.patent-prosemirror.resize-cursor
+.table-selection-handle:not([data-table-selection-row]):not([data-table-selection-column]):not(
+  [data-table-selection-table]
+) {
+  pointer-events: none;
+}
+
+.patent-prosemirror .selectedCell::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background: rgb(37 99 235 / 14%);
+  border: 0 solid #2563eb;
+  box-sizing: border-box;
+  content: "";
+}
+
+.patent-prosemirror .selectedCell.table-selection-boundary-top::after {
+  border-top-width: 1px;
+}
+
+.patent-prosemirror .selectedCell.table-selection-boundary-right::after {
+  border-right-width: 1px;
+}
+
+.patent-prosemirror .selectedCell.table-selection-boundary-bottom::after {
+  border-bottom-width: 1px;
+}
+
+.patent-prosemirror .selectedCell.table-selection-boundary-left::after {
+  border-left-width: 1px;
+}
+
+.table-insert-handle {
+  position: fixed;
+  z-index: 40;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: #8a96a3;
+  font-size: 0;
+  cursor: pointer;
+}
+
+.table-insert-handle::before {
+  position: absolute;
+  inset: 2px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: #fff;
+  content: "";
+}
+
+.table-insert-handle::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  background:
+    linear-gradient(currentColor, currentColor) center / 8px 1px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1px 8px no-repeat;
+  content: "";
+}
+
+.table-insert-handle:hover,
+.table-insert-handle:focus-visible {
+  color: #2563eb;
+  background: transparent;
+}
+
+.table-insert-handle:hover::before,
+.table-insert-handle:focus-visible::before {
+  background: #eff6ff;
+}
+
+.table-insert-guide {
+  position: fixed;
+  z-index: 39;
+  pointer-events: none;
+  background: #2563eb;
+}
+
+.table-insert-guide::before,
+.table-insert-guide::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid #2563eb;
+  border-left: 2px solid #2563eb;
+  content: "";
+}
+
+.table-insert-guide[data-axis="row"]::before {
+  transform: translate(-50%, -10px) rotate(45deg);
+}
+
+.table-insert-guide[data-axis="row"]::after {
+  transform: translate(-50%, 4px) rotate(225deg);
+}
+
+.table-insert-guide[data-axis="column"]::before {
+  transform: translate(-10px, -50%) rotate(-45deg);
+}
+
+.table-insert-guide[data-axis="column"]::after {
+  transform: translate(4px, -50%) rotate(135deg);
+}
+
+@media print {
+  .table-insert-handle,
+  .table-insert-guide {
+    display: none;
+  }
+}
+
+.table-selection-handle {
+  position: absolute;
+  z-index: 3;
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  color: transparent;
+  background: none;
+  border: 0;
+  cursor: cell;
+  opacity: 0;
+}
+
+.table-selection-handle-reveal {
+  position: absolute;
+  z-index: 3;
+  cursor: default;
+}
+
+/* 单元格选择区域通过伪元素扩展命中范围。 */
+.table-selection-handle::before {
+  position: absolute;
+  inset: -11px;
+  content: "";
+}
+
+.table-selection-handle:not([data-table-selection-row]):not([data-table-selection-column]):not(
+  [data-table-selection-table]
+)::before {
+  inset: -1px;
+}
+
+/* 行、列选择使用 15px 命中区；整表入口稍小以避开插入加号，蓝点保持原尺寸。 */
+.table-selection-handle[data-table-selection-row],
+.table-selection-handle[data-table-selection-column],
+.table-selection-handle[data-table-selection-table] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.table-selection-handle[data-table-selection-row]::before,
+.table-selection-handle[data-table-selection-column]::before,
+.table-selection-handle[data-table-selection-table]::before {
+  inset: 0;
+}
+
+.table-selection-handle::after {
+  position: absolute;
+  inset: 0;
+  background: #2563eb;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  content: "";
+}
+
+.table-selection-handle[data-table-selection-row]::after,
+.table-selection-handle[data-table-selection-column]::after,
+.table-selection-handle[data-table-selection-table]::after {
+  inset: 4px;
+}
+
+.table-selection-handle[data-table-selection-row]::after {
+  transform: translateX(-4px);
+}
+
+.table-selection-handle[data-table-selection-column]::after {
+  transform: translateY(-4px);
+}
+
+.table-selection-handle[data-table-selection-table]::after {
+  inset: 3px;
+  transform: translate(-3px, -3px);
+}
+
+.table-selection-handle:not([data-table-selection-row]):not([data-table-selection-column]):not(
+  [data-table-selection-table]
+)::after {
+  display: none;
+}
+
+.table-selection-handle:hover,
+.table-selection-handle:focus-visible,
+.table-selection-handle-reveal:hover > .table-selection-handle,
+.table-selection-handle-reveal:focus-within > .table-selection-handle {
+  opacity: 1;
+}
+
+.patent-prosemirror table:hover .table-selection-handle[data-table-selection-table] {
+  opacity: 1;
+}
+
+.patent-prosemirror
+  table:has(
+    .table-selection-handle-reveal:is(
+        [data-table-selection-reveal="row"],
+        [data-table-selection-reveal="column"],
+        [data-table-selection-reveal="table"]
+      ):hover
+  )
+  .table-selection-handle:is(
+    [data-table-selection-row],
+    [data-table-selection-column],
+    [data-table-selection-table]
+  ) {
+  opacity: 1;
+}
+
+.table-selection-handle[data-table-selection-row] {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.table-selection-handle[data-table-selection-column] {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.table-selection-handle[data-table-selection-table] {
+  top: 0;
+  left: 0;
+  width: 13px;
+  height: 13px;
+}
+
+.table-selection-handle-reveal[data-table-selection-reveal="row"] {
+  top: 0;
+  left: -11px;
+  width: 12px;
+  height: 100%;
+}
+
+.table-selection-handle-reveal[data-table-selection-reveal="column"] {
+  top: -11px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+}
+
+.table-selection-handle-reveal[data-table-selection-reveal="table"] {
+  top: -24px;
+  left: -24px;
+  width: 13px;
+  height: 13px;
+}
+
+.table-row-resize-handle {
+  position: absolute;
+  z-index: 4;
+  right: -2mm;
+  bottom: -4px;
+  left: -2mm;
+  height: 8px;
+  padding: 0;
+  color: transparent;
+  background: transparent;
+  border: 0;
+  cursor: row-resize;
+  opacity: 0;
+}
+
+.patent-prosemirror:not([data-table-selection-dragging="true"]) .table-row-resize-handle:hover,
+.patent-prosemirror:not([data-table-selection-dragging="true"])
+  .table-row-resize-handle:focus-visible,
+.patent-prosemirror:not([data-table-selection-dragging="true"])
+  tr:has(.table-row-resize-handle:hover)
+  .table-row-resize-handle,
+.patent-prosemirror:not([data-table-selection-dragging="true"])
+  tr:has(.table-row-resize-handle:focus-visible)
+  .table-row-resize-handle,
+.patent-prosemirror tr[data-table-row-resize-preview="true"] .table-row-resize-handle {
+  opacity: 1;
+}
+
+.table-row-resize-handle::after {
+  position: absolute;
+  right: 2mm;
+  bottom: 2px;
+  left: 2mm;
+  height: 2px;
+  background: #2563eb;
+  content: "";
+}
+
+.patent-prosemirror td[data-horizontal-alignment="center"],
+.patent-prosemirror th[data-horizontal-alignment="center"] {
+  text-align: center;
+}
+
+.patent-prosemirror td[data-horizontal-alignment="right"],
+.patent-prosemirror th[data-horizontal-alignment="right"] {
+  text-align: right;
+}
+
+.patent-prosemirror td[data-vertical-alignment="middle"],
+.patent-prosemirror th[data-vertical-alignment="middle"] {
+  vertical-align: middle;
+}
+
+.patent-prosemirror td[data-vertical-alignment="bottom"],
+.patent-prosemirror th[data-vertical-alignment="bottom"] {
+  vertical-align: bottom;
+}
+
+.patent-prosemirror td[data-border-style="none"],
+.patent-prosemirror th[data-border-style="none"] {
+  border-style: none;
+}
+
+.patent-prosemirror td[data-border-style="double"],
+.patent-prosemirror th[data-border-style="double"] {
+  border-style: double;
+  border-width: 3px;
+}
+
+.table-rail-panel {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  color: #1f2937;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 12px;
+}
+
+.table-rail-panel__summary {
+  padding: 1px 2px 12px;
+  margin: 0;
+  color: #64748b;
+  background: transparent;
+  border: 0;
+  line-height: 1.35;
+}
+
+.table-rail-panel__group {
+  min-width: 0;
+  border-top: 1px solid #d8d5cf;
+}
+
+.table-rail-panel__group h3 {
+  margin: 0;
+  font: inherit;
+}
+
+.table-rail-panel__group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 2px;
+  color: #334155;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+}
+
+.table-rail-panel__group-toggle:hover,
+.table-rail-panel__group-toggle:focus-visible {
+  color: #1d4ed8;
+  background: #f8fafc;
+}
+
+.table-rail-panel__group-toggle:focus-visible {
+  outline: 2px solid rgb(37 99 235 / 25%);
+  outline-offset: 1px;
+}
+
+.table-rail-panel__group-chevron {
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  transition: transform 140ms ease-in-out;
+}
+
+.table-rail-panel__group-toggle[aria-expanded="true"] .table-rail-panel__group-chevron {
+  transform: rotate(180deg);
+}
+
+.table-rail-panel__group-content {
+  display: grid;
+  gap: 12px;
+  padding: 0 0 10px;
+}
+
+.table-rail-panel__group-content[hidden] {
+  display: none;
+}
+
+.table-rail-panel > .table-rail-panel__group > .table-rail-panel__group-content {
+  padding-top: 10px;
+}
+
+.table-rail-panel > .table-rail-panel__group:last-child > .table-rail-panel__group-content {
+  padding-bottom: 1px;
+}
+
+.table-rail-panel__buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.table-rail-panel__buttons--alignment {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 3px;
+  background: rgb(71 85 105 / 7%);
+  border-radius: 9px;
+}
+
+.table-rail-panel__operation,
+.table-rail-panel__alignment-row {
+  display: grid;
+  min-width: 0;
+  padding: 0;
+  gap: 6px;
+  border: 0;
+}
+
+.table-rail-panel__operation-label,
+.table-rail-panel__alignment-label {
+  padding-left: 2px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.table-rail-panel__buttons--operation {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 3px;
+  background: rgb(71 85 105 / 7%);
+  border-radius: 9px;
+}
+
+.table-rail-panel__buttons--cell {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.table-rail-panel__buttons--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.table-rail-panel__buttons--borders {
+  grid-template-columns: repeat(4, 32px);
+}
+
+.table-rail-panel__button {
+  min-height: 34px;
+  padding: 4px 5px;
+  font: inherit;
+  color: #334155;
+  overflow-wrap: normal;
+  line-height: 1.25;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  transition:
+    color 120ms ease-in-out,
+    background-color 120ms ease-in-out,
+    border-color 120ms ease-in-out,
+    box-shadow 120ms ease-in-out;
+}
+
+.table-rail-panel__button--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  padding: 0;
+}
+
+.table-rail-panel__button--labeled-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.table-rail-panel__button--icon svg,
+.table-rail-panel__button--labeled-icon svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  stroke-width: 1.8;
+}
+
+.table-rail-panel__buttons--operation .table-rail-panel__button,
+.table-rail-panel__buttons--alignment .table-rail-panel__button {
+  min-height: 34px;
+}
+
+.table-rail-panel__buttons--alignment .table-rail-panel__button--icon {
+  width: 100%;
+}
+
+.table-rail-panel__button:hover:not(:disabled):not([data-unavailable="true"]),
+.table-rail-panel__button:focus-visible {
+  color: #0f172a;
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 12%);
+  outline: none;
+}
+
+.table-rail-panel__button:focus-visible {
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 22%);
+}
+
+.table-rail-panel__button.is-active,
+.figure-rail-panel__alignments button[aria-pressed="true"],
+.figure-rail-panel__actions button[aria-pressed="true"] {
+  color: #2563eb;
+  background: #eaf2fb;
+  border-color: #a9c5e8;
+  box-shadow: 0 1px 2px rgb(37 99 235 / 6%);
+  font-weight: 600;
+}
+
+.table-rail-panel__button:disabled,
+.table-rail-panel__button[data-unavailable="true"] {
+  color: #94a3b8;
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.table-rail-panel__button.is-danger {
+  color: #b42318;
+  background: transparent;
+  border-color: transparent;
+}
+
+.table-rail-panel__button.is-danger:hover,
+.table-rail-panel__button.is-danger:focus-visible {
+  background: #fff2f0;
+  border-color: #f3c3bd;
+}
+
+.table-rail-panel__line-style {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.table-rail-panel__line-style select {
+  min-width: 82px;
+  height: 30px;
+  color: #334155;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font: inherit;
+}
+
+.table-rail-panel__mixed {
+  justify-self: start;
+  padding: 2px 6px;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.find-replace-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 12px;
+}
+
+.find-replace-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.find-replace-panel__title {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.find-replace-panel__mode-switch {
+  display: inline-flex;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding: 2px;
+  background: #eef2f6;
+  border: 1px solid #d7dee8;
+  border-radius: 6px;
+}
+
+.find-replace-panel__mode-switch legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.find-replace-panel__mode-switch button {
+  height: 24px;
+  padding: 0 10px;
+  color: #475569;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.find-replace-panel__mode-switch button.is-active {
+  color: #1e293b;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 12%);
+}
+
+.find-replace-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: #64748b;
+  background: #f8f9fa;
+  border: 1px solid #d2d6dd;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.find-replace-panel__close:hover {
+  color: #0f172a;
+  background: #eef2f6;
+}
+
+.find-replace-panel__field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: #475569;
+}
+
+.find-replace-panel__input-row {
+  display: block;
+  min-width: 0;
+}
+
+.find-replace-panel__field input,
+.find-replace-panel__search-mode select {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border: 1px solid #c5cad2;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.find-replace-panel__field input {
+  border-radius: 4px;
+}
+
+.find-replace-panel__special {
+  position: relative;
+}
+
+.find-replace-panel__special > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #c5cad2;
+  border-radius: 4px;
+  list-style: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.find-replace-panel__special > button[aria-expanded="true"] {
+  color: #155eef;
+  background: #eef5ff;
+}
+
+.find-replace-panel__search-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.special-character-dialog-backdrop {
+  position: fixed;
+  z-index: 1600;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(15 23 42 / 28%);
+  backdrop-filter: blur(2px);
+}
+
+.special-character-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(520px, calc(100vw - 48px));
+  max-height: min(680px, calc(100vh - 48px));
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--ui-window-border, #d5d9e0);
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: var(--ui-shadow-dialog, 0 10px 28px rgb(20 25 35 / 10%));
+}
+
+.special-character-dialog header {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px 12px;
+}
+
+.special-character-dialog[data-dragging="true"] header {
+  cursor: grabbing;
+}
+
+.special-character-dialog h2,
+.special-character-dialog p {
+  margin: 0;
+}
+
+.special-character-dialog h2 {
+  color: #17243a;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.special-character-dialog p {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.special-character-dialog__close {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  color: #64748b;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.special-character-dialog__close:hover {
+  color: #17243a;
+  background: #eef2f6;
+}
+
+.special-character-dialog__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 8px 24px 24px;
+  overflow: auto;
+  background: #fff;
+}
+
+.special-character-dialog__option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 6px;
+  min-height: 76px;
+  padding: 12px 8px;
+  color: #334155;
+  background: #f3f5f8;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-in-out,
+    border-color 120ms ease-in-out;
+}
+
+.special-character-dialog__option:hover,
+.special-character-dialog__option:focus-visible {
+  border-color: #8db4ff;
+  background: #eaf2ff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 10%);
+}
+
+.special-character-dialog__options span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.special-character-dialog__options strong {
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.special-character-dialog__options small {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.special-character-dialog__options code {
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  color: #155eef;
+  background: transparent;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 18px;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .special-character-dialog__options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.find-replace-panel__search-mode {
+  display: grid;
+  gap: 4px;
+  color: #475569;
+}
+
+.find-replace-panel__hint {
+  margin: -2px 0 0;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.find-replace-panel__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+}
+
+.find-replace-panel__options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.find-replace-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.find-replace-panel__actions button {
+  flex: 1 1 72px;
+  height: 28px;
+  padding: 0 6px;
+  color: #1e293b;
+  background: #f8f9fa;
+  border: 1px solid #d2d6dd;
+  border-radius: 4px;
+  white-space: nowrap;
+  font: inherit;
+  cursor: pointer;
+}
+
+.find-replace-panel__actions button:disabled {
+  color: #a3aab4;
+  background: #f1f3f5;
+  cursor: not-allowed;
+}
+
+.find-replace-panel__count,
+.find-replace-panel__message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #5d626a;
+}
+
+.find-replace-match {
+  background: #fff0a8;
+  border-radius: 2px;
+  box-shadow: inset 0 -1px 0 #e6b800;
+}
+
+.find-replace-match.is-active {
+  background: #ffd45c;
+  box-shadow: inset 0 0 0 1px #c98600;
+}
+
+.reference-mark-review-match {
+  background: #dbeafe;
+  border-radius: 2px;
+  box-shadow: inset 0 -2px 0 #2563eb;
+}
+
+.reference-mark-review-match.is-active {
+  background: #80deea;
+  box-shadow: inset 0 0 0 1px #00838f;
+}
+
+.reference-mark-issue-match {
+  background: rgba(254, 202, 202, 0.78);
+  border-bottom: 1px solid #ef4444;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.reference-mark-issue-match.is-active {
+  background: rgba(252, 165, 165, 0.9);
+  box-shadow: 0 0 0 1px #dc2626;
+}
+
+.reference-mark-keyword-block {
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  border-radius: 0.34em;
+  margin-inline: 0;
+  padding: 0;
+  font-size: 0.9em;
+  vertical-align: baseline;
+  background: #e5e7eb;
+  cursor: text;
+  transition: background-color 120ms ease-in-out;
+}
+
+.reference-mark-keyword-block.is-recent {
+  background: #dcfce7;
+}
+
+.reference-mark-keyword-block.is-active {
+  background: #b2ebf2;
+}
+
+.formula-dialog {
+  width: min(760px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  padding: 0 20px 20px;
+  overflow: auto;
+  background: #fff;
+  border: 0;
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: 0 10px 28px rgb(20 25 35 / 10%);
+}
+
+/* Modeless tools have no dimmed backdrop; separate their white surface from the page. */
+.formula-dialog.dialog-surface--floating,
+.other-formula-dialog.dialog-surface--floating {
+  box-shadow:
+    0 10px 28px rgb(20 25 35 / 10%),
+    0 20px 56px rgb(15 23 42 / 20%);
+}
+
+body:has(.dialog-layer--formula:not([hidden]):not([aria-hidden="true"])) {
+  --keyboard-zindex: calc(var(--ui-layer-critical, 800) + 1);
+}
+
+.dialog-layer--formula {
+  bottom: var(--formula-virtual-keyboard-height, 0px);
+  transition: bottom var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+.dialog-layer--formula > .formula-dialog {
+  max-height: calc(100vh - 48px - var(--formula-virtual-keyboard-height, 0px));
+  transition:
+    max-height var(--ui-motion-spatial, 400ms) ease-in-out,
+    translate var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-layer--formula,
+  .dialog-layer--formula > .formula-dialog {
+    transition: none;
+  }
+}
+
+.formula-dialog header,
+.formula-dialog footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.formula-dialog > header {
+  margin: 0 -20px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  min-height: 54px;
+}
+
+.dialog-backdrop--modeless .formula-dialog > header {
+  cursor: default;
+  user-select: none;
+}
+
+.dialog-titlebar--draggable {
+  cursor: default;
+  user-select: none;
+}
+
+.dialog-backdrop--modeless .formula-dialog > header button,
+.dialog-backdrop--modeless .formula-dialog > header input,
+.dialog-backdrop--modeless .formula-dialog > header textarea,
+.dialog-backdrop--modeless .formula-dialog > header select {
+  cursor: default;
+  user-select: auto;
+}
+
+.formula-dialog h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.formula-dialog-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.formula-dialog-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.formula-dialog-actions button[aria-label] {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Match the application close control without changing editor input behavior. */
+.formula-dialog .dialog-close-button,
+.other-formula-dialog .dialog-close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  color: #65738a;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition:
+    color 0.15s ease-in-out,
+    background 0.15s ease-in-out;
+}
+
+.formula-dialog .dialog-close-button:hover:not(:disabled),
+.other-formula-dialog .dialog-close-button:hover:not(:disabled) {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.formula-dialog button,
+.formula-dialog textarea {
+  font: inherit;
+}
+
+.formula-dialog button {
+  min-height: 32px;
+  padding: 0 10px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  transition:
+    background 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+}
+
+.formula-dialog button:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.formula-dialog .primary-button {
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.formula-dialog .primary-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.formula-dialog > footer {
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.formula-dialog > footer button,
+.matrix-insert-dialog > footer button {
+  min-height: 34px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.chemistry-dialog {
+  width: min(1100px, calc(100vw - 40px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.chemistry-dialog-fixed-top {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  margin: 0 -20px;
+  background: #fff;
+}
+
+.chemistry-dialog-fixed-top > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 54px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dialog-backdrop--modeless .chemistry-dialog-fixed-top > header {
+  cursor: default;
+  user-select: none;
+}
+
+.chemistry-dialog-fixed-top > [role="tablist"] {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 14px 20px;
+  background: #eef2f6;
+  border-radius: 7px;
+}
+
+.chemistry-dialog-fixed-top > [role="tablist"] button {
+  flex: 1;
+  background: transparent;
+  border-color: transparent;
+}
+
+.chemistry-dialog-fixed-top > [role="tablist"] button[aria-selected="true"] {
+  color: #1d4ed8;
+  background: #fff;
+  border-color: #bfdbfe;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 10%);
+}
+
+.chemistry-dialog-scroll-body {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.chemistry-dialog--structure {
+  height: min(700px, calc(100dvh - 48px));
+}
+
+.chemistry-dialog--structure .chemistry-dialog-scroll-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding-top: 12px;
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+.chemistry-dialog--structure
+  .chemistry-dialog-scroll-body
+  > .spatial-presence:has(> .chemistry-structure-panel),
+.chemistry-dialog--structure .chemistry-structure-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chemistry-dialog--structure .ketcher-editor-shell,
+.chemistry-dialog--structure .ketcher-editor-state {
+  flex: 1;
+  height: 100%;
+  min-height: 180px;
+}
+
+.chemistry-dialog--structure > footer {
+  margin-top: 12px;
+}
+
+.chemistry-draft-status {
+  margin-right: auto;
+  padding: 3px 8px;
+  color: #946319;
+  font-size: 12px;
+  border-radius: 999px;
+  background: #fff5df;
+}
+
+.chemistry-discard-confirmation {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #dbe3ed;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.chemistry-discard-confirmation > span {
+  flex: 1;
+}
+
+.formula-position-switch {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  margin: 0 0 0 8px;
+  padding: 3px;
+  min-width: 0;
+  border: 1px solid #dbe3ed;
+  border-radius: 999px;
+  background: #eef2f6;
+}
+
+.formula-position-switch label {
+  position: relative;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: background var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+.formula-position-switch__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.formula-position-switch label:has(input:checked) {
+  color: #1d4ed8;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 10%);
+}
+
+.formula-position-switch label:has(input:focus-visible) {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.formula-dialog header:has(.formula-position-switch) {
+  justify-content: flex-start;
+}
+
+.formula-dialog header:has(.formula-position-switch) > .dialog-close-button {
+  margin-left: auto;
+}
+
+.chemistry-dialog.is-periodic-panel-open .chemistry-dialog-scroll-body {
+  flex: 0 0 auto;
+  overflow: visible;
+  scrollbar-gutter: auto;
+}
+
+.chemistry-dialog.is-periodic-panel-open .chemistry-periodic-collapse {
+  flex: 0 1 auto;
+}
+
+.chemistry-dialog.is-periodic-panel-open math-field.chemistry-equation-field {
+  min-height: 88px;
+  padding-block: 12px;
+}
+
+.chemistry-dialog.is-periodic-panel-open .chemistry-symbols {
+  margin-block: 8px;
+  padding: 6px;
+}
+
+.chemistry-dialog.is-periodic-panel-open .chemistry-symbols button {
+  padding: 5px 7px;
+}
+
+@media (max-height: 800px) {
+  .chemistry-dialog .periodic-grid {
+    padding: 6px;
+  }
+  .chemistry-dialog .periodic-cell {
+    height: 36px;
+  }
+  .chemistry-dialog .periodic-cell-symbol {
+    margin-left: 10px;
+    font-size: 14px;
+  }
+  .chemistry-dialog .periodic-cell-name {
+    font-size: 11px;
+  }
+  .chemistry-dialog .periodic-legend {
+    gap: 4px 8px;
+    padding: 4px 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formula-position-switch label {
+    transition: none;
+  }
+}
+
+.chemistry-periodic-tray {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  flex: 0 1 auto;
+  scrollbar-gutter: stable;
+}
+
+@media (min-height: 760px) {
+  .chemistry-periodic-tray {
+    flex: 0 0 auto;
+  }
+}
+
+.chemistry-dialog > footer {
+  flex: 0 0 auto;
+  background: #fff;
+}
+
+.chemistry-position-note {
+  margin: 10px 0;
+  color: #52606d;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.formula-dialog math-field.chemistry-equation-field {
+  min-height: 104px;
+  padding: 32px 12px;
+  font-size: 22px;
+  line-height: 1.7;
+  background: #fff;
+  border: 2px solid #93c5fd;
+  border-radius: 6px;
+}
+
+/* 隐藏 MathLive 内置的虚拟键盘和菜单按钮 */
+math-field.chemistry-equation-field::part(virtual-keyboard-toggle),
+math-field.chemistry-equation-field::part(menu-toggle) {
+  display: none;
+}
+
+.formula-dialog math-field.chemistry-equation-field:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 14%);
+}
+
+.chemistry-equation-wrapper {
+  position: relative;
+}
+
+.chemistry-suggestion-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  margin: -6px 0 12px;
+  padding: 6px 8px;
+  color: #475569;
+  background: #f8fbff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+}
+
+.chemistry-suggestion-bar [role="listbox"] {
+  display: flex;
+  gap: 6px;
+}
+
+.chemistry-suggestion-option {
+  min-width: 72px;
+  min-height: 30px;
+  padding: 3px 10px;
+  color: #0f172a;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.chemistry-suggestion-option[aria-selected="true"] {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 14%);
+}
+
+.chemistry-suggestion-label,
+.chemistry-suggestion-help,
+.chemistry-script-hint {
+  font-size: 12px;
+}
+
+.chemistry-suggestion-label {
+  font-weight: 600;
+}
+
+.chemistry-suggestion-help {
+  margin-left: auto;
+  color: #64748b;
+}
+
+.chemistry-script-hint {
+  margin: -6px 0 10px;
+  color: #1d4ed8;
+}
+
+.chemistry-suggestion-error {
+  margin: -6px 0 10px;
+  color: #b42318;
+  font-size: 12px;
+}
+
+.chemistry-clear-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s ease-in-out;
+}
+
+.chemistry-clear-button:hover {
+  color: #ef4444;
+  background: rgb(239 68 68 / 8%);
+}
+
+.chemistry-symbols {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.chemistry-symbols legend {
+  padding: 0 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.chemistry-symbols button {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 7px;
+  line-height: 1.2;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.chemistry-symbols button:hover,
+.chemistry-symbols button:focus-visible {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  box-shadow: 0 1px 3px rgb(59 130 246 / 12%);
+}
+
+.chemistry-symbols button[aria-pressed="true"] {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 14%);
+}
+
+.formula-dialog button:disabled {
+  color: #94a3b8;
+  background: #eef1f5;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.chemistry-preset-formula,
+.chemistry-symbol-preview {
+  display: inline-block;
+  min-height: 26px;
+  line-height: 1.45;
+  text-align: center;
+  color: #0f172a;
+  font-family: "Cambria Math", "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.chemistry-preset-formula .katex {
+  color: #000;
+  font-size: 1em;
+}
+
+.chemistry-symbols button > span {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chemistry-symbols {
+  gap: 6px;
+}
+
+.chemistry-symbols button {
+  min-width: 74px;
+  min-height: 58px;
+}
+
+.chemistry-preview {
+  position: relative;
+  text-align: left;
+}
+
+.chemistry-preview h3 {
+  position: absolute;
+  top: 0;
+  right: 10px;
+  margin: 0;
+  padding: 2px 8px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgb(255 255 255 / 80%);
+  border-radius: 0 0 4px 4px;
+  z-index: 1;
+}
+
+.chemistry-preview > div {
+  flex: 1;
+  min-height: 32px;
+  text-align: center;
+  font-size: 22px;
+}
+
+.chemistry-preview-placeholder {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 15px;
+  line-height: 32px;
+}
+
+.chemical-structure-tool-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.matrix-insert-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background: rgb(15 23 42 / 24%);
+}
+
+.matrix-insert-dialog {
+  width: min(360px, calc(100vw - 48px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  padding: 20px;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid var(--ui-window-border, #d5d9e0);
+  border-radius: 12px;
+  box-shadow: var(--ui-shadow-dialog, 0 10px 28px rgb(20 25 35 / 10%));
+}
+
+.matrix-insert-dialog h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.matrix-insert-dialog h3,
+.matrix-insert-dialog p {
+  margin: 0;
+}
+
+.matrix-insert-dialog p {
+  margin-top: 6px;
+  color: #5d626a;
+  font-size: 14px;
+}
+
+.matrix-insert-fields {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.matrix-insert-fields label {
+  display: grid;
+  flex: 1;
+  gap: 5px;
+  font-size: 14px;
+}
+
+.matrix-insert-fields input {
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 7px;
+  border: 1px solid #c7ccd4;
+  border-radius: 4px;
+}
+
+.matrix-insert-dialog footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.other-formula-dialog {
+  width: min(560px, calc(100vw - 48px));
+  max-height: min(640px, calc(100vh - 72px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 14px 14px;
+  background: #fff;
+  border: 0;
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: 0 10px 28px rgb(20 25 35 / 10%);
+}
+
+.other-formula-dialog-body {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.other-formula-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -14px 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  min-height: 54px;
+}
+
+.other-formula-dialog > header h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.other-formula-dialog h3,
+.other-formula-dialog h4 {
+  margin: 0;
+}
+
+.other-formula-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.other-formula-group h4 {
+  grid-column: 1 / -1;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.other-formula-group button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 5px 8px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.other-formula-group button:hover,
+.other-formula-group button:focus-visible {
+  background: #f3f6fb;
+  border-color: #c7d7f1;
+}
+
+.other-formula-group button.is-selected {
+  color: #123d78;
+  background: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: inset 3px 0 #2563eb;
+}
+
+.formula-mode {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0 10px;
+  border: 0;
+}
+
+.formula-mode-label {
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.formula-dialog math-field,
+.formula-source {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  margin: 12px 0;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #bfc5ce;
+  border-radius: 6px;
+  font-size: 20px;
+}
+
+.formula-source {
+  resize: vertical;
+  font-family: Consolas, monospace;
+  font-size: 14px;
+}
+
+.formula-symbols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.formula-symbols button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  min-height: 58px;
+  gap: 5px;
+}
+
+.formula-symbol-label {
+  font-size: 12px;
+}
+
+.formula-symbol-preview {
+  display: grid;
+  min-height: 22px;
+  place-items: center;
+  font-size: 16px;
+}
+
+.other-formula-group .formula-symbol-preview {
+  min-width: 110px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.other-formula-group--常用公式 {
+  grid-template-columns: 1fr;
+}
+
+.formula-preview {
+  min-height: 72px;
+  margin: 14px 0;
+  padding: 14px;
+  overflow-x: auto;
+  background: #f8f9fb;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.formula-preview [role="alert"] {
+  color: #b42318;
+}
+
+.formula-dialog footer {
+  justify-content: space-between;
+}
+
+.formula-dialog-footer-tools,
+.formula-dialog-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.other-formula-dialog__actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 12px 0 0;
+  margin-top: 12px;
+  border-top: 1px solid #e1e7ef;
+}
+
+.other-formula-dialog__actions button {
+  min-height: 36px;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+.other-formula-dialog__actions .primary-button {
+  min-width: 112px;
+}
+
+@media (max-width: 560px) {
+  .other-formula-dialog {
+    width: min(100%, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+  }
+
+  .other-formula-dialog__actions > button {
+    flex: 1 1 auto;
+  }
+
+  .other-formula-dialog__actions .primary-button {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+}
+
+.patent-prosemirror .claim-reference-review {
+  color: #d92d20;
+}
+
+@media print {
+  .editor-paper {
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .page-break {
+    break-after: page;
+    border: 0;
+  }
+
+  .page-break::after {
+    display: none;
+  }
+}
+
+/* ── 化学元素周期表面板 ── */
+
+.chemical-periodic-panel {
+  margin-top: 12px;
+  border: 1px solid #d7dbe1;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.periodic-panel-header {
+  display: flex;
+  align-items: center;
+}
+
+.periodic-tabs {
+  display: flex;
+  border-bottom: 1px solid #d7dbe1;
+}
+
+.periodic-panel-search-wrapper {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  background: #fff;
+  border: 1px solid #d7dbe1;
+  border-radius: 6px;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.periodic-panel-search-wrapper:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgb(99 102 241 / 18%);
+}
+
+.periodic-panel-search {
+  width: 148px;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  font-size: 12px;
+  color: #334155;
+  background: transparent;
+  border: none;
+  border-radius: 6px 0 0 6px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.periodic-panel-search-wrapper .periodic-panel-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  margin-right: 3px;
+  padding: 0;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition:
+    color 0.15s ease-in-out,
+    background 0.15s ease-in-out;
+}
+
+.periodic-panel-search-wrapper .periodic-panel-search-clear:hover {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.periodic-panel-search::placeholder {
+  color: #94a3b8;
+}
+
+.formula-dialog .periodic-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  flex: 0 0 20px;
+  margin: 0 6px 0 auto;
+  padding: 0;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition:
+    color 0.15s ease-in-out,
+    background 0.15s ease-in-out;
+}
+
+.formula-dialog .periodic-panel-close:hover:not(:disabled) {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.periodic-tab {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+}
+
+.periodic-tab:hover {
+  color: #6366f1;
+}
+
+.periodic-tab.is-active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+}
+
+.periodic-sub-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px 0;
+}
+
+.periodic-sub-tab {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    color 0.15s ease-in-out,
+    background 0.15s ease-in-out;
+}
+
+.periodic-sub-tab:hover {
+  color: #6366f1;
+  background: rgb(99 102 241 / 6%);
+}
+
+.periodic-sub-tab.is-active {
+  color: #4f46e5;
+  background: rgb(99 102 241 / 10%);
+}
+
+.periodic-section-label {
+  padding: 10px 10px 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.periodic-grid {
+  padding: 10px;
+}
+
+.periodic-row {
+  display: grid;
+  grid-template-columns: repeat(18, 1fr);
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.periodic-row-header {
+  margin-bottom: 4px;
+}
+
+.periodic-col-header {
+  text-align: center;
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 18px;
+}
+
+.periodic-row-series {
+  margin-top: 6px;
+}
+
+.periodic-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 2px 1px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s ease-in-out;
+  overflow: hidden;
+}
+
+.periodic-cell:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 18%);
+  z-index: 2;
+}
+
+.periodic-cell:active {
+  animation: periodic-flash 0.2s ease;
+}
+
+@keyframes periodic-flash {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(0.6);
+  }
+}
+
+.periodic-row .periodic-cell.periodic-cell-common {
+  border-color: #f59e0b;
+  box-shadow: inset 0 0 0 1px #fbbf24;
+}
+
+.periodic-cell::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--cell-color, #94a3b8);
+}
+
+.periodic-cell-number {
+  position: absolute;
+  top: 7px;
+  left: 2px;
+  font-size: 9px;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.periodic-cell-symbol {
+  margin-top: -4px;
+  margin-left: 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.periodic-cell-name {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.periodic-cell-empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.periodic-cell-empty::before {
+  display: none;
+}
+
+.periodic-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 6px;
+}
+
+.periodic-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.periodic-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.periodic-formula-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.chemical-periodic-panel .periodic-formula-btn {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 5px;
+  min-width: 76px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    background-color var(--ui-motion-fade, 400ms) ease-in-out,
+    border-color var(--ui-motion-fade, 400ms) ease-in-out,
+    box-shadow var(--ui-motion-fade, 400ms) ease-in-out;
+}
+
+.periodic-formula-btn:hover {
+  background: #fafafe;
+  border-color: #e0e7ff;
+  box-shadow: 0 1px 4px rgb(99 102 241 / 8%);
+}
+
+/* ── 反应条件弹窗 ── */
+
+.chemistry-condition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chemistry-condition-backdrop {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  background: rgb(15 23 42 / 18%);
+  border: 0;
+}
+
+.chemistry-condition-modal {
+  position: relative;
+  width: min(420px, calc(100vw - 48px));
+  max-height: calc(100vh - 80px);
+  padding: 20px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--ui-window-border, #d5d9e0);
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: var(--ui-shadow-dialog, 0 10px 28px rgb(20 25 35 / 10%));
+}
+
+.chemistry-condition-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.chemistry-condition-modal-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.chemistry-modal-close {
+  padding: 4px 8px;
+  font-size: 16px;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chemistry-modal-close:hover {
+  color: #475569;
+}
+
+.chemistry-condition-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.chemistry-icon-btn {
+  padding: 4px 8px;
+  font-size: 14px;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1;
+  transition:
+    color 0.1s ease-in-out,
+    background 0.1s ease-in-out,
+    border-color 0.1s ease-in-out;
+}
+
+.chemistry-icon-btn:hover:not(:disabled) {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.chemistry-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.chemistry-icon-btn.is-active {
+  color: #2563eb;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.chemistry-condition-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #f8fafc;
+  border: 1px solid #d7dbe1;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.chemistry-condition-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 14%);
+}
+
+.chemistry-condition-label {
+  display: block;
+  margin: 10px 0 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chemistry-condition-add-lower {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  font-size: 12px;
+  color: #64748b;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.chemistry-condition-add-lower:hover {
+  color: #2563eb;
+  border-color: #93c5fd;
+  background: #f1f5ff;
+}
+
+.chemistry-condition-lower-row {
+  display: flex;
+  gap: 6px;
+}
+
+.chemistry-condition-lower-row .chemistry-condition-input {
+  flex: 1;
+}
+
+.chemistry-condition-collapse {
+  flex-shrink: 0;
+  padding: 0 12px;
+  font-size: 12px;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chemistry-condition-collapse:hover {
+  background: #e2e8f0;
+}
+
+.chemistry-condition-preview {
+  margin-top: 10px;
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 22px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chemistry-condition-preview .katex {
+  font-size: 1em;
+}
+
+.chemistry-condition-section {
+  margin-top: 14px;
+}
+
+.chemistry-condition-section-title {
+  margin: 0 0 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chemistry-condition-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chemistry-condition-chip {
+  padding: 5px 12px;
+  font-size: 13px;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  cursor: pointer;
+  transition:
+    background 0.1s ease-in-out,
+    border-color 0.1s ease-in-out;
+}
+
+.chemistry-condition-chip:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.chemistry-condition-chip:active {
+  background: #bfdbfe;
+}
+
+.chemistry-condition-chip.is-selected {
+  color: #2563eb;
+  background: #dbeafe;
+  border-color: #93c5fd;
+  cursor: default;
+}
+
+.chemistry-condition-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.chemistry-condition-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chemistry-condition-modal-footer button {
+  padding: 7px 18px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chemistry-condition-arrow-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+.chemistry-condition-arrow-switch:hover {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.chemistry-condition-arrow-switch.is-active {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #60a5fa;
+}
+
+.chemistry-condition-arrow-switch span {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.chemistry-condition-modal-footer .primary-button {
+  color: #fff;
+  background: #2563eb;
+  border: 1px solid #2563eb;
+}
+
+.chemistry-condition-modal-footer .primary-button:hover {
+  background: #1d4ed8;
+}
+
+.chemistry-condition-modal-footer .primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.periodic-formula-btn:active {
+  background: #eef2ff;
+  transform: scale(0.97);
+}
+
+.periodic-formula-preview {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.periodic-formula-preview .katex {
+  font-size: 1em;
+}
+
+.periodic-formula-btn > span:last-child {
+  font-size: 10px;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.formula-dialog .chemistry-toggle-panel {
+  min-width: auto;
+  min-height: 32px;
+  padding: 5px 12px;
+  color: #0284c7;
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    color 0.15s ease-in-out,
+    background 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+}
+
+.formula-dialog .chemistry-toggle-panel:hover,
+.formula-dialog .chemistry-toggle-panel:focus-visible {
+  color: #0369a1;
+  background: #bae6fd;
+  border-color: #38bdf8;
+  box-shadow: none;
+}
+
+.chemistry-save-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  color: #92400e;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 6px;
+}
+
+.chemistry-save-warning p {
+  margin: 0;
+}
+
+.chemistry-save-warning button {
+  flex: none;
+  min-height: 30px;
+  padding: 5px 10px;
+  color: #9a3412;
+  background: #fff;
+  border: 1px solid #fb923c;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.chemistry-save-warning button:hover,
+.chemistry-save-warning button:focus-visible {
+  background: #ffedd5;
+}
+
+/* ── 搜索匹配高亮 ── */
+.periodic-cell.search-match {
+  background: #dbeafe;
+  box-shadow: 0 0 4px rgb(59 130 246 / 35%);
+  z-index: 1;
+}
+
+.periodic-formula-btn.search-match {
+  background: #dbeafe;
+  box-shadow: 0 0 4px rgb(59 130 246 / 35%);
+}
+
+.chemistry-periodic-collapse {
+  min-height: 0;
+  flex: 0 1 auto;
+}
+.chemistry-periodic-collapse > .spatial-collapse__content {
+  display: flex;
+  min-height: 0;
+}
+@media (min-height: 760px) {
+  .chemistry-periodic-collapse {
+    flex: 0 0 auto;
+  }
+}
+
+.image-selection-frame > .image-selection-frame__delete[data-motion] {
+  display: flex;
+}
+.image-selection-frame > .image-selection-frame__resize[data-motion] {
+  display: block;
+}
+.image-selection-frame > button[data-motion] {
+  opacity: 1;
+  transition: opacity var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.image-selection-frame > button[data-motion="exit"] {
+  opacity: 0;
+  pointer-events: none;
+}
+@starting-style {
+  .image-selection-frame > button[data-motion="enter"] {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .image-selection-frame > button[data-motion] {
+    transition: none;
+  }
+}
+
+.periodic-tabs .periodic-tab {
+  transition:
+    color var(--ui-motion-spatial, 400ms) ease-in-out,
+    background-color var(--ui-motion-spatial, 400ms) ease-in-out,
+    border-color var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .periodic-tabs .periodic-tab {
+    transition: none;
+  }
+}
+
+.periodic-tabs {
+  position: relative;
+}
+.periodic-tabs .periodic-tab.is-active {
+  border-bottom-color: transparent;
+}
+.periodic-tab-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: #4f46e5;
+  pointer-events: none;
+  transition:
+    transform var(--ui-motion-spatial, 400ms) ease-in-out,
+    width var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .periodic-tab-indicator {
+    transition: none;
+  }
+}
+
+.periodic-tab-content {
+  position: relative;
+}
+.periodic-tab-content:has(.periodic-tab-outgoing) {
+  overflow: hidden;
+}
+.periodic-tab-outgoing {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.chemistry-dialog--structure {
+  width: min(1120px, calc(100vw - 32px));
+}
+.chemistry-dialog--structure > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+}
+.chemistry-dialog--structure .formula-dialog-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.chemistry-dialog--structure > footer button {
+  min-width: 80px;
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+@media (max-width: 560px) {
+  .chemistry-dialog--structure > footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .chemistry-dialog--structure .formula-dialog-footer-actions > button {
+    flex: 1 1 auto;
+  }
+}

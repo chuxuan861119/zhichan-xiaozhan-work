@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RuntimeFrameworkVersion>8.0.31</RuntimeFrameworkVersion>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <WasmMainJSPath>main.mjs</WasmMainJSPath>
+    <PublishTrimmed>false</PublishTrimmed>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(WorkbenchRoot)/tools/drawing-converter/reader/Program.cs" Link="Program.cs" />
+    <Reference Include="ACadSharp.Local">
+      <HintPath>$(ReaderAssembly)</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

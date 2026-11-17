@@ -1,0 +1,110 @@
+appId: cn.local.zhichanxiaozhanwork
+productName: 知产小栈Work
+asar: true
+beforePack: build/prepare-package.cjs
+afterPack: build/audit-package.cjs
+asarUnpack:
+  - out/main/chunks/SourceHanSerifCN-Regular-*.otf
+  - node_modules/sharp/**
+  - node_modules/@img/**
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/main/**
+  - out/preload/**
+  - out/renderer/**
+  - package.json
+  - "!**/*.map"
+  - "!**/*.hidden-test-*"
+  # These runtimes are bundled into out/renderer (including the Indigo worker/WASM).
+  # Keep package.json and license inputs unchanged; omit only their duplicate npm copies.
+  - "!node_modules/ketcher-core/**"
+  - "!node_modules/ketcher-react/**"
+  - "!node_modules/ketcher-standalone/**"
+  - "!node_modules/indigo-ketcher/**"
+extraResources:
+  - from: resources
+    to: resources
+    filter:
+      - "**/*"
+      - "!cadcraft/wasm/**"
+win:
+  extraResources:
+    - from: out/cli
+      to: cli
+      filter:
+        - index.cjs
+        - manual.md
+        - zxw.cmd
+        - runtime/node.exe
+        - runtime/LICENSE.txt
+        - runtime/provenance.json
+  signExecutable: false
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.png
+  artifactName: zhichan-xiaozhan-work-${version}-${env.PATENT_BUILD_ID}-win-x64.${ext}
+nsis:
+  include: build/installer.nsh
+  oneClick: false
+  deleteAppDataOnUninstall: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createStartMenuShortcut: true
+  # The assisted installer offers this through build/installer.nsh and remembers the choice.
+  createDesktopShortcut: false
+  shortcutName: 知产小栈Work
+  runAfterFinish: true
+fileAssociations:
+  - ext: patdoc
+    name: Zhichan Xiaozhan Work Patent Document
+    description: 知产小栈专利文档
+    role: Editor
+    icon: build/icon.png
+
+mac:
+  extraResources:
+    - from: out/cli
+      to: cli
+      filter:
+        - index.cjs
+        - manual.md
+        - zxw
+        - runtime/node
+        - runtime/LICENSE.txt
+        - runtime/provenance.json
+  category: public.app-category.productivity
+  minimumSystemVersion: "14.0"
+  icon: build/icon-mac.png
+  target:
+    - dmg
+    - zip
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  binaries:
+    - Contents/Resources/cli/runtime/node
+    - Contents/Resources/resources/cadcraft/cadcraft-codec
+    - Contents/Resources/resources/platform-tools/move-no-replace
+    - Contents/Resources/resources/platform-tools/display-width-mm
+    - Contents/Resources/resources/drawing-converter/reader/CadReader
+    - Contents/Resources/resources/drawing-converter/renderer/render_svg
+  artifactName: zhichan-xiaozhan-work-${version}-${env.PATENT_BUILD_ID}-mac-${arch}.${ext}
+
+dmg:
+  title: 知产小栈Work 安装
+  background: build/dmg-background@2x.png
+  window:
+    width: 560
+    height: 440
+  contents:
+    - x: 140
+      y: 204
+    - x: 420
+      y: 204
+      type: link
+      path: /Applications

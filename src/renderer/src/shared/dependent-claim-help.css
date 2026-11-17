@@ -1,0 +1,88 @@
+.dependent-claim-help {
+  width: 560px;
+}
+.dependent-claim-help .brand-corner {
+  overflow: visible;
+  width: 260px;
+  height: 180px;
+}
+.dependent-claim-help .brand-corner img {
+  top: -164px;
+  opacity: 0.16;
+}
+.dependent-claim-help .claim-sample {
+  background: #f6f8fa;
+  border: 1px solid #eceff3;
+  border-radius: 12px;
+  padding: 22px;
+  font-size: 14px;
+  line-height: 2;
+  color: #646e7a;
+}
+.dependent-claim-help .claim-sample p {
+  margin: 0;
+}
+.dependent-claim-help .claim-sample h4 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 13px;
+  color: #343b45;
+  font-weight: 600;
+}
+.dependent-claim-help .claim-sample em {
+  font-style: normal;
+  background: #e4eefb;
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: #2463a4;
+}
+.dependent-claim-help .claim-sample .claim-new {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #eaf2fc;
+  color: #283e56;
+}
+.dependent-claim-help .claim-caret {
+  display: inline-block;
+  height: 17px;
+  border-left: 2px solid #3478f6;
+  vertical-align: middle;
+  margin-left: 3px;
+}
+.dependent-claim-help .claim-tag {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #477ba9;
+  white-space: nowrap;
+}
+.dependent-claim-help .claim-arrow {
+  text-align: center;
+  color: #8a98aa;
+  font-size: 22px;
+  line-height: 1;
+  margin: 10px 0;
+}
+.dependent-claim-help .claim-usage {
+  margin-top: 24px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #737a85;
+}
+.dependent-claim-help .claim-usage strong {
+  color: #343b45;
+  font-weight: 600;
+}
+.dependent-claim-help .claim-note {
+  margin-top: 12px;
+}
+.dependent-claim-help.compact-panel {
+  width: 380px;
+}
+.dependent-claim-help.compact-panel .brand-corner {
+  width: 76px;
+  height: 76px;
+}
+.dependent-claim-help.compact-panel .brand-corner img {
+  opacity: 0.8;
+}

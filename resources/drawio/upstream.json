@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/jgraph/drawio",
+  "tag": "v30.0.4",
+  "commit": "88ee1f5ab4d40603a8f3aaa0d9d6dc3794c6b3f0",
+  "license": "Apache-2.0",
+  "languages": ["zh", "en"],
+  "libraries": ["arrows", "basic", "bpmn", "flowchart"],
+  "templates": ["patent-basic-flowchart", "patent-system-flow", "patent-method-flow"]
+}

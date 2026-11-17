@@ -1,0 +1,130 @@
+.patent-global-function-rail[data-motion] {
+  opacity: 1;
+  clip-path: inset(-32px -32px -32px -32px);
+  transform: translateY(0);
+  transform-origin: top;
+  transition:
+    clip-path 600ms ease-in-out,
+    opacity 600ms ease-in-out,
+    transform 600ms ease-in-out;
+}
+
+html.library-editor-view-transition .patent-global-function-rail[data-motion="enter"] {
+  opacity: 0;
+  clip-path: inset(-32px -32px 100% -32px);
+  transform: translateY(-8px);
+  transition: none;
+}
+
+html.library-editor-function-rail-entry .patent-global-function-rail[data-motion="enter"] {
+  animation: patent-global-function-rail-enter 600ms ease-in-out both;
+}
+
+@keyframes patent-global-function-rail-enter {
+  from {
+    opacity: 0;
+    clip-path: inset(-32px -32px 100% -32px);
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    clip-path: inset(-32px -32px -32px -32px);
+    transform: translateY(0);
+  }
+}
+
+.patent-global-function-rail[data-motion="exit"] {
+  opacity: 0;
+  clip-path: inset(-32px -32px 100% -32px);
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+@starting-style {
+  .patent-global-function-rail[data-motion="enter"] {
+    opacity: 0;
+    clip-path: inset(-32px -32px 100% -32px);
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .patent-global-function-rail[data-motion] {
+    transition: none;
+  }
+
+  html.library-editor-function-rail-entry .patent-global-function-rail[data-motion="enter"] {
+    animation: none;
+  }
+}
+
+/*
+ * The docked rail is laid out inside the editor's 20px page inset. The overlay
+ * rail is portaled to the workspace edge, so restore that inset explicitly and
+ * remove the legacy backplate spacing in both responsive presentations.
+ */
+.patent-function-rail-edge-host > .patent-global-function-rail-slot[data-layout="overlay"] {
+  top: 20px;
+}
+
+.patent-global-function-rail-slot[data-layout="overlay"] .patent-global-function-rail {
+  display: grid;
+  align-content: start;
+  padding: 0;
+  border: 0;
+  /* Follow the cards' silhouettes, leaving the gaps transparent. Filtering the
+     scroller also keeps the shadow from being clipped at each card's edge. */
+  filter: drop-shadow(0 2px 3px rgb(40 58 82 / 8%)) drop-shadow(0 6px 12px rgb(40 58 82 / 12%));
+}
+
+.patent-global-function-rail-slot[data-layout="overlay"]
+  .patent-global-function-rail
+  :is(
+    .compact-tool-actions,
+    .compact-drawing-actions,
+    .reference-mark-panel,
+    .reference-mark-locator,
+    .drawing-explanation-rail,
+    fieldset[aria-label="摘要附图工具"]
+  ):not(.function-rail-transient-panel) {
+  border-color: #dce2eb;
+}
+
+/* Share the first card's area instead of adding a toolbar above the cards. */
+.patent-global-function-rail-slot[data-layout="overlay"]
+  .patent-global-function-rail
+  > .patent-global-function-rail__header {
+  grid-area: 1 / 1;
+  align-self: start;
+  justify-self: end;
+  z-index: 1;
+  margin: 8px 12px 0;
+}
+
+.patent-global-function-rail-slot[data-layout="overlay"]
+  .patent-global-function-rail
+  > .patent-global-function-rail__body {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.patent-global-function-rail
+  .patent-global-function-rail__header-action
+  svg[data-pin-state="pinned"] {
+  color: var(--rail-accent, #0071e3);
+}
+
+/* Reserve button space only when the header overlays the first card. Custom
+   tab headers already occupy a separate row, including during panel exits. */
+.patent-global-function-rail-slot[data-layout="overlay"]
+  :where(.patent-global-function-rail:not([data-custom-header="true"]))
+  > .patent-global-function-rail__body
+  > :first-child:not([data-function-rail-owner]),
+.patent-global-function-rail-slot[data-layout="overlay"]
+  :where(.patent-global-function-rail:not([data-custom-header="true"]))
+  > .patent-global-function-rail__body
+  > [data-function-rail-owner]:first-child
+  > :first-child {
+  padding-top: 48px;
+}

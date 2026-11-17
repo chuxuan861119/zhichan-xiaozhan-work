@@ -1,0 +1,172 @@
+:root {
+  --ui-button-hover-radius: 6px;
+  --ui-button-hover-surface: #edf1f6;
+  --ui-button-hover-ink: #4b5563;
+  --ui-button-active-surface: #e1e7ee;
+}
+
+/* Keep feedback consistent across independently loaded feature styles. */
+@layer button-feedback {
+  :where(
+    button,
+    select,
+    summary,
+    [role="button"],
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"],
+    .flowchart-export-choice-card,
+    .patent-book-tabs__tab-shell,
+    .patent-tabs__patent-tab-shell
+  ):where(
+    :not(
+      [inert],
+      [inert] *,
+      [role="switch"],
+      .patent-prosemirror *,
+      .feedback-dialog__channel-value,
+      .color-swatch,
+      .editor-color-picker__grid *,
+      .periodic-cell,
+      .insert-table-popover__grid *,
+      .table-insert-handle,
+      .table-selection-handle,
+      .table-row-resize-handle,
+      .table-column-resize-handle,
+      .image-resize-handle,
+      .drawing-figure-select-target,
+      .flowchart-project-menu-scrim,
+      .ai-settings-overlay__backdrop,
+      .shortcut-settings-dialog__backdrop,
+      .dialog-resize,
+      .document-structure-ruler__marker
+    )
+  ) {
+    transition-property:
+      background-color, color, border-color, border-radius, box-shadow, opacity, transform !important;
+    transition-duration: var(--ui-motion-spatial, 400ms) !important;
+    transition-timing-function: ease-in-out !important;
+  }
+  :where(
+    button,
+    select,
+    summary,
+    [role="button"],
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"],
+    .flowchart-export-choice-card,
+    .patent-book-tabs__tab-shell,
+    .patent-tabs__patent-tab-shell
+  ):where(
+    :not(
+      :disabled,
+      [aria-disabled="true"],
+      [data-unavailable="true"],
+      :has(input:disabled),
+      .ketcher-editor-shell [data-testid="right-toolbar"] button,
+      [inert],
+      [inert] *,
+      [role="switch"],
+      .patent-prosemirror *,
+      .feedback-dialog__channel-value,
+      .color-swatch,
+      .editor-color-picker__grid *,
+      .periodic-cell,
+      .insert-table-popover__grid *,
+      .table-insert-handle,
+      .table-selection-handle,
+      .table-row-resize-handle,
+      .table-column-resize-handle,
+      .image-resize-handle,
+      .drawing-figure-select-target,
+      .flowchart-project-menu-scrim,
+      .ai-settings-overlay__backdrop,
+      .shortcut-settings-dialog__backdrop,
+      .dialog-resize,
+      .document-structure-ruler__marker
+    )
+  ):hover {
+    &:where(
+        :not(
+          :has(input:checked),
+          .is-active,
+          .is-selected,
+          .active,
+          .selected,
+          [class*="ActionButton-module_selected__"],
+          .ketcher-more-tools-button[aria-expanded="true"],
+          [aria-selected="true"],
+          [aria-pressed="true"],
+          [aria-checked="true"],
+          [aria-current]:not([aria-current="false"]),
+          [data-active="true"],
+          .patent-book-tabs__tab-shell .patent-book-tabs__tab,
+          .patent-tabs__patent-tab-shell .patent-tabs__patent-tab
+        )
+      ) {
+      background: var(--ui-button-hover-surface) !important;
+      color: var(--ui-button-hover-ink) !important;
+      border-radius: var(--ui-button-hover-radius) !important;
+      box-shadow: none !important;
+      &:active {
+        background: var(--ui-button-active-surface) !important;
+      }
+    }
+  }
+}
+
+/* Native disclosures keep their keyboard behavior, with the toolbar's line icon. */
+summary {
+  list-style: none;
+  border-radius: var(--ui-button-hover-radius);
+}
+summary::marker {
+  content: "";
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+summary:not(:has(svg)) {
+  padding-inline: 8px !important;
+}
+summary:not(:has(svg))::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  background: currentcolor;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m9 6 6 6-6 6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  transform: rotate(0deg);
+  transition: transform var(--ui-motion-dropdown, 260ms) ease-in-out;
+}
+details[open] > summary:not(:has(svg)):not([aria-expanded="false"])::before {
+  transform: rotate(90deg);
+}
+:is(.application-settings-dialog__actions article, .ai-model-card):hover {
+  box-shadow: 0 2px 8px rgb(36 55 88 / 7%);
+}
+@media (prefers-reduced-motion: reduce) {
+  summary::before {
+    transition: none;
+  }
+}
+
+@layer button-feedback {
+  @media (prefers-reduced-motion: reduce) {
+    :where(button, select, summary, [role="button"], .flowchart-export-choice-card) {
+      transition-duration: 0s !important;
+    }
+  }
+  [data-reduced-motion="true"]
+    :where(button, select, summary, [role="button"], .flowchart-export-choice-card),
+  [data-motion-disabled="true"]
+    :where(button, select, summary, [role="button"], .flowchart-export-choice-card) {
+    transition-duration: 0s !important;
+  }
+}

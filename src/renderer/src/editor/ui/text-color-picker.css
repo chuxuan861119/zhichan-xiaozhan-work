@@ -1,0 +1,213 @@
+.text-color-picker {
+  position: relative;
+  flex: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.text-color-picker .color-palette {
+  position: fixed;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  z-index: 30;
+  font-size: 14px;
+}
+
+.text-color-picker .color-picker-split > button {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.text-color-picker .color-picker-split > .color-picker-main {
+  width: 29px;
+}
+
+.text-color-picker .color-picker-main svg {
+  width: 18px;
+  height: 18px;
+}
+
+.text-color-picker .color-picker-dropdown svg {
+  width: 14px;
+  height: 14px;
+}
+
+.text-color-picker .color-picker-split > .color-picker-dropdown {
+  width: 17px;
+  padding: 0;
+  border-left: 1px solid transparent;
+}
+
+.text-color-picker .color-picker-split > button:hover,
+.text-color-picker .color-picker-split > button[aria-expanded="true"] {
+  background: #f3f4f6;
+}
+
+.text-color-picker .color-picker-split > button[aria-expanded="true"] {
+  border-left-color: #cfd3da;
+}
+
+.text-color-picker .text-color-palette button.color-swatch {
+  display: block;
+  flex: none;
+  width: 25px;
+  min-width: 0;
+  height: 25px;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--color-palette-control-radius, 4px);
+}
+
+.text-color-picker .text-color-palette button.color-palette-automatic {
+  display: flex;
+  justify-content: flex-start;
+  width: calc(100% + 16px);
+  height: auto;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+/* Quiet, opaque surfaces avoid compositor artifacts in native editor windows. */
+.text-color-picker .text-color-palette {
+  --color-palette-control-radius: 5px;
+  box-sizing: border-box;
+  width: 292px;
+  padding: 10px 12px;
+  color: #1d1d1f;
+  background: #fbfbfd;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 12px;
+  box-shadow:
+    0 12px 32px rgb(0 0 0 / 14%),
+    0 2px 6px rgb(0 0 0 / 5%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+
+.text-color-picker .text-color-palette .color-palette-heading {
+  margin: 12px 0 8px;
+  color: #86868b;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.text-color-picker .text-color-palette button.color-palette-automatic,
+.text-color-picker .text-color-palette .color-palette-custom {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  margin: 0;
+  padding: 6px 8px;
+  gap: 9px;
+  color: #1d1d1f;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  font-weight: 400;
+}
+
+.text-color-picker .text-color-palette .color-palette-automatic:hover,
+.text-color-picker .text-color-palette .color-palette-custom:hover {
+  background: rgb(0 0 0 / 4%);
+}
+
+.text-color-picker .text-color-palette .color-theme-grid,
+.text-color-picker .text-color-palette .color-standard-grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.text-color-picker .text-color-palette .color-theme-column {
+  gap: 4px;
+}
+
+.text-color-picker .text-color-palette .color-standard-grid {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  padding-bottom: 12px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid rgb(0 0 0 / 8%);
+}
+
+.text-color-picker .text-color-palette button.color-swatch {
+  box-sizing: border-box;
+  width: 100%;
+  height: 24px;
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 14%);
+}
+
+.text-color-picker
+  .text-color-palette:not(.highlight-color-palette)
+  .color-standard-grid
+  button.color-swatch {
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.text-color-picker .text-color-palette .color-palette-automatic .color-swatch {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 14%);
+}
+
+.text-color-picker .text-color-palette button.color-swatch:hover,
+.text-color-picker .text-color-palette button.color-swatch:focus-visible,
+.text-color-picker .text-color-palette button.color-swatch[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #007aff;
+  outline-offset: 1px;
+}
+
+.text-color-picker .text-color-palette .color-control {
+  box-sizing: border-box;
+  width: 30px;
+  height: 24px;
+  padding: 2px;
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 6px;
+}
+
+.text-color-picker .text-color-palette.highlight-color-palette {
+  width: 244px;
+}
+
+.text-color-picker .highlight-color-palette .color-standard-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.text-color-picker .highlight-color-palette button.color-swatch {
+  height: 30px;
+}
+
+.text-color-picker .color-palette-automatic .color-swatch--empty {
+  position: relative;
+  background: #fff;
+}
+
+.text-color-picker .color-swatch--empty::after {
+  position: absolute;
+  inset: 7px 1px;
+  height: 1px;
+  background: #ff3b30;
+  transform: rotate(-45deg);
+  content: "";
+}

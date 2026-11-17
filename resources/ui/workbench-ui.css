@@ -1,0 +1,470 @@
+/* Outer surfaces share the editor paper's crisp, borderless silhouette. */
+:root {
+  --workbench-radius: 12px;
+  --workbench-hover-shadow: 0 3px 8px rgb(20 35 55 / 12%), 0 10px 22px rgb(20 35 55 / 10%);
+  --workbench-floating-shadow: 0 0 0 1px #dce2eb, 0 2px 4px rgb(40 58 82 / 8%);
+  --workbench-menu-shadow: 0 3px 8px rgb(20 32 50 / 12%), 0 12px 28px rgb(20 32 50 / 18%);
+}
+/* Menus use depth without a painted one-pixel contour. Keep window outlines separate. */
+:where(
+  select,
+  [role="menu"],
+  .color-palette,
+  .custom-color-popup,
+  .insert-table-popover,
+  .editor-color-picker__palette,
+  .dual-document-pane__switcher-popover,
+  .claims-description-menu,
+  .drawing-style-popover,
+  .library-import-menu__panel,
+  #shareMenuBottom,
+  div.mxPopupMenu,
+  [class*="Select-module_dropdownList__"] .MuiPaper-root,
+  [class*="NaturalAnaloguePicker-module_dropdownPaper__"],
+  .contexify,
+  .MuiMenu-paper,
+  .MLK__variant-panel
+) {
+  --workbench-floating-shadow: var(--workbench-menu-shadow);
+}
+:is(
+  [role="dialog"],
+  [role="alertdialog"],
+  [role="menu"],
+  .standard-dialog,
+  .application-settings-dialog,
+  .close-dialog,
+  .operation-feedback,
+  .color-palette,
+  .custom-color-popup,
+  .insert-table-popover,
+  .editor-color-picker__palette,
+  .ipc-data-center-window,
+  .tool-action-tooltip,
+  .feedback-dialog,
+  .writing-guidance-card,
+  .patent-illustrated-hover__popover,
+  .drawing-figure-hover-preview,
+  .library-selection-actions,
+  .library-import-menu__panel,
+  .app-crash-fallback section,
+  .library-empty,
+  .library-read-error,
+  .chemical-periodic-panel,
+  .ketcher-editor-shell,
+  .ketcher-editor-state,
+  .ketcher-editor-guide,
+  .ketcher-editor-tool-hint,
+  .flowchart-patent-preview,
+  .flowchart-image-preview,
+  .geDialog,
+  .mxWindow,
+  .mxPopupMenu,
+  .mxTooltip,
+  .patent-toolbar-tooltip,
+  .guide-shell,
+  #preExamRestrictionModal > div,
+  #imagePreviewModal > div,
+  .modal-content > div,
+  .ipc-toast,
+  .ipc-tooltip,
+  [class*="Dialog-module_dialog__"],
+  [class*="InfoModal-module_infoModalWindow__"],
+  [class*="Select-module_dropdownList__"] .MuiPaper-root,
+  [class*="NaturalAnaloguePicker-module_dropdownPaper__"],
+  .contexify,
+  .MuiMenu-paper,
+  .MLK__variant-panel
+):not(.cad-transient-window, .formula-dialog, .other-formula-dialog) {
+  border: 0 !important;
+  border-radius: var(--ui-radius-window, var(--workbench-radius)) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+:is(
+  .template-catalog-card,
+  .template-catalog-dialog__add,
+  .template-dialog__enable-row,
+  .template-catalog-launcher__summary,
+  .settings-page__card,
+  .preference-card,
+  .application-settings-dialog__primary-card,
+  .editor-assistance-settings__item,
+  .third-party-notices-dialog__components section,
+  .backup-manager__empty,
+  .backup-manager__list,
+  .backup-manager__list-scroll,
+  .snapshot-manager__empty,
+  .snapshot-manager__patent-row,
+  .snapshot-manager__version-row,
+  .data-safety-dialog__section,
+  .page-margin-dialog__fields,
+  .page-margin-dialog__preset,
+  .page-margin-dialog__preview,
+  .shortcut-settings-dialog__group-list,
+  .shortcut-settings-dialog__fixed-list,
+  .ai-model-list,
+  .ai-model-advanced,
+  .ai-key-card,
+  .ai-model-manager__hero,
+  .ai-model-empty,
+  .ai-model-card,
+  .ai-model-required,
+  .ai-provider-endpoint,
+  .ai-model-discovery-feedback,
+  .ai-scope-options label,
+  .text-polish-selection,
+  .text-polish-result pre,
+  .text-polish-conversation__status,
+  .ai-result-limit-notice,
+  .data-transfer-summary-grid__card,
+  .data-transfer-selection-card,
+  .data-transfer-notice-card,
+  .data-transfer-settings__actions,
+  .data-transfer-settings__actions article,
+  .data-transfer-drop-zone,
+  .migration-password-step__public-hint,
+  .docx-import-confidence,
+  .docx-import-conflict,
+  .reference-mark-interruption-dialog__examples,
+  .snapshot-figures-preview,
+  .flowchart-export-choice-card,
+  .legislation-common__card
+) {
+  border-radius: var(--ui-radius-card, var(--workbench-radius)) !important;
+}
+.application-settings-dialog
+  :is(
+    .settings-page__card,
+    .preference-card,
+    .editor-assistance-settings__item,
+    .snapshot-manager--embedded .snapshot-manager__patent-row,
+    .snapshot-manager--embedded .snapshot-manager__version-row,
+    .data-safety-dialog--embedded .data-safety-dialog__section,
+    .ai-model-manager--embedded .ai-model-list,
+    .ai-model-manager--embedded .ai-model-advanced,
+    .backup-manager--embedded .backup-manager__empty,
+    .backup-manager--embedded .backup-manager__list,
+    .backup-manager--embedded .backup-manager__list-scroll,
+    .snapshot-manager--embedded .snapshot-manager__empty,
+    .page-margin-dialog--embedded .page-margin-dialog__fields,
+    .page-margin-dialog--embedded .page-margin-dialog__preset,
+    .page-margin-dialog--embedded .page-margin-dialog__preview,
+    .shortcut-settings-dialog--embedded .shortcut-settings-dialog__group-list,
+    .shortcut-settings-dialog--embedded .shortcut-settings-dialog__fixed-list
+  ) {
+  border-radius: var(--ui-radius-card, 12px) !important;
+}
+.patent-global-function-rail select::picker(select) {
+  border: 0 !important;
+  border-radius: var(--ui-radius-window, 12px) !important;
+  box-shadow: none !important;
+}
+select::picker(select) {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.template-catalog-card__select {
+  border-radius: inherit;
+}
+.template-catalog-card--simple .template-catalog-card__select {
+  border-radius: 12px 12px 0 0;
+}
+.editor-assistance-settings__switch,
+.drawing-export-toggle {
+  transition: background-color 400ms ease-in-out;
+}
+.editor-assistance-settings__switch span,
+.drawing-export-toggle > span {
+  transition: transform 400ms ease-in-out;
+}
+.standard-dialog.legislation-dialog {
+  transition:
+    width 400ms ease-in-out,
+    height 400ms ease-in-out;
+}
+.ipc-data-center-layer[data-motion="enter"] .ipc-data-center-window {
+  animation: workbench-enter 400ms ease-in-out;
+}
+.ipc-data-center-layer[data-motion="exit"] .ipc-data-center-window {
+  animation: workbench-exit 400ms ease-in-out forwards;
+}
+.app-crash-fallback section {
+  animation: workbench-enter 400ms ease-in-out;
+}
+@keyframes workbench-enter {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes workbench-exit {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+  to {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+/* Third-party adapters own surface timing; disable their competing transitions. */
+:is(
+  .geDialog,
+  .mxWindow,
+  .mxPopupMenu,
+  .patent-toolbar-tooltip,
+  .contexify,
+  .MuiMenu-paper,
+  .MLK__variant-panel,
+  [class*="Dialog-module_dialog__"],
+  [class*="InfoModal-module_infoModalWindow__"],
+  [class*="Modal-module_modalOverlay__"],
+  [class*="Select-module_dropdownList__"] .MuiPaper-root
+) {
+  transition: none !important;
+  animation: none !important;
+}
+
+.help-guide .guide-shell,
+#ipcBottomToolbar {
+  border-radius: 12px;
+  box-shadow: none;
+}
+.ipc-toast,
+.ipc-tooltip {
+  border-radius: 12px;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ipc-data-center-layer .ipc-data-center-window,
+  .app-crash-fallback section {
+    animation: none !important;
+  }
+  .standard-dialog.legislation-dialog,
+  .editor-assistance-settings__switch,
+  .editor-assistance-settings__switch span,
+  .drawing-export-toggle,
+  .drawing-export-toggle > span {
+    transition: none;
+  }
+}
+[data-reduced-motion="true"] :is(.ipc-data-center-window, .app-crash-fallback section) {
+  animation: none !important;
+}
+[data-reduced-motion="true"]
+  :is(
+    .legislation-dialog,
+    .editor-assistance-settings__switch,
+    .editor-assistance-settings__switch span,
+    .drawing-export-toggle,
+    .drawing-export-toggle > span
+  ) {
+  transition: none !important;
+}
+
+.geDialog,
+.guide-shell,
+[class*="Dialog-module_dialog__"],
+[class*="InfoModal-module_infoModalWindow__"] {
+  overflow: hidden;
+}
+.help-guide .guide-data-note::details-content {
+  height: auto;
+  opacity: 1;
+  transition:
+    height 400ms ease-in-out,
+    opacity 400ms ease-in-out,
+    content-visibility 400ms allow-discrete;
+  interpolate-size: allow-keywords;
+  overflow: hidden;
+}
+.help-guide .guide-data-note:not([open])::details-content {
+  height: 0;
+  opacity: 0;
+}
+#shareMenuBottom {
+  translate: none !important;
+  transform: none !important;
+  border-radius: 12px 12px 0 0;
+  border: 0;
+  box-shadow: none;
+}
+:is(.shadow, .shadow-lg, .shadow-2xl),
+.modal-content > div {
+  box-shadow: none !important;
+}
+.modal-content > div,
+.guide-shell,
+#preExamRestrictionModal > div,
+#imagePreviewModal > div {
+  animation: none !important;
+}
+
+.ipc-home :is(.province-card, .rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-radius: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .help-guide .guide-data-note::details-content {
+    transition: none;
+  }
+}
+[data-reduced-motion="true"] .help-guide .guide-data-note::details-content {
+  transition: none;
+}
+[data-motion-disabled="true"] * {
+  animation-duration: 0s !important;
+  transition-duration: 0s !important;
+}
+
+.ipc-home
+  :is(button, label, [role="tab"], .selectable-ipc-item, .province-card)[class*="transition"] {
+  transition-duration: 400ms !important;
+  transition-timing-function: ease-in-out !important;
+}
+
+[class*="Dialog-module_dialog__"][class*="Dialog-module_hide__"] {
+  visibility: hidden !important;
+}
+
+/* Hover explanations need separation from both white paper and the gray workspace. */
+:is(
+  .floating-help-panel,
+  [role="tooltip"],
+  .tool-action-tooltip,
+  .ai-experimental-popover,
+  .patent-illustrated-hover__popover,
+  .drawing-figure-hover-preview,
+  .ketcher-editor-tool-hint,
+  .mxTooltip,
+  .patent-toolbar-tooltip,
+  .ipc-tooltip
+) {
+  --workbench-floating-shadow: var(--workbench-hover-shadow);
+}
+
+/* Match the shared reset specificity so floating contours survive it. */
+html
+:is(
+  [role="menu"],
+  [role="tooltip"],
+  .floating-help-panel,
+  .ketcher-editor-tool-hint,
+  .color-palette,
+  .custom-color-popup,
+  .insert-table-popover,
+  .editor-color-picker__palette,
+  .dual-document-pane__switcher-popover,
+  .claims-description-menu,
+  .drawing-style-popover,
+  .library-import-menu__panel,
+  .patent-illustrated-hover__popover,
+  .drawing-figure-hover-preview,
+  .writing-guidance-card,
+  .tool-action-tooltip,
+  .ai-experimental-popover,
+  .operation-feedback,
+  .ipc-toast,
+  .ipc-tooltip,
+  #shareMenuBottom,
+  div.mxPopupMenu,
+  .mxTooltip,
+  .patent-toolbar-tooltip,
+  [class*="Select-module_dropdownList__"] .MuiPaper-root,
+  [class*="NaturalAnaloguePicker-module_dropdownPaper__"],
+  .contexify,
+  .MuiMenu-paper,
+  .MLK__variant-panel
+):not(.cad-transient-window, .formula-dialog, .other-formula-dialog) {
+  border: 0 !important;
+  border-radius: var(--ui-radius-window, var(--workbench-radius)) !important;
+  box-shadow: var(--workbench-floating-shadow) !important;
+  backdrop-filter: none !important;
+}
+
+@supports (appearance: base-select) {
+  select::picker(select),
+  .patent-global-function-rail select::picker(select) {
+    box-shadow: var(--workbench-floating-shadow) !important;
+  }
+}
+
+/* Window surfaces use the same visible contour as floating menus. */
+/* Formula tools retain their own dialog depth in both modal and modeless modes. */
+html
+:is(
+  .standard-dialog,
+  .dialog-surface--floating,
+  .application-settings-dialog__surface,
+  .close-dialog,
+  .feedback-dialog,
+  .formula-dialog,
+  .other-formula-dialog,
+  .ipc-data-center-window,
+  .geDialog,
+  .mxWindow,
+  .guide-shell,
+  #preExamRestrictionModal > div,
+  #imagePreviewModal > div,
+  .modal-content > div,
+  [class*="Dialog-module_dialog__"],
+  [class*="InfoModal-module_infoModalWindow__"]
+):not(.formula-dialog, .other-formula-dialog) {
+  box-shadow: var(--workbench-floating-shadow) !important;
+}
+
+/* Bundled flowchart dialogs run in an independent document. */
+:is(.geDialog, .mxWindow) .geBtn {
+  border-radius: 6px;
+}
+:is(.geDialog, .mxWindow, .patent-toolbar)
+  :is(button, .geBtn):not(.patent-circuit-quick-wiring-port) {
+  transition:
+    background-color 400ms ease-in-out,
+    color 400ms ease-in-out,
+    border-color 400ms ease-in-out,
+    border-radius 400ms ease-in-out,
+    opacity 400ms ease-in-out;
+}
+:is(.geDialog, .mxWindow, .patent-toolbar)
+  :is(button, .geBtn):not(
+    :disabled,
+    [aria-disabled="true"],
+    [aria-pressed="true"],
+    [aria-selected="true"],
+    .is-active,
+    .is-selected,
+    [data-active="true"],
+    .patent-circuit-quick-wiring-port
+  ):hover {
+  background: #edf1f6 !important;
+  color: #4b5563 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+:is(.geDialog, .mxWindow, .patent-toolbar)
+  :is(button, .geBtn):not(
+    :disabled,
+    [aria-disabled="true"],
+    [aria-pressed="true"],
+    [aria-selected="true"],
+    .is-active,
+    .is-selected,
+    [data-active="true"],
+    .patent-circuit-quick-wiring-port
+  ):active {
+  background: #e1e7ee !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.geDialog, .mxWindow, .patent-toolbar) :is(button, .geBtn) {
+    transition: none !important;
+  }
+}
+[data-reduced-motion="true"] :is(.geDialog, .mxWindow, .patent-toolbar) :is(button, .geBtn),
+[data-motion-disabled="true"] :is(.geDialog, .mxWindow, .patent-toolbar) :is(button, .geBtn) {
+  transition: none !important;
+}

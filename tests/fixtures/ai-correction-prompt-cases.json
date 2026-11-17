@@ -1,0 +1,50 @@
+[
+  {
+    "id": "claims-partial-middle-paragraph",
+    "bookKind": "claims",
+    "scopeKind": "selection",
+    "completeDocument": false,
+    "include": ["非最后段可以使用冒号或分号"],
+    "exclude": ["完整输入中可以检查权利要求末段句号"]
+  },
+  {
+    "id": "claims-complete-document",
+    "bookKind": "claims",
+    "scopeKind": "selection",
+    "completeDocument": true,
+    "include": ["完整输入中可以检查权利要求末段句号"],
+    "exclude": ["完整摘要输入可以检查"]
+  },
+  {
+    "id": "description-local",
+    "bookKind": "description",
+    "scopeKind": "selection",
+    "completeDocument": false,
+    "include": ["不同实施例、替代方案"],
+    "exclude": ["完整说明书输入可以检查"]
+  },
+  {
+    "id": "description-complete",
+    "bookKind": "description",
+    "scopeKind": "current-book",
+    "completeDocument": true,
+    "include": ["完整说明书输入可以检查"],
+    "exclude": ["摘要表达应简洁"]
+  },
+  {
+    "id": "abstract-local-no-length-rule",
+    "bookKind": "abstract",
+    "scopeKind": "selection",
+    "completeDocument": false,
+    "include": ["不得检查、计算或报告摘要是否超过300字"],
+    "exclude": ["完整摘要输入可以检查其是否清楚表达"]
+  },
+  {
+    "id": "abstract-complete",
+    "bookKind": "abstract",
+    "scopeKind": "current-book",
+    "completeDocument": true,
+    "include": ["完整摘要输入可以检查其是否清楚表达"],
+    "exclude": ["仅当同一项权利要求分成多个段落"]
+  }
+]

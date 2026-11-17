@@ -1,0 +1,161 @@
+.ai-experimental-entry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.ai-experimental-entry > :first-child {
+  flex: 1 1 auto;
+}
+:root body button.ai-experimental-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 22px;
+  height: 22px;
+  padding: 2px 5px;
+  margin: 0;
+  border: 1px solid #dfbd76;
+  border-radius: 5px;
+  background: #fff3d9;
+  color: #92600d;
+  box-shadow: none;
+  font:
+    400 10px / 1.2 "Segoe UI",
+    "Microsoft YaHei UI",
+    sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+:root body button.ai-experimental-badge svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  padding: 0;
+  background: transparent;
+  color: currentColor;
+}
+:root body button.ai-experimental-badge:hover {
+  background: #ffe8b5;
+  color: #794c06;
+}
+button.ai-experimental-badge:focus-visible {
+  outline: 2px solid #477bd3;
+  outline-offset: 2px;
+}
+.compact-tool-actions .ai-experimental-entry {
+  flex-direction: row;
+  align-items: center;
+}
+:root body button.ai-experimental-badge.is-icon-only {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 4px;
+  border-color: transparent;
+  background: transparent;
+  color: #777780;
+}
+:root body button.ai-experimental-badge.is-icon-only svg {
+  width: 16px;
+  height: 16px;
+}
+:root body button.ai-experimental-badge.is-icon-only:hover {
+  background: #f0f0f3;
+  color: #333338;
+}
+:root body .assistant-side-panel__header-title > .ai-experimental-badge {
+  margin-top: 5px;
+  align-self: flex-start;
+}
+.ai-correction-panel:not(.text-polish-panel) .assistant-side-panel__header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+:root
+  body
+  .ai-correction-panel:not(.text-polish-panel)
+  .assistant-side-panel__header-title
+  > .ai-experimental-badge {
+  margin-top: 0;
+  align-self: center;
+}
+.toolbar-overflow-menu:has(.ai-experimental-entry) {
+  width: min(260px, calc(100vw - 24px));
+}
+.text-polish-panel .assistant-side-panel__header .ai-kicker {
+  grid-column: 1 / 4;
+}
+:root body .text-polish-panel .assistant-side-panel__header-title > .ai-experimental-badge {
+  grid-row: 2;
+  grid-column: 4 / -1;
+  justify-self: end;
+  align-self: center;
+  margin: 0;
+}
+.ai-model-manager__experimental {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #73737c;
+}
+.ai-experimental-popover {
+  position: fixed;
+  z-index: 20000;
+  box-sizing: border-box;
+  width: min(356px, calc(100vw - 16px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  color: #45454e;
+  box-shadow: 0 8px 32px #19202b26;
+  font:
+    12px / 1.7 "Segoe UI",
+    "Microsoft YaHei UI",
+    sans-serif;
+  user-select: text;
+}
+.ai-experimental-popover__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ai-experimental-popover__heading strong {
+  font-size: 14px;
+  color: #26262b;
+}
+.ai-experimental-popover__heading button {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #73737c;
+  cursor: pointer;
+}
+.ai-experimental-popover__heading button:hover {
+  background: #f0f0f3;
+}
+.ai-experimental-popover p {
+  margin: 10px 0;
+  text-indent: 2em;
+}
+.ai-experimental-popover small {
+  display: block;
+  padding-top: 8px;
+  border-top: 1px solid #ededf1;
+  color: #7c7c86;
+  font-size: 11px;
+}

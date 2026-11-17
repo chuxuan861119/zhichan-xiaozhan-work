@@ -1,0 +1,6 @@
+@font-face {
+  font-family: "CAD Unified Text";
+  src: url("../../../shared/document/fonts/SourceHanSerifCN-Regular.otf")
+    format("opentype");
+  font-display: block;
+}

@@ -1,0 +1,62 @@
+.dialog-resize {
+  position: absolute;
+  z-index: 3;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  touch-action: none;
+}
+.dialog-resize--e,
+.dialog-resize--w {
+  top: 14px;
+  bottom: 14px;
+  width: 6px;
+  cursor: ew-resize;
+}
+.dialog-resize--s,
+.dialog-resize--n {
+  left: 14px;
+  right: 14px;
+  height: 6px;
+  cursor: ns-resize;
+}
+.dialog-resize--e {
+  right: 0;
+}
+.dialog-resize--w {
+  left: 0;
+}
+.dialog-resize--s {
+  bottom: 0;
+}
+.dialog-resize--n {
+  top: 0;
+}
+.dialog-resize--se {
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+}
+.dialog-resize--sw,
+.dialog-resize--ne,
+.dialog-resize--nw {
+  width: 14px;
+  height: 14px;
+}
+.dialog-resize--sw {
+  left: 0;
+  bottom: 0;
+  cursor: nesw-resize;
+}
+.dialog-resize--ne {
+  right: 0;
+  top: 0;
+  cursor: nesw-resize;
+}
+.dialog-resize--nw {
+  left: 0;
+  top: 0;
+  cursor: nwse-resize;
+}

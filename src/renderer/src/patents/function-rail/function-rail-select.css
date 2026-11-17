@@ -1,0 +1,75 @@
+/* Retain native select semantics and keyboard handling; scope to the rail. */
+@supports (appearance: base-select) {
+  .patent-global-function-rail select:not([multiple]):not([size]),
+  .patent-global-function-rail select:not([multiple]):not([size])::picker(select) {
+    appearance: base-select;
+  }
+
+  .patent-global-function-rail select:not([multiple]):not([size]) {
+    min-width: 0;
+    min-height: 34px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .patent-global-function-rail select::picker(select) {
+    /* Use the available anchor area, not a viewport-sized list below the trigger. */
+    inset: auto;
+    position-area: block-end span-inline-end;
+    position-try-order: most-block-size;
+    position-try-fallbacks:
+      block-start span-inline-end,
+      block-end span-inline-start,
+      block-start span-inline-start;
+    box-sizing: border-box;
+    max-height: min(280px, calc(100% - 8px));
+    overflow-y: auto;
+    margin-block: 4px;
+    padding: 4px;
+    color: var(--editor-display-panel-ink, #202124);
+    background: var(--editor-display-panel, #fdfdfe);
+    border: 1px solid var(--editor-display-panel-line, #e8e8ee);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgb(32 33 36 / 14%);
+    font:
+      13px / 1.5 "Segoe UI",
+      "Microsoft YaHei",
+      sans-serif;
+  }
+
+  .patent-global-function-rail select option {
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 6px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .patent-global-function-rail select option:checked {
+    color: var(--editor-display-panel-accent, #0071e3);
+    background: var(--editor-display-panel-surface, #e6f0fc);
+  }
+
+  .patent-global-function-rail select option:hover:not(:disabled),
+  .patent-global-function-rail select option:focus-visible {
+    background: var(--editor-display-panel-surface, #eeeef2);
+    outline: none;
+  }
+
+  .patent-global-function-rail select::picker-icon {
+    color: var(--editor-display-panel-muted, #727783);
+  }
+
+  .patent-global-function-rail select option::checkmark {
+    color: var(--editor-display-panel-accent, #0071e3);
+  }
+
+  .patent-global-function-rail select:disabled,
+  .patent-global-function-rail select option:disabled {
+    color: var(--editor-display-panel-muted, #9296a0);
+    cursor: not-allowed;
+  }
+}

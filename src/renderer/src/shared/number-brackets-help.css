@@ -1,0 +1,58 @@
+.clear-format-help.number-brackets-help {
+  width: 510px;
+}
+.number-brackets-help .brand-corner {
+  overflow: visible;
+}
+.number-brackets-help .brand-corner img {
+  top: -190px;
+  opacity: 0.14;
+}
+.number-brackets-help__comparison {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.number-brackets-help__comparison section {
+  padding: 20px 12px;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  background: #f6f8fa;
+  text-align: center;
+}
+.number-brackets-help__comparison h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #283345;
+}
+.number-brackets-help__comparison p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 2;
+  color: #536174;
+}
+.number-brackets-help__comparison > span {
+  color: #8392a5;
+  font-size: 24px;
+  text-align: center;
+}
+.number-brackets-help__usage {
+  margin: 24px 0 8px;
+}
+.number-brackets-help__usage,
+.number-brackets-help__note {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #737a85;
+}
+.number-brackets-help__note {
+  margin: 0;
+}
+.clear-format-help.number-brackets-help.compact-panel {
+  width: 360px;
+}
+.number-brackets-help.compact-panel .brand-corner img {
+  opacity: 0.8;
+}

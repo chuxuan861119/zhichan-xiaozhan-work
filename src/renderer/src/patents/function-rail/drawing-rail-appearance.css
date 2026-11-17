@@ -1,0 +1,41 @@
+.patent-global-function-rail .compact-drawing-actions {
+  isolation: isolate;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 0;
+}
+
+.patent-global-function-rail .compact-drawing-actions::before {
+  content: "";
+  grid-area: 1 / 1 / 4 / -1;
+  z-index: -1;
+  background: var(--rail-surface);
+  border-radius: var(--rail-radius);
+  pointer-events: none;
+}
+
+.patent-global-function-rail .compact-drawing-actions > .compact-tool-actions__label {
+  grid-area: 1 / 1 / 2 / -1;
+  margin-top: 12px;
+}
+
+.patent-global-function-rail .compact-drawing-actions > button {
+  grid-area: 2 / 1;
+  margin: 0 0 12px 12px;
+}
+
+.patent-global-function-rail .compact-drawing-import > button {
+  grid-area: 2 / 2;
+  margin: 0 12px 12px 0;
+}
+
+.patent-global-function-rail .compact-drawing-import > .cad-markup-entry {
+  grid-area: 3 / 1 / 4 / -1;
+  margin: 0 12px 12px;
+}
+
+.patent-global-function-rail .drawing-explanation-card textarea {
+  --explanation-min-height: 40;
+  box-sizing: border-box;
+  min-height: 40px;
+  resize: none;
+}

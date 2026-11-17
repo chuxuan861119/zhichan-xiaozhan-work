@@ -1,0 +1,155 @@
+/* Reveal the menu's paint from its top edge without scaling text or changing layout.
+   The negative insets keep floating shadows intact once the menu is fully open. */
+:root {
+  --ui-motion-dropdown: 260ms;
+}
+
+.spatial-presence {
+  --dropdown-opacity: 1;
+}
+
+.spatial-presence[data-motion="exit"] {
+  --dropdown-opacity: 0;
+}
+
+:is(
+  .spatial-presence > [role="menu"],
+  .spatial-presence > .color-palette,
+  .spatial-presence > .custom-color-popup,
+  .spatial-presence > .library-selection-actions,
+  .spatial-presence > .insert-table-popover,
+  .spatial-presence > .dual-document-pane__switcher-popover,
+  .spatial-presence > .claims-description-menu,
+  .spatial-presence > .editor-color-picker__palette,
+  .spatial-presence > .flowchart-project-menu-layer > [role="menu"]
+) {
+  opacity: var(--dropdown-opacity);
+  transform: var(--dropdown-position, none);
+  transition: none;
+}
+
+.spatial-presence > .dual-document-pane__switcher-popover {
+  --dropdown-position: translateX(-50%);
+}
+
+/* Animate the project list, not its full-window click-away layer. */
+.spatial-presence[data-motion] > .flowchart-project-menu-layer {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Keep native select semantics, including keyboard navigation and change events. */
+@supports (appearance: base-select) {
+  select:not([multiple]):not([size]),
+  select:not([multiple]):not([size])::picker(select) {
+    appearance: base-select;
+  }
+
+  select:not([multiple]):not([size]) {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  select:not([multiple]):not([size])::picker-icon {
+    content: "";
+    display: block;
+    flex: none;
+    width: 14px;
+    height: 14px;
+    margin-left: auto;
+    background: currentColor;
+    mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    rotate: 0deg;
+  }
+
+  :where(select:not([multiple]):not([size]))::picker(select) {
+    inset: auto;
+    top: anchor(bottom);
+    left: anchor(left);
+    min-width: anchor-size(width);
+    max-height: min(320px, 60vh);
+    overflow-y: auto;
+    margin-block: 4px;
+    padding: 4px;
+    color: var(--editor-display-panel-ink, #202124);
+    background: var(--editor-display-panel, #fdfdfe);
+    border: 1px solid var(--editor-display-panel-line, #e8e8ee);
+    border-radius: var(--ui-radius-window, 12px);
+    box-shadow: var(--ui-shadow-floating, 0 8px 24px rgb(32 33 36 / 14%));
+  }
+
+  select:not([multiple]):not([size])::picker(select) {
+    opacity: 0;
+    clip-path: inset(-32px -32px 100% -32px);
+    pointer-events: none;
+    transition:
+      clip-path var(--ui-motion-dropdown, 260ms) ease-in-out,
+      opacity var(--ui-motion-dropdown, 260ms) ease-in-out,
+      display var(--ui-motion-dropdown, 260ms) allow-discrete,
+      overlay var(--ui-motion-dropdown, 260ms) allow-discrete;
+  }
+
+  select:not([multiple]):not([size]):open::picker(select) {
+    opacity: 1;
+    clip-path: inset(-32px -32px -32px -32px);
+    pointer-events: auto;
+  }
+
+  @starting-style {
+    select:not([multiple]):not([size]):open::picker(select) {
+      opacity: 0;
+      clip-path: inset(-32px -32px 100% -32px);
+    }
+  }
+
+  :where(select:not([multiple]):not([size])) option {
+    min-height: 30px;
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+}
+
+/* Absolutely positioned drawing menus need paint reveal rather than height collapse. */
+.spatial-disclosure:has(> .drawing-style-popover)::details-content {
+  height: auto;
+  overflow: visible;
+  opacity: 1;
+}
+
+.spatial-disclosure > .drawing-style-popover {
+  opacity: 1;
+  clip-path: inset(-32px -32px -32px -32px);
+  transition:
+    clip-path var(--ui-motion-dropdown, 260ms) ease-in-out,
+    opacity var(--ui-motion-dropdown, 260ms) ease-in-out;
+}
+
+.spatial-disclosure:not([open]) > .drawing-style-popover {
+  opacity: 0;
+  clip-path: inset(-32px -32px 100% -32px);
+  pointer-events: none;
+}
+
+@starting-style {
+  .spatial-disclosure[open] > .drawing-style-popover {
+    opacity: 0;
+    clip-path: inset(-32px -32px 100% -32px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spatial-presence > [role="menu"],
+  .spatial-presence > .color-palette,
+  .spatial-presence > .insert-table-popover,
+  .spatial-presence > .dual-document-pane__switcher-popover,
+  .spatial-presence > .claims-description-menu,
+  .spatial-presence > .editor-color-picker__palette,
+  .spatial-presence > .flowchart-project-menu-layer > [role="menu"],
+  select:not([multiple]):not([size])::picker(select),
+  .spatial-disclosure > .drawing-style-popover {
+    transition: none;
+  }
+}

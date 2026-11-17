@@ -1,0 +1,102 @@
+.cad-function-tabs__tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.patent-global-function-rail-slot .patent-global-function-rail[data-custom-header="true"] {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.patent-global-function-rail-slot
+  .patent-global-function-rail[data-custom-header="true"]
+  > .patent-global-function-rail__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  grid-area: 1 / 1;
+  justify-self: stretch;
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--rail-surface, #fdfdfe);
+  border-radius: var(--rail-radius, 12px) var(--rail-radius, 12px) 0 0;
+}
+.patent-global-function-rail-slot
+  .patent-global-function-rail[data-custom-header="true"]
+  > .patent-global-function-rail__body {
+  grid-area: 2 / 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border-radius: 0 0 var(--rail-radius, 12px) var(--rail-radius, 12px);
+}
+.patent-global-function-rail[data-custom-header="true"]
+  .patent-global-function-rail__header-actions {
+  flex-shrink: 0;
+}
+.patent-global-function-rail[data-custom-header="true"] .cad-editing-panel,
+.patent-global-function-rail[data-custom-header="true"] .cad-reference-mark-panel {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: var(--rail-radius, 12px);
+  border-bottom-right-radius: var(--rail-radius, 12px);
+}
+.patent-global-function-rail[data-custom-header="true"] .cad-editing-panel {
+  padding-top: 21px;
+}
+.cad-function-tabs__tabs button {
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--rail-muted, #727783);
+  background: transparent;
+  font-size: 13px;
+  transition:
+    background-color var(--ui-motion-spatial, 400ms) ease-in-out,
+    color var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.cad-function-tabs__tabs button[aria-selected="true"] {
+  color: var(--rail-accent, #0071e3);
+  background: color-mix(in srgb, var(--rail-accent, #0071e3) 11%, transparent);
+  font-weight: 600;
+}
+.cad-function-tabs__tabs button:focus-visible {
+  outline: 2px solid var(--rail-accent, #0071e3);
+  outline-offset: 2px;
+}
+.cad-function-tabs__panels {
+  position: relative;
+  min-width: 0;
+  overflow: clip;
+  background: var(--rail-surface, #fdfdfe);
+  border-radius: 0 0 var(--rail-radius, 12px) var(--rail-radius, 12px);
+}
+.cad-function-tabs__panel {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  opacity: 1;
+}
+.cad-function-tabs__panel[data-motion="exit"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.cad-function-tabs__panel[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cad-function-tabs__tabs button {
+    transition: none;
+  }
+}
+html[data-reduced-motion="true"] .cad-function-tabs__tabs button {
+  transition: none;
+}

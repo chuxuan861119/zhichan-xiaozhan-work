@@ -1,0 +1,351 @@
+{
+  "formatVersion": 4,
+  "documentId": "00000000-0000-4000-8000-000000000700",
+  "title": "DOCX 导出参考文档",
+  "patentType": "invention",
+  "createdAt": "2026-07-31T00:00:00.000Z",
+  "modifiedAt": "2026-07-31T01:00:00.000Z",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginTopMm": 25,
+    "marginRightMm": 15,
+    "marginBottomMm": 15,
+    "marginLeftMm": 25
+  },
+  "content": [
+    {
+      "id": "00000000-0000-4000-8000-000000000701",
+      "type": "heading",
+      "level": 1,
+      "attrs": {
+        "alignment": "center",
+        "paragraphIndentMm": 0,
+        "lineSpacing": 1.5,
+        "defaultFontFamily": "SimSun",
+        "defaultFontSizePt": 12
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "一种参考装置",
+          "marks": []
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000702",
+      "type": "paragraph",
+      "attrs": {
+        "alignment": "justify",
+        "paragraphIndentMm": 10,
+        "lineSpacing": 1.5,
+        "defaultFontFamily": "SimSun",
+        "defaultFontSizePt": 12
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "宋体十二磅 ",
+          "marks": []
+        },
+        {
+          "type": "text",
+          "text": "粗体",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": " 斜体",
+          "marks": [
+            {
+              "type": "italic"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": " 下划线",
+          "marks": [
+            {
+              "type": "underline"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": " H",
+          "marks": []
+        },
+        {
+          "type": "text",
+          "text": "2",
+          "marks": [
+            {
+              "type": "subscript"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "O x",
+          "marks": []
+        },
+        {
+          "type": "text",
+          "text": "2",
+          "marks": [
+            {
+              "type": "superscript"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": " 彩色文字",
+          "marks": [
+            {
+              "type": "color",
+              "value": "#1A2B3C"
+            }
+          ]
+        },
+        {
+          "type": "hard-break"
+        },
+        {
+          "type": "text",
+          "text": "指定字体字号",
+          "marks": [
+            {
+              "type": "font-family",
+              "value": "SimHei"
+            },
+            {
+              "type": "font-size",
+              "valuePt": 14
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000703",
+      "type": "bullet-list",
+      "items": [
+        {
+          "id": "00000000-0000-4000-8000-000000000704",
+          "content": [
+            {
+              "id": "00000000-0000-4000-8000-000000000705",
+              "type": "paragraph",
+              "attrs": {
+                "alignment": "left",
+                "paragraphIndentMm": 0,
+                "lineSpacing": 1.5,
+                "defaultFontFamily": "SimSun",
+                "defaultFontSizePt": 12
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "项目符号一",
+                  "marks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000706",
+      "type": "ordered-list",
+      "start": 3,
+      "items": [
+        {
+          "id": "00000000-0000-4000-8000-000000000707",
+          "content": [
+            {
+              "id": "00000000-0000-4000-8000-000000000708",
+              "type": "paragraph",
+              "attrs": {
+                "alignment": "right",
+                "paragraphIndentMm": 0,
+                "lineSpacing": 1.5,
+                "defaultFontFamily": "SimSun",
+                "defaultFontSizePt": 12
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "编号列表三",
+                  "marks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000709",
+      "type": "page-break"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000710",
+      "type": "figure",
+      "assetId": "00000000-0000-4000-8000-000000000750",
+      "widthMm": 165,
+      "alignment": "center"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000711",
+      "type": "table",
+      "columnWidthsMm": [40, 45, 50],
+      "rows": [
+        {
+          "id": "00000000-0000-4000-8000-000000000712",
+          "cells": [
+            {
+              "id": "00000000-0000-4000-8000-000000000713",
+              "rowSpan": 2,
+              "colSpan": 1,
+              "horizontalAlignment": "center",
+              "verticalAlignment": "middle",
+              "borderStyle": "double",
+              "content": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000714",
+                  "type": "paragraph",
+                  "attrs": {
+                    "alignment": "left",
+                    "paragraphIndentMm": 0,
+                    "lineSpacing": 1.5,
+                    "defaultFontFamily": "SimSun",
+                    "defaultFontSizePt": 12
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "纵向合并",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000715",
+              "rowSpan": 1,
+              "colSpan": 2,
+              "horizontalAlignment": "right",
+              "verticalAlignment": "bottom",
+              "borderStyle": "single",
+              "content": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000716",
+                  "type": "paragraph",
+                  "attrs": {
+                    "alignment": "left",
+                    "paragraphIndentMm": 0,
+                    "lineSpacing": 1.5,
+                    "defaultFontFamily": "SimSun",
+                    "defaultFontSizePt": 12
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "横向合并",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000717",
+          "cells": [
+            {
+              "id": "00000000-0000-4000-8000-000000000718",
+              "rowSpan": 1,
+              "colSpan": 1,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "borderStyle": "none",
+              "content": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000719",
+                  "type": "paragraph",
+                  "attrs": {
+                    "alignment": "left",
+                    "paragraphIndentMm": 0,
+                    "lineSpacing": 1.5,
+                    "defaultFontFamily": "SimSun",
+                    "defaultFontSizePt": 12
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "第二行二列",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000720",
+              "rowSpan": 1,
+              "colSpan": 1,
+              "horizontalAlignment": "center",
+              "verticalAlignment": "middle",
+              "borderStyle": "single",
+              "content": [
+                {
+                  "id": "00000000-0000-4000-8000-000000000721",
+                  "type": "paragraph",
+                  "attrs": {
+                    "alignment": "left",
+                    "paragraphIndentMm": 0,
+                    "lineSpacing": 1.5,
+                    "defaultFontFamily": "SimSun",
+                    "defaultFontSizePt": 12
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "第二行三列",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "assetId": "00000000-0000-4000-8000-000000000750",
+      "kind": "image",
+      "originalName": "sample.png",
+      "mediaType": "image/png",
+      "extension": "png",
+      "byteLength": 100,
+      "sha256": "FA11D037362C77AF26742BAE0A64EFAD6B0899C2FDCB6E446DE13671EA2DB53E",
+      "widthPx": 12,
+      "heightPx": 8,
+      "previewByteLength": 100,
+      "previewSha256": "FA11D037362C77AF26742BAE0A64EFAD6B0899C2FDCB6E446DE13671EA2DB53E"
+    }
+  ]
+}

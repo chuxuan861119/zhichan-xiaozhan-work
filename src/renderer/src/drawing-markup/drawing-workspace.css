@@ -1,0 +1,2235 @@
+.drawing-workspace {
+  /* 画布、外围和左侧列表的空白区均不启动网页选字。 */
+  user-select: none;
+  --drawing-text: #1d1d1f;
+  --drawing-secondary: #6e6e75;
+  --drawing-accent: #3b6797;
+  --drawing-grip: #c45a00;
+  --drawing-hover: #ededf0;
+  --drawing-selected: #e5e5ea;
+  --drawing-border: #dddde2;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  color: var(--drawing-text);
+  background: #fff;
+  font-size: 14px;
+}
+
+.cad-editing-panel {
+  padding: 12px;
+  color: inherit;
+  background: var(--rail-surface, #fdfdfe);
+  border: 0;
+  border-radius: 0;
+  margin-bottom: 10px;
+}
+/* Command guidance belongs to the canvas status strip, alongside zoom and save state. */
+.cad-status-instruction {
+  flex: 1;
+  min-width: 0;
+  order: 0;
+}
+.cad-status-instruction .cad-instruction-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: #eaf2ff;
+  color: #164f9e;
+  font-size: 13px;
+  line-height: 20px;
+}
+.cad-status-instruction .cad-instruction-card strong {
+  flex-shrink: 0;
+  font-weight: 650;
+}
+.cad-status-instruction .cad-instruction-card[data-tone="error"] {
+  color: #b42318;
+  background: #fff1f0;
+}
+.cad-status-instruction .cad-instruction-card[data-tone="error"] > span {
+  white-space: normal;
+  overflow: visible;
+}
+.cad-status-instruction .cad-instruction-card > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.drawing-status:has(.cad-status-instruction) .drawing-feedback:empty {
+  display: none;
+}
+.cad-tool-settings {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--editor-display-panel-line, var(--rail-line, #e8e8ee));
+  border-radius: var(--rail-radius, 12px);
+  background: var(--rail-surface, #fdfdfe);
+}
+.cad-tool-settings > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--rail-muted, #64748b);
+  font-size: 12px;
+}
+.cad-tool-settings > header strong {
+  color: var(--rail-ink, #202124);
+  font-size: 14px;
+}
+.cad-editing-panel .cad-tool-settings > label {
+  margin: 0;
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+.cad-tool-settings > small {
+  color: var(--rail-muted, #64748b);
+  line-height: 1.4;
+}
+.cad-tool-settings__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.cad-tool-settings .cad-selection-actions {
+  margin: 0;
+}
+.cad-detail-controls {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.cad-detail-controls h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.cad-detail-controls > label {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+}
+.cad-detail-controls > label input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.cad-editing-panel .cad-detail-controls > label {
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+}
+.drawing-detail-scale,
+.drawing-detail-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.drawing-detail-stepper {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.cad-detail-controls .drawing-detail-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cad-detail-controls .drawing-detail-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.patent-global-function-rail .cad-editing-panel .drawing-detail-actions button,
+.patent-global-function-rail .cad-editing-panel .drawing-detail-stepper button {
+  padding: 6px 8px;
+  border: 1px solid var(--rail-line, #e8e8ee);
+  background: color-mix(in srgb, var(--rail-accent, #0071e3) 4%, var(--rail-surface, #fdfdfe));
+  font-size: 12px;
+}
+.cad-detail-controls .drawing-detail-stepper button {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+}
+.cad-detail-controls small {
+  color: var(--rail-muted, #727783);
+}
+.cad-detail-controls .drawing-detail-settings > summary {
+  width: auto;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+}
+.cad-detail-controls .drawing-style-popover {
+  position: static;
+  width: auto;
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--rail-surface, #fdfdfe);
+  border-color: var(--rail-line, #e8e8ee);
+  box-shadow: none;
+}
+.cad-detail-controls .drawing-style-popover label {
+  color: var(--rail-muted, #727783);
+}
+.cad-tool-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px 0 8px;
+  font-size: 13px;
+}
+.cad-tool-heading > span {
+  color: var(--rail-muted, #727783);
+  font-size: 11px;
+  font-weight: 400;
+}
+.patent-global-function-rail .cad-editing-panel button {
+  box-shadow: none;
+  border: 0;
+  color: var(--rail-ink, #202124);
+}
+.patent-global-function-rail .cad-editing-panel button[aria-pressed="true"] {
+  color: var(--rail-accent, #0071e3);
+  background: color-mix(in srgb, var(--rail-accent, #0071e3) 11%, transparent);
+}
+.cad-selection-actions {
+  border-top: 1px solid var(--rail-line, #e8e8ee);
+  padding-top: 6px;
+}
+.cad-editing-panel + .cad-entity-tools {
+  padding: 10px;
+  background: var(--rail-surface, #fdfdfe);
+  border-radius: var(--rail-radius, 12px);
+}
+.drawing-workspace
+  svg[role="application"][data-cad-editing="true"][data-space-pan="false"]:not(
+    [data-panning="true"]
+  ) {
+  cursor:
+    url("./cursors/select.svg") 48 48,
+    crosshair;
+}
+.cad-gesture-preview {
+  color: #0071e3;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+  fill: none;
+}
+.cad-grip-shape {
+  stroke-dasharray: none;
+  stroke-width: 2;
+}
+.drawing-workspace svg:has(.cad-grip-shape) .cad-selection-overlay {
+  opacity: 0.28;
+}
+.drawing-workspace
+  svg[role="application"][data-cad-pickbox="true"][data-space-pan="false"]:not(
+    [data-panning="true"]
+  ) {
+  cursor:
+    url("./cursors/select-idle.svg") 48 48,
+    crosshair;
+}
+.drawing-workspace svg[role="application"][data-cad-object-cursor="true"][data-space-pan="false"]:not([data-panning="true"]) {
+  cursor: url("./cursors/pickbox.svg") 32 32, crosshair;
+}
+.cad-window-contained {
+  fill: #0071e316;
+  stroke: #0071e3;
+  stroke-dasharray: none;
+}
+.cad-window-crossing {
+  fill: #15803d18;
+  stroke: #15803d;
+  stroke-dasharray: 5 3;
+}
+.cad-cursor {
+  stroke: #0071e3;
+  stroke-width: 1;
+}
+.cad-cursor.is-snapped {
+  stroke: #15803d;
+  stroke-width: 1.5;
+}
+.cad-cursor.is-deferred {
+  stroke: #a16207;
+}
+.cad-tracking-reference {
+  stroke: #15803d;
+  stroke-width: 1;
+  stroke-dasharray: none;
+}
+.cad-tracking-guide {
+  stroke: #6b8793;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  fill: none;
+}
+.cad-snap-label {
+  fill: #334155;
+  stroke: white;
+  stroke-width: 3;
+  stroke-dasharray: none;
+  paint-order: stroke;
+}
+.cad-capture-options {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.cad-capture-options > summary {
+  cursor: pointer;
+  color: var(--rail-muted, #64748b);
+}
+.cad-capture-options__types {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+.cad-capture-options label.cad-snap-toggle {
+  margin: 3px 0;
+}
+.cad-mode-switch,
+.cad-entity-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cad-split-tool {
+  display: flex;
+  min-width: 0;
+  position: relative;
+}
+.cad-icon-geometry,
+.cad-icon-constraint {
+  stroke-width: 1.25;
+}
+.cad-icon-guide {
+  stroke: var(--rail-muted, #727783);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.cad-icon-constraint,
+.cad-icon-point {
+  stroke: var(--rail-accent, #0071e3);
+}
+.cad-icon-point {
+  fill: var(--rail-surface, #fdfdfe);
+  stroke-width: 1.1;
+}
+/* Limit the lighter weight to UI icons, never drawing geometry or stroke samples. */
+.drawing-workspace .lucide,
+.patent-function-rail-scope[data-function-rail-scope="drawing-markup"] .lucide,
+.cad-tool-menu .lucide,
+.cad-transient-window .lucide,
+.cad-color-palette-layer .lucide,
+.cad-custom-color-popup .lucide {
+  stroke-width: 1.25;
+}
+button:disabled .cad-icon-constraint,
+button:disabled .cad-icon-point,
+button:disabled .cad-icon-guide {
+  stroke: currentColor;
+}
+.cad-tool-menu button svg {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+}
+.cad-tool-group > .cad-entity-tools .cad-split-tool > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.cad-tool-group > .cad-entity-tools .cad-split-tool__arrow {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  padding: 0;
+  min-height: 0;
+  border-radius: 0 8px 8px 0;
+}
+.cad-tool-menu {
+  position: fixed;
+  z-index: 1500;
+  box-sizing: border-box;
+  width: 188px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--rail-line, #e8e8ee);
+  border-radius: 10px;
+  background: var(--rail-surface, #fdfdfe);
+  color: var(--rail-ink, #202124);
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 10px 32px #182c4a26;
+  animation: cad-menu-in 120ms ease-out;
+}
+.cad-tool-menu button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 8px;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.cad-tool-menu button:hover,
+.cad-tool-menu button:focus-visible,
+.cad-tool-menu button[aria-checked="true"] {
+  background: color-mix(in srgb, var(--rail-accent, #0071e3) 10%, transparent);
+  color: var(--rail-accent, #0071e3);
+}
+@keyframes cad-menu-in {
+  from { transform: translateY(-3px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cad-tool-menu { animation: none; }
+}
+html[data-reduced-motion="true"] .cad-tool-menu { animation: none; }
+.cad-detail-breadcrumb {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--rail-accent, #0071e3);
+  font-size: 12px;
+}
+.cad-tool-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.cad-tool-group > .cad-tool-heading {
+  width: 100%;
+  padding: 0;
+}
+.cad-tool-group > .cad-entity-tools {
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+}
+.cad-tool-group > .cad-entity-tools button {
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 5px 4px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.cad-tool-group > .cad-entity-tools button svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.cad-tool-group > .cad-entity-tools .cad-split-tool__arrow svg {
+  width: 12px;
+  height: 12px;
+}
+.cad-tool-group > .cad-entity-tools button span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.cad-editing-panel button:focus-visible {
+  outline: 2px solid var(--rail-accent, #0071e3);
+  outline-offset: 2px;
+}
+.cad-editing-panel .cad-selection-actions .cad-entity-tools {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.cad-editing-panel .cad-selection-actions label {
+  grid-template-columns: 68px minmax(0, 1fr);
+  font-size: 12px;
+}
+.cad-editing-panel button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  transition:
+    background-color 400ms ease-in-out,
+    color 400ms ease-in-out;
+}
+.cad-editing-panel button:hover:not(:disabled) {
+  background: var(--drawing-hover, #ededf0);
+}
+.cad-editing-panel button[aria-pressed="true"] {
+  color: #007aff;
+  background: color-mix(in srgb, #007aff 10%, transparent);
+}
+.cad-editing-panel button:disabled {
+  opacity: 0.45;
+}
+.cad-editing-panel label {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.cad-editing-panel input,
+.cad-editing-panel select {
+  min-width: 0;
+  width: 100%;
+  padding: 6px 8px;
+  color: inherit;
+  border: 1px solid var(--drawing-border, #dddde2);
+  border-radius: 7px;
+  background: transparent;
+}
+.cad-editing-panel .cad-snap-toggle {
+  display: flex;
+}
+.cad-editing-panel .cad-snap-toggle input {
+  width: auto;
+}
+.cad-editing-panel details {
+  margin: 10px 0;
+}
+.cad-editing-panel summary {
+  cursor: pointer;
+  padding: 6px 0;
+}
+.cad-editing-panel p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--drawing-secondary, #6e6e75);
+  line-height: 1.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cad-editing-panel button {
+    transition: none;
+  }
+}
+
+/* 错误与导入检查信息仍可按需选择、复制。输入框由公共规则恢复选字。 */
+.drawing-feedback,
+.drawing-warning,
+.drawing-import-warnings {
+  user-select: text;
+}
+
+.drawing-workspace-content {
+  display: grid;
+  grid-template-columns: 218px minmax(0, 1fr);
+  /* Header and toolbar keep fixed rows so state changes never move the canvas. */
+  grid-template-rows: 56px 56px minmax(0, 1fr) 42px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.drawing-workspace-content.is-sources-collapsed {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+/* CAD标号的悬浮功能栏：作用域与画布共用同一个网格单元（第 3 行 / 第 2 列），
+   只铺画布、不吃指针事件，功能栏本身在画布右上角悬浮。
+   导入等待窗口（z-index 6）仍在功能栏之上，导入期间不挡“取消导入”。 */
+.drawing-workspace-content > .patent-function-rail-scope {
+  grid-area: 3 / 2;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+/* The shared height measurement uses this clipped canvas scope as its viewport.
+   Do not cap the rail against the 128px collapsed-handle slot. */
+.drawing-workspace-content > .patent-function-rail-scope > .patent-function-rail-edge-host {
+  height: 100%;
+}
+/* Keep a small gap below the canvas top edge, while using the available bottom space. */
+.drawing-workspace-content
+  > .patent-function-rail-scope
+  > .patent-function-rail-edge-host
+  > .patent-global-function-rail-slot[data-layout="overlay"] {
+  --rail-bottom-gap: 0px;
+  top: 8px;
+}
+.drawing-workspace-content
+  > .patent-function-rail-scope
+  > .patent-function-rail-edge-host
+  > .patent-global-function-rail-slot[data-layout="overlay"]
+  .patent-global-function-rail {
+  height: var(--rail-visible-height);
+}
+/* 画布元素的通用样式保持原来的作用范围（`.drawing-workspace X`），只把悬浮功能栏
+   作用域整棵子树排除掉：功能栏的外观完全由悬浮功能栏自己的样式表决定。
+   用 `:where(:not(...))` 而不是 `:not(...)` —— `:where()` 不贡献特异性，
+   整条选择器仍是 (0,1,1)，与改动前完全一致，不会抢掉 `.drawing-source-header h3`
+   这类书写在后面、需要覆盖它的同级规则。 */
+.drawing-workspace button:where(:not(.patent-function-rail-scope *)),
+.drawing-workspace input:where(:not(.patent-function-rail-scope *)),
+.drawing-workspace select:where(:not(.patent-function-rail-scope *)) {
+  font: inherit;
+  min-height: 30px;
+  border: 1px solid var(--drawing-border);
+  border-radius: 6px;
+  background: #fff;
+  padding: 4px 8px;
+  color: inherit;
+}
+.drawing-workspace button:where(:not(.patent-function-rail-scope *)) {
+  cursor: pointer;
+}
+.drawing-workspace button:where(:not(.patent-function-rail-scope *)):hover:not(:disabled) {
+  background: #ededf0;
+}
+.drawing-workspace button:where(:not(.patent-function-rail-scope *)):disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* Background checkpoints retain the safety lock without flashing otherwise
+   available controls. Real operations and unavailable tools keep their dimming. */
+.drawing-workspace button[data-cad-save-locked="true"]:disabled,
+.drawing-workspace .drawing-project-row[data-cad-save-locked="true"] button:disabled {
+  opacity: 1;
+}
+.drawing-workspace button:where(:not(.patent-function-rail-scope *)):focus-visible,
+.drawing-workspace summary:where(:not(.patent-function-rail-scope *)):focus-visible,
+.drawing-workspace input:where(:not(.patent-function-rail-scope *)):focus-visible,
+.drawing-workspace select:where(:not(.patent-function-rail-scope *)):focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 2px;
+}
+.drawing-workspace button:where(:not(.patent-function-rail-scope *))[aria-pressed="true"] {
+  background: #e7edf5;
+  border-color: transparent;
+  color: #0062c4;
+}
+.drawing-workspace button.drawing-primary {
+  background: #0071e3;
+  color: #fff;
+  border-color: #0071e3;
+  padding-inline: 14px;
+}
+.drawing-workspace button.drawing-primary:hover:not(:disabled) {
+  background: #0077ed;
+}
+.drawing-workspace input:where(:not(.patent-function-rail-scope *)),
+.drawing-workspace select:where(:not(.patent-function-rail-scope *)) {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.drawing-workspace input:where(:not(.patent-function-rail-scope *))[hidden] {
+  display: none;
+}
+.drawing-workspace h3:where(:not(.patent-function-rail-scope *)) {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.drawing-workspace label:where(:not(.patent-function-rail-scope *)) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+}
+.drawing-workspace p:where(:not(.patent-function-rail-scope *)) {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--drawing-secondary);
+}
+.drawing-workspace button.drawing-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  flex-shrink: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--drawing-secondary);
+}
+.drawing-icon-button svg {
+  flex-shrink: 0;
+}
+.drawing-sources {
+  display: flex;
+  flex-direction: column;
+  grid-row: 1 / -1;
+  grid-column: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 16px 18px;
+  background: #f5f5f7;
+  border-right: 1px solid #e5e5e8;
+}
+.drawing-source-header {
+  flex-shrink: 0;
+  display: flex;
+  height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+.drawing-source-header h3 {
+  font-size: 15px;
+  margin: 0;
+}
+.is-sources-collapsed .drawing-sources {
+  padding: 0 5px;
+}
+.drawing-source-content[hidden] {
+  display: none;
+}
+.drawing-source-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  min-height: 0;
+}
+.drawing-source-content > :not(.drawing-source-scroll) {
+  flex-shrink: 0;
+}
+.drawing-source-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  min-height: 0;
+}
+.drawing-source-scroll > * {
+  flex-shrink: 0;
+}
+.drawing-import-row {
+  margin: 10px 0 18px;
+}
+.drawing-image-tools {
+  padding: 12px;
+  color: var(--drawing-text, #1d1d1f);
+}
+.drawing-image-tools input {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 8px;
+  color: inherit;
+  font: inherit;
+  border: 1px solid var(--rail-line, #dddde2);
+  border-radius: 7px;
+  background: var(--rail-surface, #fdfdfe);
+}
+.drawing-image-tools button:focus-visible,
+.drawing-image-tools input:focus-visible {
+  outline: 2px solid var(--rail-accent, #0071e3);
+  outline-offset: 2px;
+}
+.drawing-image-tools__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.drawing-image-tools__grid > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 64px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: inherit;
+  background: transparent;
+}
+.drawing-image-tools__grid > button svg { width: 22px; height: 22px; }
+.drawing-image-tools__grid > button:hover:not(:disabled) { background: var(--drawing-hover, #ededf0); }
+.drawing-image-tools__grid > button[aria-pressed="true"] { color: #194f88; background: #e8eef5; }
+.drawing-image-tools__hint {
+  color: var(--drawing-secondary, #6e6e75);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.drawing-image-tools__rotation {
+  border: 0;
+  padding: 0;
+  margin: 16px 0;
+  min-width: 0;
+}
+.drawing-image-tools__rotation legend { font-weight: 600; margin-bottom: 8px; }
+.drawing-image-tools__rotation label,
+.drawing-image-tools__rotation > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.drawing-image-tools__rotation input { min-width: 0; width: 100%; }
+.drawing-image-tools__rotation label { white-space: nowrap; }
+.drawing-image-tools__rotation button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 4px;
+}
+.drawing-import-row button {
+  width: 100%;
+  background: #0071e3;
+  color: white;
+  border-color: #0071e3;
+}
+.drawing-import-row button:hover:not(:disabled) {
+  background: #005bb8;
+}
+.drawing-project-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin: 3px 0;
+}
+.drawing-project-row .drawing-project-name {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  padding: 10px;
+  background: transparent;
+  border-color: transparent;
+  font-size: 14px;
+}
+.drawing-project-row .drawing-project-name[aria-pressed="true"] {
+  background: var(--drawing-selected);
+  color: var(--drawing-text);
+}
+.drawing-source-content > select {
+  font-size: 13px;
+  background: transparent;
+  color: var(--drawing-secondary);
+}
+.drawing-source-content > p {
+  font-size: 13px;
+  color: var(--drawing-secondary);
+}
+.drawing-workspace .drawing-side-section-title {
+  margin: 23px 0 10px;
+  color: var(--drawing-secondary);
+  font-size: 13px;
+}
+.drawing-more {
+  margin: 10px 0;
+  padding-top: 10px;
+  border-top: 1px solid #e2e2e6;
+}
+.drawing-more > summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--drawing-secondary);
+  line-height: 1.7;
+}
+.drawing-sidebar-output {
+  margin-top: auto;
+  padding-top: 12px;
+}
+.drawing-sidebar-output .drawing-more {
+  margin-bottom: 0;
+}
+.drawing-sidebar-output label {
+  font-size: 13px;
+  color: var(--drawing-secondary);
+}
+.drawing-header {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  padding: 0 22px;
+  border-bottom: 1px solid #e5e5e8;
+}
+.drawing-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+.drawing-heading strong {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.drawing-heading > span {
+  font-size: 13px;
+  color: var(--drawing-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.drawing-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.drawing-source-content > .drawing-create-button,
+.drawing-import-row > .drawing-import {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: 100%;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.drawing-header-actions > .drawing-primary {
+  margin-left: 9px;
+  font-size: 14px;
+}
+.drawing-header-actions > .drawing-replace-button + .drawing-primary {
+  margin-left: 0;
+}
+.drawing-toolbar {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 10px 20px;
+  border-bottom: 1px solid #e5e5e8;
+  position: relative;
+  z-index: 4;
+}
+.drawing-toolbar::-webkit-scrollbar {
+  display: none;
+}
+.drawing-toolbar > * {
+  flex-shrink: 0;
+}
+/* Open style popovers must be allowed to escape the horizontal scroller. */
+.drawing-toolbar:has(.drawing-more[open]),
+.drawing-toolbar:has(.drawing-detail-settings[open]) {
+  overflow: visible;
+}
+/* Open menus escape the retained fold; exiting tool controls stay clipped and inert. */
+.drawing-tool-options
+  > .spatial-collapse:has(.drawing-detail-settings[open], .drawing-more[open]):not(
+    [data-motion="exit"]
+  )
+  > .spatial-collapse__content {
+  overflow: visible;
+}
+.drawing-tool-segment {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 7px;
+  background: #f1f1f3;
+}
+.drawing-workspace button.drawing-tool-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-color: transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--drawing-secondary);
+  font-size: 14px;
+  min-height: 30px;
+}
+.drawing-workspace button.drawing-tool-button[aria-pressed="true"] {
+  color: #194f88;
+  background: #d6e5f8;
+  box-shadow: none;
+}
+.drawing-toolbar > button.drawing-tool-button {
+  min-height: 36px;
+  border-color: transparent;
+  background: #f1f1f3;
+}
+.drawing-toolbar > button.drawing-tool-button > svg {
+  display: block;
+  flex-shrink: 0;
+}
+.drawing-workspace button[data-drawing-tool="label"]:focus-visible {
+  outline: 2px solid #91aed0;
+  outline-offset: 3px;
+}
+.drawing-toolbar [data-selected-annotation-count] {
+  color: var(--drawing-secondary);
+  font-size: 13px;
+  order: 2;
+}
+.drawing-toolbar label.drawing-size-slider {
+  flex-direction: row;
+  align-items: center;
+  margin: 0;
+  gap: 9px;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--drawing-secondary);
+}
+.drawing-size-slider input[type="range"] {
+  width: 100px;
+  min-height: 20px;
+  padding: 0;
+  border: 0;
+  accent-color: #88888e;
+  cursor: pointer;
+}
+.drawing-size-slider > span {
+  min-width: 27px;
+  font-variant-numeric: tabular-nums;
+  color: #45454b;
+}
+.drawing-annotation-properties {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  margin-left: auto;
+  font-size: 13px;
+}
+.drawing-annotation-properties h3 {
+  display: none;
+}
+.drawing-annotation-properties > label {
+  flex-direction: row;
+  align-items: center;
+  margin: 0;
+  font-size: 13px;
+  color: var(--drawing-secondary);
+}
+.drawing-annotation-properties > label input:not([type="checkbox"]) {
+  width: 60px;
+  min-height: 27px;
+}
+.drawing-workspace label.drawing-check {
+  flex-direction: row;
+  align-items: center;
+}
+.drawing-check input {
+  width: 13px;
+  min-height: 13px;
+  margin: 0;
+  accent-color: #0071e3;
+}
+.drawing-annotation-properties > .drawing-more {
+  position: relative;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.drawing-annotation-properties > .drawing-more > summary {
+  list-style: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f5f5f7;
+}
+.drawing-annotation-properties > .drawing-more[open] {
+  position: relative;
+}
+.drawing-annotation-properties > .drawing-more[open] > label,
+.drawing-annotation-properties > .drawing-more[open] > button {
+  position: relative;
+  z-index: 2;
+}
+.drawing-annotation-properties > .drawing-more[open] {
+  background: white;
+  border: 1px solid #e2e2e6;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.drawing-layout {
+  grid-column: 2;
+  grid-row: 3;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+}
+.drawing-stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #ededf0;
+  /* 作为导入等待窗口的定位基准（窗口只盖画布，页头的“取消导入”仍可点）。 */
+  position: relative;
+}
+.drawing-stage[data-infinite-cad="true"] {
+  /* Editing space is independent of the saved drawing and export extents. */
+  background: white;
+}
+.drawing-stage svg {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  touch-action: none;
+  user-select: none;
+}
+.drawing-viewport {
+  position: relative;
+  /* Keep the scene and its focus ring below floating workspace controls. */
+  isolation: isolate;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.drawing-viewport > svg {
+  /* The stationary viewport clips the translated scene, including geometry
+     entering from outside the original view during a middle-button pan. */
+  overflow: visible;
+  will-change: transform;
+}
+.drawing-viewport > svg[role="application"]:focus {
+  /* Paint focus on the stationary viewport, never on the translated scene. */
+  outline: none;
+}
+.drawing-viewport:has(> svg[role="application"]:focus)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border: 1px solid #e59700;
+  pointer-events: none;
+}
+.drawing-viewport > svg,
+.drawing-cad-paper,
+.drawing-vector-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.drawing-cad-paper,
+.drawing-vector-preview {
+  pointer-events: none;
+}
+.drawing-cad-paper {
+  /* The fixed viewport clips the paper; its moving SVG must not clip it first. */
+  overflow: visible;
+}
+.drawing-annotation {
+  cursor: move;
+}
+.drawing-stage svg[data-tool="select"]:not([data-panning="true"]):not([data-space-pan="true"]) {
+  cursor:
+    url("./cursors/select.svg") 48 48,
+    crosshair;
+}
+.drawing-stage svg[data-tool="label"] {
+  --drawing-tool-cursor: url("./cursors/label.svg") 9 9, crosshair;
+}
+.drawing-stage svg[data-tool="detail"] {
+  --drawing-tool-cursor: url("./cursors/detail.svg") 9 9, crosshair;
+}
+.drawing-stage svg[data-tool="lasso"] {
+  --drawing-tool-cursor: url("./cursors/lasso.svg") 9 9, crosshair;
+}
+.drawing-stage
+  svg:is([data-tool="label"], [data-tool="detail"], [data-tool="lasso"]):not(
+    [data-panning="true"]
+  ):not([data-space-pan="true"]),
+.drawing-stage
+  svg:is([data-tool="label"], [data-tool="detail"], [data-tool="lasso"]):not(
+    [data-panning="true"]
+  ):not([data-space-pan="true"])
+  :not(input):not(textarea) {
+  cursor: var(--drawing-tool-cursor);
+}
+.drawing-stage svg[data-space-pan="true"],
+.drawing-stage svg[data-space-pan="true"] * {
+  cursor: grab;
+}
+.drawing-stage svg[data-panning="true"],
+.drawing-stage svg[data-panning="true"] * {
+  cursor: grabbing;
+}
+.drawing-stage text {
+  font-weight: 400;
+}
+.drawing-annotation text {
+  stroke: none;
+}
+.drawing-empty {
+  margin: auto;
+  text-align: center;
+  padding: 25px;
+}
+.drawing-empty h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+.drawing-row {
+  display: flex;
+  gap: 5px;
+}
+.drawing-row button {
+  flex: 1;
+}
+.drawing-region-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
+  margin: 10px 0;
+}
+.drawing-region-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px;
+  border-color: transparent;
+  background: transparent;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.drawing-region-item[data-wide="true"] {
+  grid-column: 1 / -1;
+}
+.drawing-workspace .drawing-region-item[aria-pressed="true"] {
+  background: var(--drawing-selected);
+  color: var(--drawing-text);
+}
+.drawing-region-item:focus-visible {
+  outline: 2px solid #1465d9;
+  outline-offset: -2px;
+}
+.drawing-region-thumbnail {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 160px;
+  border: 1px solid #e5e5e8;
+  border-radius: 3px;
+  background: white;
+}
+.drawing-region-thumbnail img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.drawing-region-list span {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+.drawing-figure-hover-preview {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--ui-radius-window, 12px);
+  background: white;
+  box-shadow: 0 8px 28px #0002;
+  pointer-events: none;
+  text-align: center;
+  color: #303038;
+  font-size: 13px;
+}
+.drawing-figure-hover-preview img {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+}
+.drawing-workspace .drawing-warning {
+  color: #c43832;
+  background: transparent;
+  padding: 8px 0;
+  border-radius: 0;
+}
+.drawing-warning button {
+  margin-top: 5px;
+  font-size: 13px;
+}
+.drawing-status {
+  position: relative;
+  container-type: inline-size;
+  grid-column: 2;
+  grid-row: 4;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 5px 18px;
+  border-top: 1px solid #e5e5e8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  background: #fafafa;
+  color: var(--drawing-secondary);
+  font-size: 13px;
+}
+.drawing-status [role="alert"] {
+  color: #b42318;
+}
+.drawing-feedback {
+  flex: 0 1 26%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.drawing-view-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 440px);
+  order: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  color: var(--drawing-secondary);
+}
+.drawing-status > span:last-child {
+  order: 2;
+  white-space: nowrap;
+}
+.drawing-view-tools {
+  order: 1;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0 0 0 auto;
+  font-size: 13px;
+}
+.drawing-view-tools .drawing-icon-button {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 4px;
+}
+.drawing-view-tools svg {
+  width: 14px;
+  height: 14px;
+}
+.drawing-zoom-value {
+  min-width: 36px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.standard-dialog.drawing-preview-dialog {
+  --standard-dialog-width: 1200px;
+  --standard-dialog-max-height: 900px;
+  --standard-dialog-header-padding: 14px 20px;
+  height: min(85dvh, 900px);
+}
+.drawing-preview-dialog .standard-dialog__heading {
+  margin-right: auto;
+}
+.drawing-preview-dialog .standard-dialog__header {
+  gap: 16px;
+}
+.drawing-preview-dialog .drawing-preview-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  padding: 8px 12px 12px;
+}
+.drawing-preview-body > .flowchart-image-preview {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+}
+.flowchart-export-dialog .drawing-output {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.flowchart-export-dialog .drawing-output button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+}
+.drawing-preview-status {
+  flex: 1;
+  min-width: 0;
+  color: var(--standard-dialog-muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.drawing-preview-status[data-failure="true"] {
+  color: var(--standard-dialog-danger);
+}
+.drawing-preview-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+.drawing-preview-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 6px 10px;
+  color: var(--standard-dialog-text);
+  font: inherit;
+  line-height: 20px;
+  white-space: nowrap;
+  background: #fff;
+  border: 1px solid var(--standard-dialog-divider);
+  border-radius: var(--standard-dialog-control-radius);
+  cursor: pointer;
+}
+.drawing-preview-toolbar button:hover:not(:disabled) {
+  background: #f1f4f8;
+  border-color: #cbd5e1;
+}
+.drawing-preview-toolbar button:focus-visible {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 1px;
+}
+.drawing-preview-dialog button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.drawing-preview-zoom {
+  min-width: 42px;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.drawing-preview-scroll {
+  overflow: auto;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 24px;
+  border-radius: 8px;
+  background: #eef1f5;
+  text-align: center;
+}
+.drawing-preview-scroll img {
+  max-width: none;
+  height: auto;
+  background: white;
+  box-shadow: 0 1px 4px rgb(20 25 35 / 8%);
+  vertical-align: top;
+  display: block;
+  margin: 0 auto;
+}
+@media (max-width: 560px) {
+  .drawing-preview-dialog .standard-dialog__header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .drawing-preview-dialog .standard-dialog__heading {
+    flex: 1;
+  }
+  .drawing-preview-dialog .drawing-preview-toolbar {
+    order: 2;
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+  .drawing-preview-dialog .standard-dialog__footer {
+    gap: 8px;
+  }
+  .drawing-preview-status:not(:empty) {
+    flex-basis: 100%;
+  }
+}
+.drawing-output img {
+  width: 100%;
+  max-height: 190px;
+  object-fit: contain;
+  margin-top: 14px;
+  border: 1px solid #e5e5e8;
+  background: white;
+}
+.drawing-output button {
+  margin: 7px 0;
+}
+@media (max-width: 1100px) {
+  .drawing-workspace-content {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+  .drawing-sources {
+    padding-inline: 12px;
+  }
+  .drawing-header {
+    padding-inline: 16px;
+  }
+  .drawing-toolbar {
+    padding: 8px 14px;
+    gap: 9px;
+  }
+  .drawing-size-slider input[type="range"] {
+    width: 76px;
+  }
+  .drawing-heading > span {
+    max-width: 180px;
+  }
+}
+@media (max-width: 850px) {
+  .drawing-heading > span {
+    display: none;
+  }
+  .drawing-annotation-properties {
+    margin-left: 0;
+  }
+  .drawing-toolbar [data-selected-annotation-count] {
+    display: none;
+  }
+}
+.drawing-tool-segment {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}
+.drawing-annotation-properties > .drawing-more[open] {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.drawing-style-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 9px);
+  width: 210px;
+  padding: 12px 16px;
+  border: 1px solid var(--drawing-border);
+  border-radius: var(--ui-radius-window, 12px);
+  background: #fff;
+  box-shadow: 0 8px 24px #00000018;
+  z-index: 5;
+}
+.drawing-style-popover label {
+  color: var(--drawing-secondary);
+}
+
+/* 引出线线宽已固定自适应，这里说明它为什么不再出现在面板里。 */
+.drawing-style-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--drawing-secondary);
+}
+
+.drawing-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.drawing-save-badge[data-save-state="saved"] {
+  color: #427653;
+  background: #edf5ef;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.cad-file-drop-hint {
+  position: fixed;
+  inset: 110px 20px 28px;
+  z-index: 1200;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  border: 2px dashed #2673d9;
+  border-radius: 12px;
+  background: rgb(239 246 255 / 88%);
+  color: #1856a7;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.drawing-detail-settings {
+  position: relative;
+}
+.drawing-detail-settings > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  border: 1px solid var(--border-color, #d6dce5);
+  border-radius: 6px;
+}
+.drawing-detail-settings[open] > summary {
+  background: #eaf2ff;
+}
+
+.drawing-workspace button.drawing-icon-button:hover:not(:disabled),
+.drawing-workspace button.drawing-tool-button:hover:not(:disabled) {
+  background: var(--drawing-hover);
+  color: var(--drawing-text);
+}
+.drawing-workspace button.drawing-icon-button:active:not(:disabled),
+.drawing-workspace button.drawing-tool-button:active:not(:disabled) {
+  background: #d6e5f8;
+  color: #194f88;
+}
+.drawing-workspace button.drawing-tool-button[aria-pressed="true"]:hover:not(:disabled) {
+  background: #c9dcf2;
+  color: #194f88;
+}
+.drawing-hint-short {
+  display: none;
+}
+@container (max-width: 960px) {
+  .drawing-hint-full {
+    display: none;
+  }
+  .drawing-hint-short {
+    display: inline;
+  }
+}
+@container (max-width: 700px) {
+  .drawing-view-hint {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100% - 300px);
+    flex: none;
+    order: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* 导入图纸（DWG 转换可能较慢）时盖在画布上的等待窗口，导入结束随状态一起卸载。
+   只铺画布区、且不吃指针事件，所以页头的“取消导入”始终可点。 */
+.drawing-import-progress {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(255 255 255 / 72%);
+  pointer-events: none;
+}
+
+.drawing-import-progress__card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  width: min(400px, 100%);
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid #dce3ed;
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgb(20 25 35 / 24%);
+}
+
+.drawing-import-progress p {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* 用 p.类 而非 .类，才压得住文件开头的 .drawing-workspace p。 */
+p.drawing-import-progress__title {
+  color: #172033;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+p.drawing-import-progress__detail {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+p.drawing-import-progress__metric {
+  min-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawing-import-progress__spinner {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: 3px solid #dbe7ff;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: drawing-import-spin 700ms linear infinite;
+}
+
+@keyframes drawing-import-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.standard-dialog.drawing-export-settings-dialog {
+  --standard-dialog-width: 520px;
+  --standard-dialog-header-padding: 20px 24px;
+  border: 0;
+  box-shadow: 0 4px 14px rgb(20 25 35 / 8%);
+}
+.drawing-export-settings-dialog .standard-dialog__title {
+  font-size: 18px;
+}
+.drawing-export-settings-dialog .drawing-export-settings-body {
+  padding: 24px;
+}
+.drawing-export-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.drawing-export-setting__heading {
+  min-width: 0;
+}
+.drawing-export-setting__title {
+  color: #172033;
+  font-size: 15px;
+  font-weight: 600;
+}
+.drawing-export-setting__heading p,
+.drawing-export-settings__hint {
+  margin: 6px 0 0;
+  color: #65738a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.drawing-export-settings-body .drawing-export-settings__hint {
+  margin-top: 24px;
+}
+.drawing-export-settings__error {
+  margin: 12px 0 0;
+  color: #c92a2a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.drawing-export-scale {
+  padding-top: 20px;
+}
+.drawing-export-scale__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.drawing-export-scale__value {
+  min-width: 64px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #e8f1ff;
+  color: #2563eb;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  transition:
+    background-color var(--ui-motion-spatial, 400ms) ease-in-out,
+    color var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.drawing-export-scale__slider {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #2563eb var(--drawing-export-progress),
+    #d6dce5 var(--drawing-export-progress)
+  );
+  cursor: pointer;
+}
+.drawing-export-scale__slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #2563eb;
+  border-radius: 50%;
+  background: #fff;
+}
+.drawing-export-scale__slider:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 6px;
+}
+.drawing-export-scale__slider:disabled {
+  cursor: not-allowed;
+  background: #d6dce5;
+}
+.drawing-export-scale__slider:disabled::-webkit-slider-thumb {
+  border-color: #a4afbf;
+}
+.drawing-export-scale[data-disabled="true"] .drawing-export-scale__value {
+  background: #f1f4f8;
+  color: #7b879a;
+}
+.drawing-export-scale__ticks {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  color: #65738a;
+  font-size: 12px;
+}
+.drawing-export-scale__ticks > :nth-child(2) {
+  position: absolute;
+  left: calc(6px + (100% - 18px) / 3);
+  transform: translateX(-50%);
+}
+.drawing-export-toggle {
+  width: 42px;
+  height: 24px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: #cbd5e1;
+  flex: 0 0 auto;
+  cursor: pointer;
+  transition: background-color var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.drawing-export-toggle[aria-checked="true"] {
+  background: #2563eb;
+}
+.drawing-export-toggle > span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.drawing-export-toggle:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+.drawing-export-toggle[aria-checked="true"] > span {
+  transform: translateX(18px);
+}
+.drawing-export-toggle:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawing-export-toggle,
+  .drawing-export-toggle > span,
+  .drawing-export-scale__value {
+    transition: none;
+  }
+}
+[data-reduced-motion="true"] .drawing-export-toggle,
+[data-reduced-motion="true"] .drawing-export-toggle > span,
+[data-reduced-motion="true"] .drawing-export-scale__value {
+  transition: none;
+}
+
+/* Keep the canvas mounted while its source column changes width. */
+.drawing-workspace-content {
+  transition: grid-template-columns var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.drawing-sources {
+  transition: padding var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+.drawing-source-content {
+  overflow: clip;
+  opacity: 1;
+  transition:
+    opacity var(--ui-motion-spatial, 400ms) ease-in-out,
+    display var(--ui-motion-spatial, 400ms) allow-discrete;
+}
+.drawing-source-content[hidden] {
+  opacity: 0;
+}
+@starting-style {
+  .drawing-source-content:not([hidden]) {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawing-workspace-content,
+  .drawing-sources,
+  .drawing-source-content {
+    transition: none;
+  }
+}
+
+.drawing-workspace-content:has(.drawing-import-warnings) {
+  grid-template-rows: 56px 56px minmax(0, 1fr) auto 42px;
+}
+.drawing-workspace-content:has(.drawing-import-warnings) > .drawing-status {
+  grid-row: 5;
+}
+.drawing-import-warnings {
+  grid-column: 2;
+  grid-row: 4;
+  padding: 6px 12px;
+  max-height: 100px;
+  overflow: auto;
+  color: #854d0e;
+  background: #fffbeb;
+  border-top: 1px solid #fde68a;
+  font-size: 12px;
+}
+.drawing-import-warnings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.drawing-workspace button.drawing-import-warnings__close {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  flex: 0 0 auto;
+  padding: 0;
+  color: #a16207;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  opacity: 0.68;
+  cursor: pointer;
+}
+.drawing-workspace button.drawing-import-warnings__close:hover {
+  color: #854d0e;
+  background: rgb(217 119 6 / 9%);
+  opacity: 1;
+}
+.drawing-workspace button.drawing-import-warnings__close:active {
+  background: rgb(217 119 6 / 15%);
+}
+.drawing-workspace button.drawing-import-warnings__close:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+}
+.drawing-import-warnings ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.drawing-import-progress__body {
+  min-width: 0;
+  flex: 1;
+}
+p.drawing-import-progress__stage {
+  margin-top: 10px;
+  color: #334155;
+  font-size: 12px;
+}
+.drawing-import-progress__bar {
+  margin-top: 8px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e7edf5;
+}
+.drawing-import-progress__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2563eb;
+}
+
+/* Tool changes never resize the drawing viewport, including split panes. */
+.drawing-workspace {
+  container: drawing-pane / inline-size;
+}
+.drawing-tool-options {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.drawing-tool-options > * {
+  flex-shrink: 0;
+}
+@container drawing-pane (max-width: 1400px) {
+  .drawing-toolbar {
+    overflow: visible;
+  }
+  .drawing-tool-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    background: var(--surface, #fff);
+    border-bottom: 1px solid var(--border, #dce2ea);
+    box-shadow: 0 3px 8px #0000000a;
+  }
+  .drawing-tool-options:not(:has(.spatial-collapse:not([inert]))) {
+    display: none;
+  }
+  .drawing-tool-options .drawing-annotation-properties {
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+  .drawing-tool-options [data-selected-annotation-count] {
+    display: none;
+  }
+}
+
+@container drawing-pane (max-width: 900px) {
+  .drawing-toolbar .drawing-tool-button > span {
+    display: none;
+  }
+  .drawing-toolbar .drawing-tool-button {
+    min-width: 34px;
+    justify-content: center;
+  }
+  .drawing-tool-options .drawing-size-slider input {
+    width: 76px;
+  }
+}
+.drawing-viewport[data-cad-detail-live="base"] [data-pan-preview-surface],
+.drawing-viewport[data-cad-detail-live="overlay"] [data-cad-overlay-preview] {
+  visibility: hidden;
+}
+
+/* Compact CAD controls share the rail's spacing without the heavy transient frame. */
+.patent-global-function-rail .cad-editing-panel .cad-tool-settings {
+  padding: 10px 12px;
+  gap: 8px;
+  border: 1px solid var(--rail-line, #e8e8ee);
+}
+.patent-global-function-rail .cad-editing-panel .cad-tool-settings > header strong {
+  font-size: 13px;
+  line-height: 20px;
+}
+.cad-editing-panel .cad-tool-settings > .cad-snap-toggle {
+  display: flex;
+  gap: 8px;
+}
+.cad-editing-panel .cad-snap-toggle input[type="checkbox"] {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--rail-accent, #0071e3);
+}
+.cad-editing-panel .cad-tool-parameter {
+  grid-template-columns: 90px minmax(0, 1fr);
+  margin: 6px 0 12px;
+  font-size: 12px;
+}
+.cad-editing-panel .cad-tool-heading {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rail-muted, #64748b);
+}
+.cad-editing-panel .cad-snap-toggle {
+  font-size: 12px;
+  min-height: 24px;
+  margin: 4px 0;
+}
+
+.cad-pattern-panel {
+  min-width: 0;
+  margin: 0 0 10px;
+  padding: 10px;
+  border: 1px solid var(--border-color, #dbe3ee);
+  border-radius: 12px;
+  background: var(--surface-color, #f5f8fc);
+}
+.cad-pattern-panel legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4f91;
+}
+.cad-pattern-fields {
+  display: grid;
+  gap: 8px;
+}
+.cad-hatch-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 176px;
+  overflow-y: auto;
+}
+.cad-hatch-swatches,
+.cad-hatch-regions {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.cad-editing-panel .cad-hatch-swatches button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  grid-template-rows: 36px 12px;
+  gap: 3px;
+  min-width: 0;
+  height: auto;
+  min-height: 57px;
+  align-content: start;
+  padding: 0 0 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #dbe3ee);
+  border-radius: 7px;
+  background: var(--surface-color, #fff);
+  color: var(--text-color, #24364b);
+}
+.cad-hatch-swatches button[aria-pressed="true"] {
+  border-color: #2563eb;
+  background: #eaf2ff;
+  color: #1857bc;
+}
+.cad-hatch-swatches svg {
+  width: 100%;
+  height: 36px;
+  display: block;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-color, #dbe3ee);
+}
+.cad-editing-panel .cad-hatch-swatches span {
+  padding: 0 3px;
+  font-size: 10px;
+  line-height: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cad-hatch-regions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.cad-pattern-panel input[type="number"],
+.cad-pattern-panel select {
+  min-width: 0;
+  width: 100%;
+}
+.cad-pattern-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  align-items: center;
+}
+.cad-pattern-actions button {
+  flex: 1;
+}
+.cad-pattern-actions span {
+  font-size: 12px;
+  color: #64748b;
+}
+.cad-editing-panel .cad-pattern-panel .cad-tool-parameter {
+  margin: 0;
+  grid-template-columns: 92px minmax(0, 1fr);
+  line-height: 1.4;
+}
+.cad-pattern-panel {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--ui-motion-panel) ease-in-out,
+    transform var(--ui-motion-panel) ease-in-out;
+}
+.motion-presence[data-motion-state="closing"] .cad-pattern-panel {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+@starting-style {
+  .cad-pattern-panel {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cad-pattern-panel {
+    transition: none;
+    transform: none;
+  }
+}

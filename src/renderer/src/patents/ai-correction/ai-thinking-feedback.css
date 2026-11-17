@@ -1,0 +1,80 @@
+.ai-thinking-feedback {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+  color: #72727a;
+  user-select: text;
+}
+.ai-thinking-feedback__status,
+.ai-thinking-feedback__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ai-thinking-feedback__status strong {
+  color: #414149;
+  font-size: 13px;
+  font-weight: 500;
+}
+.ai-thinking-feedback__status small {
+  margin-left: auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.ai-thinking-feedback__hint {
+  margin: 12px 0;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.ai-thinking-feedback__actions {
+  margin-top: 10px;
+}
+.ai-thinking-feedback__actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 2px;
+  cursor: pointer;
+}
+.ai-thinking-feedback__actions button:hover {
+  color: #3468c0;
+}
+.ai-thinking-feedback__actions button:focus-visible {
+  outline: 2px solid #3468c0;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.ai-thinking-feedback__content pre,
+.ai-thinking-feedback__content p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 0;
+}
+.ai-thinking-feedback__content,
+.text-polish-panel .polish-completed-reasoning pre {
+  max-height: min(280px, 35vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c4c5cb transparent;
+  user-select: text;
+}
+.ai-thinking-feedback__content {
+  margin-top: 8px;
+  padding-right: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-thinking-feedback .ai-running-mark span {
+    animation: none;
+  }
+}

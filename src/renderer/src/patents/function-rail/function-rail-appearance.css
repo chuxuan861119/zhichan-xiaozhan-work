@@ -1,0 +1,871 @@
+/* The approved minimal rail theme. Keep selectors inside the rail so editor,
+   toolbar, dialogs and printed documents retain their existing appearance. */
+.patent-global-function-rail {
+  --rail-surface: var(--editor-display-panel, #fdfdfe);
+  --rail-line: var(--editor-display-panel-line, #e8e8ee);
+  --rail-ink: var(--editor-display-panel-ink, #202124);
+  --rail-muted: var(--editor-display-panel-muted, #727783);
+  --rail-hover: var(--editor-display-panel-hover, #eeeef2);
+  --rail-accent: var(--editor-display-panel-accent, #0071e3);
+  --rail-radius: 12px;
+  --rail-inset: 16px;
+  color: var(--rail-ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+.patent-global-function-rail-slot .patent-global-function-rail {
+  max-height: var(--rail-visible-height, calc(100vh - 180px));
+}
+
+/* With no backplate, docked cards themselves define the visible page alignment. */
+.patent-global-function-rail-slot[data-layout="docked"] {
+  height: 0;
+}
+
+.patent-global-function-rail-slot[data-layout="docked"] .patent-global-function-rail {
+  position: absolute;
+  top: var(--rail-viewport-offset, -20px);
+  height: var(--rail-visible-height);
+  padding: 20px 0;
+  border: 0;
+}
+
+.patent-global-function-rail-slot[data-layout="overlay"] .patent-global-function-rail {
+  box-shadow: none;
+}
+
+.patent-global-function-rail__body {
+  gap: 0;
+}
+
+.patent-global-function-rail__body > * {
+  margin-block: 0;
+  transition: margin-block-start 400ms ease-in-out;
+}
+
+.patent-global-function-rail__body > * + * {
+  margin-block-start: 12px;
+}
+
+.function-rail-transient-slot {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+  transform-origin: top;
+  transition:
+    grid-template-rows 400ms ease-in-out,
+    opacity 400ms ease-in-out,
+    transform 400ms ease-in-out;
+}
+
+.function-rail-transient-slot__content {
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+}
+
+.function-rail-transient-slot[data-motion="exit"] {
+  grid-template-rows: 0fr;
+  margin-block-start: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+@starting-style {
+  .function-rail-transient-slot[data-motion="enter"] {
+    grid-template-rows: 0fr;
+    margin-block-start: 0;
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  .patent-global-function-rail__body
+    > .function-rail-transient-slot:first-child[data-motion="enter"]
+    + * {
+    margin-block-start: 0;
+  }
+}
+
+.patent-global-function-rail__body
+  > .function-rail-transient-slot:first-child[data-motion="exit"]
+  + * {
+  margin-block-start: 0;
+}
+
+.patent-global-function-rail__header {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.patent-global-function-rail .patent-global-function-rail__header-action {
+  color: var(--rail-muted);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 8px;
+}
+
+.patent-global-function-rail
+  :is(
+    .compact-tool-actions,
+    .reference-mark-panel,
+    .reference-mark-locator,
+    .drawing-explanation-rail,
+    .function-rail-transient-panel,
+    :where(fieldset)[aria-label="摘要附图工具"]
+  ) {
+  padding: 16px var(--rail-inset);
+  color: var(--rail-ink);
+  background: var(--rail-surface);
+  border: 1px solid transparent;
+  border-radius: var(--rail-radius);
+  box-shadow: none;
+}
+
+.patent-global-function-rail .function-rail-transient-panel {
+  --transient-panel-gap: 14px;
+  border-width: 2px;
+  border-color: var(--editor-display-panel-line, #ec9d56);
+  gap: var(--transient-panel-gap);
+}
+
+.patent-global-function-rail-slot[data-layout="docked"] .function-rail-transient-panel {
+  border-color: transparent;
+}
+
+.patent-global-function-rail
+  :is(
+    .reference-mark-panel__title strong,
+    .reference-mark-panel__toggle strong,
+    .drawing-explanation-rail h2,
+    .function-rail-transient-panel > h3,
+    .function-rail-transient-panel > header > strong,
+    .find-replace-panel__title
+  ) {
+  margin: 0;
+  color: var(--rail-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+.patent-global-function-rail .compact-tool-actions {
+  gap: 4px 6px;
+}
+
+.patent-global-function-rail .compact-drawing-actions {
+  padding-top: 16px;
+}
+
+.patent-global-function-rail .compact-drawing-actions > .compact-tool-actions__label {
+  margin-inline: var(--rail-inset);
+}
+
+.patent-global-function-rail .compact-tool-actions__label {
+  margin-bottom: 4px;
+  color: var(--rail-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+.patent-global-function-rail .compact-tool-actions__label--separated {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-color: var(--rail-line);
+}
+
+.patent-global-function-rail .patent-book-tools.compact-tool-actions button,
+.patent-global-function-rail .compact-drawing-actions > button,
+.patent-global-function-rail .compact-drawing-import > button {
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 0;
+  color: var(--rail-ink);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.patent-global-function-rail
+  .compact-tool-actions
+  button
+  svg:not(.claims-description-tool__outline),
+.patent-global-function-rail .compact-drawing-actions > button svg,
+.patent-global-function-rail .compact-drawing-import > button svg {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--editor-display-panel-muted, #626771);
+  background: transparent;
+  border-radius: 0;
+  stroke-width: 1.5;
+}
+
+.patent-global-function-rail .patent-book-tools.compact-tool-actions button:hover:not(:disabled),
+.patent-global-function-rail .compact-drawing-actions > button:hover:not(:disabled),
+.patent-global-function-rail .compact-drawing-import > button:hover:not(:disabled) {
+  color: var(--rail-ink);
+  background: var(--rail-hover);
+  border-color: transparent;
+}
+
+.patent-global-function-rail .compact-drawing-actions > button[aria-pressed="true"] {
+  color: var(--rail-accent);
+  background: var(--editor-display-panel-surface, #e6f0fc);
+}
+
+.patent-global-function-rail .claims-description-tool__toggle .claims-description-tool__chevron {
+  flex-basis: 13px;
+  width: 13px;
+  height: 13px;
+}
+
+.patent-global-function-rail
+  .patent-book-tools.compact-tool-actions
+  .claims-description-tool__toggle {
+  color: var(--rail-accent);
+}
+
+.patent-global-function-rail
+  .patent-book-tools.compact-tool-actions
+  .claims-description-tool__actions
+  button {
+  justify-content: flex-start;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--rail-ink);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.patent-global-function-rail .claims-description-tool {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.patent-global-function-rail .compact-tool-actions .claims-description-tool__toggle svg {
+  color: var(--rail-accent);
+}
+
+.patent-global-function-rail
+  .patent-book-tools.compact-tool-actions
+  button.claims-description-tool__toggle[aria-expanded="true"] {
+  border-radius: 8px;
+  background: var(--rail-hover);
+}
+
+.patent-global-function-rail .claims-description-tool__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  width: max(100%, 148px);
+  padding: 6px;
+  border: 1px solid var(--rail-line);
+  border-radius: 9px;
+  background: var(--editor-display-panel, #fff);
+  box-shadow: 0 6px 20px rgb(36 50 70 / 10%);
+}
+
+.patent-global-function-rail .claims-description-tool__actions {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.patent-global-function-rail .claims-description-tool__invention {
+  gap: 0;
+  border-radius: 6px;
+}
+
+.patent-global-function-rail .claims-description-tool__invention:hover {
+  background: var(--rail-hover);
+}
+
+.patent-global-function-rail
+  .patent-book-tools.compact-tool-actions
+  .claims-description-tool__actions
+  .claims-description-tool__settings {
+  justify-content: center;
+  padding: 4px;
+}
+
+.patent-global-function-rail .claims-description-tool__panel p {
+  color: var(--rail-muted);
+}
+
+/* Reference marks remain real editable/selectable rows, not decorative cards. */
+.patent-global-function-rail .reference-mark-panel {
+  gap: 12px;
+}
+
+.patent-global-function-rail .reference-mark-panel__body {
+  gap: 8px;
+}
+
+.patent-global-function-rail .reference-mark-panel__header {
+  gap: 8px;
+}
+
+.patent-global-function-rail .reference-mark-panel__title {
+  margin-right: 0;
+}
+
+.patent-global-function-rail
+  :is(.reference-mark-panel__actions, .drawing-explanation-rail__actions) {
+  gap: 12px;
+}
+
+.patent-global-function-rail
+  :is(
+    .reference-mark-panel__fill,
+    .reference-mark-panel__copy,
+    .drawing-explanation-rail__fill,
+    .drawing-explanation-rail__copy
+  ) {
+  min-height: 26px;
+  padding: 4px 0;
+  color: var(--editor-display-panel-accent, #5b7fa9);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.patent-global-function-rail :is(.reference-mark-panel__fill, .drawing-explanation-rail__fill) {
+  color: var(--editor-display-panel-accent, #4285cc);
+}
+
+.patent-global-function-rail
+  :is(
+    .reference-mark-panel__fill,
+    .reference-mark-panel__copy,
+    .drawing-explanation-rail__fill,
+    .drawing-explanation-rail__copy
+  ):hover:not(:disabled) {
+  color: var(--rail-accent);
+  background: var(--rail-hover);
+  border-color: transparent;
+}
+
+.patent-global-function-rail .reference-mark-panel__numbering-buttons {
+  gap: 6px;
+  padding-bottom: 4px;
+  background: linear-gradient(var(--rail-line), var(--rail-line)) bottom / 100% 1px no-repeat;
+}
+
+.patent-global-function-rail .patent-book-tools .reference-mark-panel__numbering-buttons button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 0;
+  color: var(--rail-ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-control, 8px);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.patent-global-function-rail .reference-mark-panel__numbering-buttons button svg {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.patent-global-function-rail
+  .patent-book-tools
+  .reference-mark-panel__numbering-buttons:not(:has([aria-expanded="true"]))
+  button:first-child,
+.patent-global-function-rail
+  .patent-book-tools
+  .reference-mark-panel__numbering-buttons
+  button[aria-expanded="true"] {
+  color: var(--rail-ink);
+}
+
+.patent-global-function-rail
+  .patent-book-tools
+  .reference-mark-panel__numbering-buttons
+  button:is(:first-child, :last-child):is(:hover, :focus-visible):not(:disabled) {
+  color: var(--rail-accent);
+  background: color-mix(in srgb, var(--rail-hover) 65%, transparent);
+  border-color: transparent;
+}
+
+.patent-global-function-rail :is(.reference-mark-panel__editor, .reference-mark-panel__rows) {
+  gap: 0;
+}
+
+.patent-global-function-rail .reference-mark-panel__columns {
+  min-height: 30px;
+  padding: 0;
+  align-items: center;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--rail-muted);
+  border-bottom: 1px solid var(--rail-line);
+}
+
+.patent-global-function-rail .reference-mark-panel__columns {
+  grid-template-columns: 44px minmax(0, 1fr) 28px;
+}
+
+.patent-global-function-rail .reference-mark-panel__row-activation-area {
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+}
+
+.patent-global-function-rail .reference-mark-panel__rows > div,
+.patent-global-function-rail .reference-mark-panel__list li {
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rail-line);
+  border-radius: 0;
+}
+
+.patent-global-function-rail .reference-mark-panel__row-summary {
+  min-height: 28px;
+}
+
+.patent-global-function-rail .reference-mark-panel__rows > div {
+  box-shadow: inset 0 0 0 1px transparent;
+  transition:
+    padding var(--ui-motion-spatial, 400ms) ease-in-out,
+    background-color var(--ui-motion-spatial, 400ms) ease-in-out,
+    border-color var(--ui-motion-spatial, 400ms) ease-in-out,
+    border-radius var(--ui-motion-spatial, 400ms) ease-in-out,
+    box-shadow var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+.patent-global-function-rail :is(.reference-mark-panel__row-number, .reference-mark-panel__number) {
+  color: var(--rail-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.patent-global-function-rail .reference-mark-panel__row-keyword {
+  color: var(--rail-ink);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.patent-global-function-rail .reference-mark-panel__rows > div.is-keyword-active {
+  background: var(--editor-display-panel-surface, #ffedd5);
+  border-bottom-color: transparent;
+  border-radius: 8px;
+}
+
+.patent-global-function-rail .reference-mark-panel__rows > div.is-issue,
+.patent-global-function-rail .reference-mark-panel__rows > div.is-editing {
+  padding: 8px;
+  border: 1px solid var(--editor-display-panel-line, #ec9d56);
+  border-radius: 12px;
+}
+
+.patent-global-function-rail .reference-mark-panel__rows > div.is-editing {
+  border-width: 0 0 1px;
+  border-bottom-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--editor-display-panel-line, #ec9d56);
+  background: var(--editor-display-panel, #fff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduced-motion="false"])
+    .patent-global-function-rail
+    .reference-mark-panel__rows
+    > div {
+    transition: none;
+  }
+}
+
+.patent-global-function-rail .reference-mark-panel__rows > div:not(.is-editing):has(+ .is-editing),
+.patent-global-function-rail
+  .reference-mark-panel__columns:has(+ .reference-mark-panel__rows > .is-editing:first-child) {
+  border-bottom-color: transparent;
+}
+
+.patent-global-function-rail .reference-mark-panel__empty {
+  padding: 18px 8px;
+  color: var(--rail-muted);
+  background: transparent;
+  border: 0;
+}
+
+/* Both drawing accordions retain a full-card collapsed hit area. */
+.patent-global-function-rail .reference-mark-panel[data-collapsible="true"],
+.patent-global-function-rail .drawing-explanation-rail[data-collapsed] {
+  padding: 0;
+  gap: 0;
+}
+
+.patent-global-function-rail
+  .patent-book-tools
+  .reference-mark-panel[data-collapsible="true"]
+  .reference-mark-panel__toggle,
+.patent-global-function-rail
+  .drawing-explanation-rail[data-collapsed]
+  .drawing-explanation-rail__toggle {
+  min-height: 64px;
+  padding: 20px var(--rail-inset);
+  border-radius: var(--rail-radius);
+}
+
+.patent-global-function-rail
+  .reference-mark-panel[data-collapsible="true"]
+  > .reference-mark-panel__body,
+.patent-global-function-rail
+  .drawing-explanation-rail[data-collapsed]
+  > .drawing-explanation-cards {
+  padding-inline: var(--rail-inset);
+}
+
+.patent-global-function-rail
+  :is(.reference-mark-panel__toggle, .drawing-explanation-rail__toggle)::after {
+  border-radius: var(--rail-radius);
+}
+
+/* Animate the native hidden state without unmounting editors or losing drafts. */
+.patent-global-function-rail
+  :is(.reference-mark-panel[data-collapsible="true"], .drawing-explanation-rail[data-collapsed])
+  > :is(.reference-mark-panel__body, .drawing-explanation-cards) {
+  interpolate-size: allow-keywords;
+  height: auto;
+  padding-block: 0 20px;
+  overflow: clip;
+  opacity: 1;
+  transition:
+    height 400ms ease-in-out,
+    opacity 400ms ease-in-out,
+    padding-block 400ms ease-in-out,
+    display 400ms allow-discrete;
+}
+
+.patent-global-function-rail
+  :is(.reference-mark-panel[data-collapsible="true"], .drawing-explanation-rail[data-collapsed])
+  > :is(.reference-mark-panel__body, .drawing-explanation-cards)[hidden] {
+  display: none;
+  height: 0;
+  padding-block: 0;
+  opacity: 0;
+}
+
+@starting-style {
+  .patent-global-function-rail
+    :is(.reference-mark-panel[data-collapsible="true"], .drawing-explanation-rail[data-collapsed])
+    > :is(.reference-mark-panel__body, .drawing-explanation-cards):not([hidden]) {
+    height: 0;
+    padding-block: 0;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .patent-global-function-rail
+    :is(.reference-mark-panel[data-collapsible="true"], .drawing-explanation-rail[data-collapsed])
+    > :is(.reference-mark-panel__body, .drawing-explanation-cards) {
+    transition: none;
+  }
+}
+
+.patent-global-function-rail .patent-book-tools .reference-mark-panel__toggle:hover:not(:disabled),
+.patent-global-function-rail .drawing-explanation-rail .drawing-explanation-rail__toggle:hover {
+  background: var(--rail-hover);
+}
+
+.patent-global-function-rail .drawing-explanation-card textarea {
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rail-line);
+  border-radius: 0;
+}
+
+.patent-global-function-rail .reference-mark-locator__title {
+  color: var(--rail-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+.patent-global-function-rail .reference-mark-locator {
+  gap: 6px;
+}
+
+.patent-global-function-rail .patent-book-tools button.reference-mark-locator__switch {
+  width: 34px;
+  min-width: 34px;
+  height: 19px;
+  min-height: 19px;
+}
+
+.patent-global-function-rail .reference-mark-locator__switch-thumb {
+  width: 15px;
+  height: 15px;
+}
+
+.patent-global-function-rail
+  .patent-book-tools
+  button.reference-mark-locator__switch[aria-checked="true"]
+  .reference-mark-locator__switch-thumb {
+  transform: translateX(15px);
+}
+
+.patent-global-function-rail .reference-mark-locator__hint {
+  color: var(--rail-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.patent-global-function-rail
+  .patent-book-tools
+  .reference-mark-locator__switch[aria-checked="true"] {
+  background: var(--rail-accent);
+  border-color: var(--rail-accent);
+}
+
+/* Transient tools share quiet controls while keeping active/danger/disabled states. */
+.patent-global-function-rail
+  .function-rail-transient-panel
+  :is(input:not([type="checkbox"]), select),
+.patent-global-function-rail .patent-book-tools select.patent-book-tools__abstract-drawing-select,
+.patent-global-function-rail .reference-mark-panel :is(input:not([type="checkbox"]), select) {
+  min-width: 0;
+  color: var(--rail-ink);
+  background: var(--editor-display-panel-surface, #f4f4f7);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.patent-global-function-rail .reference-mark-panel__rows > div.is-editing input {
+  border-color: var(--editor-display-panel-line, #b5cce6);
+}
+
+.patent-global-function-rail
+  .function-rail-transient-panel
+  :is(input:not([type="checkbox"]), select):focus-visible,
+.patent-global-function-rail
+  .reference-mark-panel
+  :is(input:not([type="checkbox"]), select):focus-visible {
+  background: var(--editor-display-panel, #fff);
+  border-color: var(--editor-display-panel-line, #b5cce6);
+}
+
+.patent-global-function-rail
+  :is(
+    .table-rail-panel__buttons,
+    .figure-rail-panel__alignments,
+    .figure-rail-panel__actions,
+    .find-replace-panel__actions,
+    .reference-mark-panel__custom-number-row,
+    .chemical-structure-tools
+  )
+  button {
+  min-height: 34px;
+  color: var(--rail-ink);
+  background: var(--editor-display-panel-surface, #f0f0f4);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-weight: 400;
+  box-shadow: none;
+}
+
+.patent-global-function-rail
+  :is(
+    .table-rail-panel__buttons,
+    .figure-rail-panel__alignments,
+    .figure-rail-panel__actions,
+    .find-replace-panel__actions,
+    .reference-mark-panel__custom-number-row,
+    .chemical-structure-tools
+  )
+  button:hover:not(:disabled) {
+  color: var(--rail-ink);
+  background: var(--editor-display-panel-surface, #e5e7ec);
+  border-color: transparent;
+}
+
+.patent-global-function-rail
+  .table-rail-panel__button:hover:not(:disabled):not([data-unavailable="true"]):not(.is-danger),
+.patent-global-function-rail .table-rail-panel__button:focus-visible:not(.is-danger) {
+  color: #0f172a;
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 12%);
+}
+
+.patent-global-function-rail .table-rail-panel__button.is-active {
+  color: #2563eb;
+  background: #eaf2fb;
+  border-color: #a9c5e8;
+  box-shadow: 0 1px 2px rgb(37 99 235 / 6%);
+  font-weight: 600;
+}
+
+.patent-global-function-rail .figure-rail-panel__alignments button[aria-pressed="true"],
+.patent-global-function-rail .figure-rail-panel__actions button[aria-pressed="true"] {
+  color: var(--rail-accent);
+  background: var(--editor-display-panel-surface, #e6f0fc);
+  border-color: transparent;
+}
+
+.patent-global-function-rail .table-rail-panel__button.is-danger {
+  color: var(--editor-display-panel-danger, #b42318);
+}
+
+.patent-global-function-rail .table-rail-panel__buttons .table-rail-panel__button.is-danger {
+  margin-top: 0;
+}
+
+.patent-global-function-rail .table-rail-panel__group {
+  padding-top: 8px;
+  border-color: var(--rail-line);
+}
+
+.patent-global-function-rail .table-rail-panel__summary {
+  padding: 0 0 8px;
+  color: var(--rail-muted);
+  background: transparent;
+  border: 0;
+}
+
+.patent-global-function-rail .table-rail-panel__group-toggle {
+  min-height: 38px;
+  color: var(--editor-display-panel-muted, #555c68);
+  font-weight: 400;
+}
+
+.patent-global-function-rail .table-rail-panel__group-toggle:hover {
+  background: var(--rail-hover);
+}
+
+.patent-global-function-rail .table-rail-panel__button--icon:not(.is-active) {
+  background: transparent;
+}
+
+.patent-global-function-rail
+  :is(.table-rail-panel__buttons, .figure-rail-panel__alignments, .figure-rail-panel__actions) {
+  gap: 8px;
+  padding-inline: 4px;
+}
+
+.patent-global-function-rail :is(.table-rail-panel, .figure-rail-panel) button {
+  min-height: 30px;
+  padding: 3px 4px;
+  border-radius: 6px;
+}
+
+.patent-global-function-rail .table-rail-panel__group-toggle {
+  width: calc(100% - 8px);
+  margin-inline: 4px;
+  margin-bottom: 6px;
+}
+
+.patent-global-function-rail .table-rail-panel__buttons--alignment {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.patent-global-function-rail .table-rail-panel__buttons--borders {
+  grid-template-columns: repeat(4, 28px);
+}
+
+.patent-global-function-rail .table-rail-panel__button--icon {
+  width: 28px;
+  padding: 0;
+}
+
+.patent-global-function-rail .table-rail-panel__buttons--alignment .table-rail-panel__button--icon {
+  width: 100%;
+}
+
+.patent-global-function-rail .find-replace-panel__mode-switch {
+  border: 0;
+  background: var(--editor-display-panel-surface, #eeeef2);
+  border-radius: 8px;
+}
+
+.patent-global-function-rail .find-replace-panel__close {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 50%;
+}
+
+.patent-global-function-rail .chemical-structure-tools {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.patent-global-function-rail .chemical-structure-alignments button.is-active {
+  color: var(--rail-accent);
+  background: var(--editor-display-panel-surface, #e6f0fc);
+  border-color: transparent;
+}
+
+.patent-global-function-rail button {
+  transition:
+    background-color 150ms ease-in-out,
+    color 150ms ease-in-out,
+    border-color 150ms ease-in-out;
+}
+
+.patent-global-function-rail button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.patent-global-function-rail :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--rail-accent);
+  outline-offset: 2px;
+}
+
+.patent-global-function-rail
+  .reference-mark-panel
+  .reference-mark-panel__custom-number-field
+  input:focus-visible {
+  outline: none;
+  border-color: var(--rail-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .function-rail-transient-slot {
+    transition: none;
+  }
+
+  .patent-global-function-rail__body > * {
+    transition: none;
+  }
+
+  .patent-global-function-rail button {
+    transition: none;
+  }
+}

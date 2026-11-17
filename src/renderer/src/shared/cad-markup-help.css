@@ -1,0 +1,45 @@
+.cad-markup-help {
+  width: 560px;
+  padding: 26px;
+}
+.cad-markup-help__details {
+  margin-top: 18px;
+}
+.cad-markup-help__details > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cad-markup-help__details ol {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  padding-left: 21px;
+  color: #2673d9;
+}
+.cad-markup-help__details li {
+  padding-left: 5px;
+}
+.cad-markup-help__details strong {
+  display: block;
+  color: #243347;
+  font-size: 13px;
+}
+.cad-markup-help__details li span {
+  display: block;
+  margin-top: 3px;
+  color: #697586;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.cad-markup-help__gestures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 10px 12px;
+  background: #f5f8fc;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #526279;
+}

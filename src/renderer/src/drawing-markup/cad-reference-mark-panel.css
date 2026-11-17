@@ -1,0 +1,92 @@
+.patent-global-function-rail .reference-mark-panel.cad-reference-mark-panel {
+  border: 0;
+  border-radius: var(--rail-radius, 12px);
+}
+.patent-global-function-rail[data-custom-header="true"]
+  .reference-mark-panel.cad-reference-mark-panel {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.patent-global-function-rail
+  .cad-reference-mark-panel
+  :is(.reference-mark-panel__columns, .reference-mark-panel__row-summary) {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 10px;
+  align-items: center;
+  gap: 6px;
+}
+.patent-global-function-rail .cad-reference-mark-panel .cad-reference-mark-row {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 0;
+  text-align: left;
+  font: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rail-line, #e8e8ee);
+  border-radius: 0;
+  cursor: pointer;
+}
+.patent-global-function-rail
+  .cad-reference-mark-panel
+  .cad-reference-mark-row:hover:not(:disabled) {
+  background: var(--rail-hover, #eaf2ff);
+}
+.cad-reference-mark-row:focus-visible {
+  outline: 2px solid var(--rail-accent, #0066ff);
+  outline-offset: -2px;
+}
+.cad-reference-mark-row:disabled {
+  cursor: default;
+}
+.patent-global-function-rail-slot[data-layout="overlay"]
+  .patent-global-function-rail__body
+  > [data-function-rail-owner="drawing-markup"]:first-child
+  > .cad-reference-mark-panel:first-child {
+  padding-top: 16px;
+}
+.cad-reference-mark-panel .reference-mark-panel__header {
+  min-height: 32px;
+  padding-right: 72px;
+}
+.cad-reference-mark-panel .reference-mark-panel__header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+.cad-reference-mark-panel .reference-mark-panel__row-keyword {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.cad-reference-mark-status {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+.cad-reference-mark-status[data-status="present"] {
+  background: #22c55e;
+}
+
+/* The card's whole title area is the CAD-only drag handle; controls remain clickable. */
+.patent-global-function-rail-slot[data-layout="overlay"]
+  .patent-global-function-rail[data-draggable="true"]
+  > .patent-global-function-rail__header {
+  justify-self: stretch;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.patent-global-function-rail[data-dragging="true"] > .patent-global-function-rail__header {
+  cursor: grabbing;
+}
+.patent-global-function-rail[data-draggable="true"] > .patent-global-function-rail__header button {
+  touch-action: none;
+  cursor: grab;
+}
+.patent-global-function-rail[data-dragging="true"] > .patent-global-function-rail__header button {
+  cursor: grabbing;
+}

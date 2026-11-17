@@ -1,0 +1,21 @@
+.agent-cli-policy-dialog .ai-policy-content > section + section {
+  margin-top: 22px;
+}
+.agent-cli-policy-dialog .agent-cli-policy-important {
+  padding: 14px 16px;
+  border: 1px solid #ead8b4;
+  border-radius: 12px;
+  background: #fffbf2;
+}
+.agent-cli-policy-dialog .ai-policy-content p {
+  overflow-wrap: anywhere;
+}
+.agent-cli-policy-dialog .ai-policy-content [role="alert"] {
+  color: #b42318;
+}
+.agent-cli-policy-dialog .ai-policy-consent {
+  min-width: 0;
+}
+.agent-cli-policy-dialog .ai-policy-consent input {
+  flex-shrink: 0;
+}

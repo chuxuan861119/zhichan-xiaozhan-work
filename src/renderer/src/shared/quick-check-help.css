@@ -1,0 +1,215 @@
+.quick-check-help {
+  position: fixed;
+  z-index: 10020;
+  width: 580px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 48px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  padding: 32px;
+  border: 0;
+  border-radius: var(--ui-radius-window, 12px);
+  background: #fff;
+  box-shadow:
+    0 14px 44px #28334514,
+    0 2px 8px #28334508;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  line-height: normal;
+  color: #24272c;
+  text-align: left;
+}
+.quick-check-help * {
+  box-sizing: border-box;
+}
+.quick-check-help > :not(.quick-check-help__brand) {
+  position: relative;
+}
+.quick-check-help__brand {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 260px;
+  height: 180px;
+  overflow: visible;
+  border-top-right-radius: 17px;
+  pointer-events: none;
+  user-select: none;
+}
+.quick-check-help__brand img {
+  position: absolute;
+  display: block;
+  top: -164px;
+  right: -135px;
+  width: 520px;
+  height: 520px;
+  object-fit: contain;
+  opacity: 0.16;
+}
+.quick-check-help__header h2 {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0;
+  padding-right: 210px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.quick-check-help__header h2 svg {
+  color: #626b77;
+}
+.quick-check-help__header p {
+  margin: 13px 0 0;
+  color: #737a85;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.quick-check-help__details {
+  margin-top: 30px;
+}
+.quick-check-help__details section + section {
+  margin-top: 28px;
+}
+.quick-check-help__details h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.quick-check-help__details p {
+  margin: 0;
+  color: #676f7b;
+  font-size: 13px;
+  line-height: 2;
+}
+.quick-check-help__flow {
+  display: grid;
+  grid-template-columns: 1fr 20px 1fr 20px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 12px;
+  border-radius: 12px;
+  background: #f6f8fa;
+}
+.quick-check-help__flow > div {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+}
+.quick-check-help .quick-check-help__flow svg {
+  width: 24px;
+  height: 24px;
+  color: #6586a6;
+  stroke-width: 1.4;
+}
+.quick-check-help__flow strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.quick-check-help__flow span {
+  color: #7c8490;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.quick-check-help__flow .quick-check-help__flow-arrow {
+  width: 16px;
+  color: #a0a9b5;
+}
+.quick-check-help__details .quick-check-help__boundary {
+  margin-top: 24px;
+  color: #818894;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.quick-check-help__footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 30px;
+  padding-top: 19px;
+  border-top: 1px solid #eceef1;
+  color: #858b95;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.quick-check-help__footer p {
+  margin: 0;
+}
+.quick-check-help__detail-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+.quick-check-help__detail-switch {
+  display: inline-flex;
+  align-items: center;
+  width: 34px;
+  height: 20px;
+  padding: 2px;
+  border: 0;
+  border-radius: 20px;
+  background: #cbd1da;
+  cursor: pointer;
+}
+.quick-check-help__detail-switch[aria-checked="true"] {
+  background: #3478f6;
+}
+.quick-check-help__detail-switch > span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px #0002;
+}
+.quick-check-help__detail-switch[aria-checked="true"] > span {
+  transform: translateX(14px);
+}
+.quick-check-help__detail-switch:focus-visible {
+  outline: 2px solid #3478f6;
+  outline-offset: 3px;
+}
+.quick-check-help.compact-panel {
+  width: 400px;
+  padding: 22px;
+}
+.quick-check-help.compact-panel .quick-check-help__brand {
+  top: -4px;
+  right: 12px;
+  width: 76px;
+  height: 76px;
+}
+.quick-check-help.compact-panel .quick-check-help__brand img {
+  position: static;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+}
+.quick-check-help.compact-panel .quick-check-help__header h2 {
+  padding-right: 68px;
+  font-size: 17px;
+}
+.quick-check-help.compact-panel .quick-check-help__header p {
+  max-width: 310px;
+  margin-top: 12px;
+}
+.quick-check-help.compact-panel .quick-check-help__footer {
+  margin-top: 20px;
+  padding-top: 14px;
+}
+@media (max-width: 650px) {
+  .quick-check-help {
+    padding: 24px;
+  }
+  .quick-check-help__flow {
+    gap: 2px;
+    padding: 18px 2px;
+  }
+  .quick-check-help__flow span {
+    font-size: 10px;
+  }
+}

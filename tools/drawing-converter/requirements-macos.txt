@@ -1,0 +1,13 @@
+# Runtime versions match the Windows renderer; build tooling is pinned separately.
+ezdxf==1.4.4
+numpy==2.4.6
+fonttools==4.65.0
+pyparsing==3.3.2
+typing_extensions==4.16.0
+Pillow==11.3.0
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8
+altgraph==0.17.5
+macholib==1.16.4
+packaging==26.3
+setuptools==84.0.0

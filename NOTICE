@@ -1,0 +1,17 @@
+知产小栈 Work 1.1.8 — open-source snapshot
+Copyright (C) 2026 南今（山东）网络科技有限公司
+
+Original project code in this snapshot is licensed under GPL-3.0-only.
+The complete license is in LICENSE. This notice does not replace third-party
+licenses or copyright notices, and does not change rights in user documents.
+
+Third-party components, fonts, images and other upstream materials retain their
+own licenses. See resources/THIRD_PARTY_NOTICES.txt and resources/licenses/INDEX.md.
+Bundled third-party source archives and source preparation recipes are retained.
+
+This is an independent snapshot of version 1.1.8, before the design-patent
+workbench was introduced. No private repository history is included.
+See SOURCE_BASELINE.json and docs/OPEN_SOURCE_RELEASE.md for provenance.
+
+Website: https://zcxzz.cn/
+Work: https://zcxzz.cn/work/

@@ -1,0 +1,16 @@
+{
+  "endpoint": "",
+  "noticeVersion": "2026-10-28.5",
+  "acceptedPlatforms": [],
+  "publicVersionGroups": [],
+  "releaseChannel": "preview",
+  "releases": [],
+  "disclosure": {
+    "operator": "南今（山东）网络科技有限公司",
+    "contact": "yyqc861@163.com",
+    "recipient": "南今（山东）网络科技有限公司，基础设施由腾讯云提供",
+    "region": "中国大陆（腾讯云上海）",
+    "retentionMonths": 18,
+    "securityLogNotice": "连接涉及来源 IP、网络时间和响应状态等必要信息，服务器访问日志按日轮转约 190 天，限制管理权限，不将来源 IP 导出到统计后台；统计接口不记录业务上报正文。汇总业务数据最长保留 18 个月。"
+  }
+}

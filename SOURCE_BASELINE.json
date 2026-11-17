@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "version": "1.1.8",
+  "sourceCommit": "c6d08fb15bf75eec8151dfc01fee4f1308099a10",
+  "patentTypes": [
+    "invention",
+    "utility-model"
+  ],
+  "license": "GPL-3.0-only",
+  "history": "Independent snapshot. No private repository history or later-version code.",
+  "manifest": "docs/releases/1.1.8-source-manifest.json",
+  "adaptations": "docs/OPEN_SOURCE_RELEASE.md"
+}

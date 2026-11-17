@@ -1,0 +1,251 @@
+.compact-tool-actions,
+.compact-drawing-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.compact-tool-actions .patent-book-tools__problem-check,
+.compact-drawing-actions > .compact-drawing-import {
+  display: contents;
+}
+
+.compact-tool-actions > span,
+.compact-tool-actions > output,
+.compact-tool-actions__wide,
+.compact-drawing-import > :not(button) {
+  grid-column: 1 / -1;
+}
+
+.patent-book-tools.compact-tool-actions button,
+.compact-drawing-actions > button,
+.compact-drawing-actions .compact-drawing-import > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 6px;
+  border: 1px solid var(--editor-display-panel-line, #e0e5ed);
+  border-radius: 6px;
+  background: var(--editor-display-panel, #fff);
+  color: var(--editor-display-panel-muted, #334155);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-in-out,
+    border-color 120ms ease-in-out;
+}
+
+.compact-tool-actions button svg,
+.compact-drawing-actions > button svg,
+.compact-drawing-import > button svg {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  padding: 5px;
+  border-radius: 6px;
+  background: var(--editor-display-panel-surface, #e8eef5);
+  color: var(--editor-display-panel-accent, #516e92);
+  stroke-width: 1.75;
+}
+
+.patent-book-tools.compact-tool-actions button:hover:not(:disabled),
+.compact-drawing-actions > button:hover:not(:disabled),
+.compact-drawing-actions .compact-drawing-import > button:hover:not(:disabled),
+.compact-drawing-actions > button[aria-pressed="true"] {
+  background: var(--editor-display-panel-surface, #f6f8fc);
+  border-color: var(--editor-display-panel-line, #aebed4);
+  color: var(--editor-display-panel-muted, #334155);
+}
+
+.claims-description-tool {
+  display: contents;
+}
+
+.claims-description-tool__toggle {
+  width: 100%;
+  position: relative;
+}
+
+.claims-description-tool__toggle .claims-description-tool__chevron {
+  margin-left: auto;
+  padding: 6px;
+  background: transparent;
+  transform: translateX(-10px);
+}
+
+.claims-description-tool__toggle[data-menu-open="true"] .claims-description-tool__chevron {
+  transform: translateX(-10px) rotate(180deg);
+}
+
+.patent-book-tools.compact-tool-actions button.claims-description-tool__toggle[aria-expanded] {
+  border-color: transparent;
+}
+
+.patent-book-tools.compact-tool-actions
+  button.claims-description-tool__toggle[aria-expanded="true"] {
+  position: relative;
+  z-index: 1;
+  border-color: transparent;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+}
+
+.claims-description-tool__outline {
+  position: absolute;
+  z-index: 2;
+  max-width: none;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.claims-description-tool__outline path {
+  fill: none;
+}
+
+.compact-tool-actions button svg.claims-description-tool__outline {
+  width: auto;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  flex: none;
+  stroke-width: 1;
+}
+
+.claims-description-tool__panel > :not(svg) {
+  position: relative;
+  z-index: 1;
+}
+
+.claims-description-tool__panel {
+  position: relative;
+  grid-column: 1 / -1;
+  padding: 10px;
+  border: 1px solid transparent;
+}
+
+.claims-description-tool__panel p {
+  margin: 10px 0 0;
+  color: var(--editor-display-panel-muted, #64748b);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.claims-description-tool__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.claims-description-tool__invention {
+  display: flex;
+  min-width: 0;
+  gap: 2px;
+}
+.claims-description-tool__invention > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.patent-book-tools.compact-tool-actions
+  .claims-description-tool__actions
+  .claims-description-tool__settings {
+  flex: 0 0 26px;
+  width: 26px;
+  padding: 4px 2px;
+}
+
+.patent-book-tools.compact-tool-actions .claims-description-tool__actions button {
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 8px;
+  border-color: var(--editor-display-panel-line, #cbd5e1);
+  border-radius: 5px;
+  background: var(--editor-display-panel, #f8fafc);
+  color: var(--editor-display-panel-muted, #334155);
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.patent-book-tools.compact-tool-actions
+  .claims-description-tool__actions
+  button:hover:not(:disabled) {
+  border-color: var(--editor-display-panel-line, #93b4e8);
+  background: var(--editor-display-panel-surface, #eff6ff);
+  color: var(--editor-display-panel-accent, #1d4ed8);
+}
+
+.patent-book-tools.compact-tool-actions button:focus-visible,
+.compact-drawing-actions button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.patent-book-tools.compact-tool-actions button:disabled,
+.compact-drawing-actions > button:disabled,
+.compact-drawing-actions .compact-drawing-import > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@container (max-width: 250px) {
+  .compact-tool-actions,
+  .compact-drawing-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compact-tool-actions button,
+  .compact-drawing-actions button {
+    transition: none;
+  }
+}
+.patent-global-function-rail__body {
+  container-type: inline-size;
+}
+
+.patent-book-tools.compact-tool-actions .compact-tool-actions__wide {
+  justify-content: center;
+}
+
+.compact-tool-actions .patent-book-tools__problem-check-button svg {
+  background: var(--editor-display-panel-surface, #e5f2ed);
+  color: var(--editor-display-panel-success, #347760);
+}
+
+.compact-tool-actions .patent-book-tools__ai-correction-button svg {
+  background: var(--editor-display-panel-surface, #e9effd);
+  color: var(--editor-display-panel-accent, #4968ba);
+}
+
+.compact-tool-actions .patent-book-tools__text-polish-button svg {
+  background: var(--editor-display-panel-surface, #efebf8);
+  color: var(--editor-display-panel-accent, #7a5fa0);
+}
+
+.compact-tool-actions__label {
+  grid-column: 1 / -1;
+  color: var(--editor-display-panel-muted, #758293);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.compact-tool-actions__label--separated {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--editor-display-panel-line, #e7ebf0);
+}
+
+.compact-drawing-actions > button[aria-pressed="true"] {
+  border-color: var(--editor-display-panel-line, #93b4e8);
+  background: var(--editor-display-panel-surface, #eff6ff);
+  color: var(--editor-display-panel-accent, #1d4ed8);
+}

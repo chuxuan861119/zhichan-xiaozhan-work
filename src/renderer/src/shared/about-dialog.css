@@ -1,0 +1,119 @@
+.about-dialog .about-dialog__content {
+  display: grid;
+  gap: 20px;
+  text-align: left;
+}
+.about-dialog__identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.about-dialog .about-dialog__logo {
+  flex: none;
+  width: 56px;
+  height: 56px;
+}
+.about-dialog .about-dialog__identity h3 {
+  color: #172033;
+  font-size: 20px;
+  line-height: 1.4;
+}
+.about-dialog .about-dialog__version {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+.about-dialog .about-dialog__content p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.about-dialog__provider {
+  display: grid;
+  gap: 4px;
+}
+.about-dialog__provider > span {
+  color: #64748b;
+  font-size: 12px;
+}
+.about-dialog .about-dialog__provider p {
+  color: #25324a;
+  overflow-wrap: anywhere;
+}
+.about-dialog__support,
+.about-dialog__legal nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+.about-dialog__link {
+  min-width: 0;
+  min-height: 28px;
+  padding: 2px 0;
+  color: #2563eb;
+  font: inherit;
+  font-size: 13px;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+.about-dialog__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.about-dialog__link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+.about-dialog .about-dialog__error {
+  color: #b42318;
+  overflow-wrap: anywhere;
+}
+.about-dialog__legal {
+  display: grid;
+  gap: 6px;
+}
+.about-dialog .about-dialog__copyright,
+.about-dialog__legal .about-dialog__link {
+  color: #64748b;
+  font-size: 12px;
+}
+.about-dialog__build {
+  border-top: 1px solid #e5eaf2;
+  padding-top: 14px;
+  color: #64748b;
+  font-size: 12px;
+}
+.about-dialog__build summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: 13px;
+  color: #475569;
+}
+.about-dialog__build summary:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.about-dialog__build dl {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.about-dialog__build dl > div {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 12px;
+}
+.about-dialog__build dt,
+.about-dialog__build dd {
+  margin: 0;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.about-dialog .about-dialog__build p {
+  margin-top: 8px;
+  font-size: 12px;
+}

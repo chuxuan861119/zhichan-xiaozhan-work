@@ -1,0 +1,119 @@
+.supplement-number-help {
+  width: 540px;
+}
+
+.supplement-number-help__token {
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: #e8ebef;
+  color: #343b45;
+}
+
+.supplement-number-help .brand-corner {
+  overflow: visible;
+  width: 260px;
+  height: 180px;
+}
+
+.supplement-number-help .brand-corner img {
+  top: -164px;
+  opacity: 0.16;
+}
+
+.supplement-number-help__registry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  color: #737a85;
+  font-size: 12px;
+}
+
+.supplement-number-help__registry span {
+  padding: 4px 9px;
+  border: 1px solid #e4e8ee;
+  border-radius: 6px;
+  background: #fff;
+  color: #535f6c;
+}
+
+.supplement-number-help__sample {
+  padding: 22px;
+  border: 1px solid #eceff3;
+  border-radius: 12px;
+  background: #f6f8fa;
+  color: #646e7a;
+  font-size: 15px;
+  line-height: 2;
+}
+
+.supplement-number-help__sample h4 {
+  margin: 0 0 10px;
+  color: #343b45;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.supplement-number-help__sample p {
+  margin: 0;
+}
+
+.supplement-number-help__sample em {
+  color: #7c3aed;
+  font-style: normal;
+}
+
+.supplement-number-help__arrow {
+  margin: 10px 0;
+  color: #8a98aa;
+  font-size: 22px;
+  line-height: 1;
+  text-align: center;
+}
+
+.supplement-number-help__sample-note,
+.supplement-number-help__usage {
+  color: #737a85;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.supplement-number-help__sample-note {
+  margin: 12px 0 0;
+}
+
+.supplement-number-help__sample-note::before {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #7c3aed;
+  content: "";
+  vertical-align: middle;
+}
+
+.supplement-number-help__usage {
+  margin: 24px 0 0;
+}
+
+.supplement-number-help__usage strong {
+  color: #343b45;
+  font-weight: 600;
+}
+
+.supplement-number-help.compact-panel {
+  width: 360px;
+  padding: 22px;
+}
+
+.supplement-number-help.compact-panel .brand-corner {
+  width: 76px;
+  height: 76px;
+}
+
+.supplement-number-help.compact-panel .brand-corner img {
+  opacity: 0.8;
+}

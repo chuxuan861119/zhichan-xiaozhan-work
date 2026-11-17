@@ -1,0 +1,165 @@
+.tool-bar {
+  anchor-name: --editor-toolbar;
+  anchor-scope: --editor-toolbar, --toolbar-menu-trigger, --toolbar-more-trigger;
+}
+
+.tool-bar .style-select {
+  width: 96px;
+}
+
+.toolbar-import-picker,
+.toolbar-export-picker {
+  anchor-name: --toolbar-menu-trigger;
+  anchor-scope: --toolbar-menu-trigger;
+}
+
+.tool-bar .more-tools {
+  anchor-name: --toolbar-more-trigger;
+}
+
+.toolbar-import-menu[role="menu"],
+.toolbar-export-menu[role="menu"] {
+  position: fixed;
+  top: anchor(--editor-toolbar bottom);
+  left: anchor(--toolbar-menu-trigger left);
+  width: max-content;
+  min-width: 144px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  position-try-fallbacks: --toolbar-menu-fit;
+}
+
+.toolbar-import-menu[role="menu"] button,
+.toolbar-export-menu[role="menu"] button {
+  height: auto;
+  min-height: 32px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.tool-bar:has(.toolbar-import-menu, .toolbar-export-menu, .color-palette) {
+  z-index: calc(var(--ui-layer-panel, 500) + 1);
+}
+
+.tool-bar .color-picker .color-palette {
+  position: fixed;
+}
+
+.tool-bar :is(.style-select, .font-select, .size-select),
+.editor-mini-row select,
+.tool-bar :is(.style-select, .font-select, .size-select)::picker(select),
+.editor-mini-row select::picker(select) {
+  appearance: base-select;
+}
+
+.tool-bar :is(.style-select, .font-select, .size-select),
+.editor-mini-row select {
+  align-items: center;
+  gap: 6px;
+  padding-right: 8px;
+}
+
+.tool-bar :is(.style-select, .font-select, .size-select)::picker-icon,
+.editor-mini-row select::picker-icon {
+  content: "";
+  display: block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  rotate: 0deg;
+}
+
+.tool-bar :is(.style-select, .font-select, .size-select)::picker(select),
+.editor-mini-row select::picker(select) {
+  inset: auto;
+  top: anchor(bottom);
+  left: anchor(left);
+  min-width: anchor-size(width);
+  max-height: min(280px, calc(100dvh - 24px));
+  margin-top: 4px;
+  padding: 4px;
+  overflow-y: auto;
+  color: #1f2937;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--ui-radius-window, 12px);
+  box-shadow: var(--ui-shadow-floating, 0 8px 20px rgb(15 23 42 / 14%));
+  position-try-fallbacks: flip-inline;
+}
+
+.tool-bar :is(.style-select, .font-select, .size-select) option,
+.editor-mini-row select option {
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+:is(.tool-bar :is(.style-select, .font-select, .size-select), .editor-mini-row select)
+  option::checkmark {
+  display: none;
+}
+
+.tool-bar
+  :is(.style-select, .font-select, .size-select)
+  option:is(:checked, :hover, :focus-visible),
+.editor-mini-row select option:is(:checked, :hover, :focus-visible) {
+  color: #0f5fca;
+  background: #eff6ff;
+}
+
+.tool-bar .toolbar-overflow-menu {
+  position: fixed;
+  top: anchor(--editor-toolbar bottom);
+  left: auto;
+  right: max(8px, anchor(--toolbar-more-trigger right));
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+}
+
+.tool-bar :is(.style-select, .font-select, .size-select)::picker(select) {
+  top: anchor(--editor-toolbar bottom);
+  margin-top: 0;
+}
+
+@position-try --toolbar-menu-fit {
+  left: auto;
+  right: 8px;
+}
+
+/* Keep chosen labels on one line; the menu still shows the full font name. */
+:is(.tool-bar :is(.style-select, .font-select, .size-select), .editor-mini-row select) {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+:is(.tool-bar :is(.style-select, .font-select, .size-select), .editor-mini-row select) > button {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+
+:is(.tool-bar :is(.style-select, .font-select, .size-select), .editor-mini-row select)
+  .toolbar-selected-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+:is(.tool-bar :is(.style-select, .font-select, .size-select), .editor-mini-row select)
+  .toolbar-selected-label.is-overflowing {
+  mask-image: linear-gradient(to right, #000 calc(100% - 12px), transparent);
+}

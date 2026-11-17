@@ -1,0 +1,853 @@
+.library-shell {
+  --library-ink: #1d2638;
+  --library-muted: #68758a;
+  --library-line: #e3e9f1;
+  --library-blue: #1670ff;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  color: var(--library-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.library-sidebar {
+  padding: 24px 14px;
+  background: #f5f7fa;
+  border-right: 1px solid var(--library-line);
+  overflow: auto;
+}
+.library-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px 26px;
+  white-space: nowrap;
+  font-size: 18px;
+  font-weight: 650;
+  color: #1d1d1f;
+}
+.library-wordmark img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex: none;
+}
+.library-wordmark .library-wordmark__work {
+  font-size: 15px;
+  font-weight: 500;
+  color: #6e6e73;
+}
+.library-sidebar__label {
+  margin: 0 12px 10px;
+  color: var(--library-muted);
+  font-size: 12px;
+}
+.library-sidebar nav {
+  display: grid;
+  gap: 6px;
+}
+.library-shell .library-sidebar :where(nav) > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--library-ink);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 400ms ease-in-out,
+    color 400ms ease-in-out;
+}
+.library-sidebar :where(nav) > button > svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.library-shell .library-sidebar :where(nav) > button:hover {
+  background: #eaf0f8;
+}
+.library-shell .library-sidebar :where(nav) > button[aria-current="page"] {
+  background: #e1edff;
+  color: #0766eb;
+  font-weight: 600;
+}
+.library-sidebar__divider {
+  height: 1px;
+  margin: 16px 10px 10px;
+  background: #dce3ed;
+}
+.library-shell .library-desktop-view {
+  padding: 0 28px 32px;
+  min-width: 0;
+}
+.library-shell .library-toolbar {
+  padding: 26px 0 12px;
+}
+.library-shell .library-header {
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0;
+  border: 0;
+  gap: 16px;
+}
+.library-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.library-shell .library-heading h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+}
+.library-heading > span {
+  color: var(--library-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.library-shell .library-header-actions {
+  gap: 8px;
+}
+.library-shell .library-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border-color: #d5deea;
+  background: #f9fafc;
+  color: var(--library-ink);
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background-color 400ms ease-in-out,
+    border-color 400ms ease-in-out,
+    box-shadow 400ms ease-in-out;
+}
+.library-shell .library-header .library-export-menu > button[aria-pressed="true"] {
+  border-color: #c7daf8;
+  background: #e8f1ff;
+  color: #0766eb;
+}
+.library-shell .library-header .library-export-menu > button[aria-pressed="true"]:hover {
+  background: #dceaff;
+}
+.library-shell .library-header .primary-button {
+  background: var(--library-blue);
+  border-color: var(--library-blue);
+  color: #fff;
+  box-shadow: 0 2px 5px rgb(22 112 255 / 14%);
+}
+.library-shell .library-header .primary-button:hover {
+  background: #0862e9;
+}
+.library-shell .library-header button:hover:not(.primary-button) {
+  background: #eef3fa;
+}
+.library-shell .patent-library-filters {
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 18px;
+  border-color: var(--library-line);
+}
+.library-shell .patent-library-search {
+  height: 38px;
+  border-color: #d5deea;
+  border-radius: 9px;
+  flex-basis: 300px;
+}
+.library-shell .patent-library-search input[type="search"] {
+  font-size: 14px;
+  height: 36px;
+}
+.library-shell .patent-search-content-toggle {
+  border-left: 0;
+  font-size: 12px;
+  padding: 0 10px;
+}
+.library-shell .library-filter-select select {
+  height: 38px;
+  min-width: 124px;
+  width: 124px;
+  border-color: #d5deea;
+  border-radius: 9px;
+  font-size: 13px;
+}
+.library-shell .patent-library-view-toggle {
+  min-height: 38px;
+  align-self: center;
+  border-radius: 9px;
+  background: #fff;
+  border-color: #d5deea;
+  padding: 3px;
+}
+.library-shell .patent-library-view-toggle button {
+  width: 34px;
+  min-height: 30px;
+  border-radius: 6px;
+  transition:
+    background-color 400ms ease-in-out,
+    color 400ms ease-in-out;
+}
+.library-shell .patent-library-view-toggle button[aria-pressed="true"] {
+  background: #e8f1ff;
+  color: #0766eb;
+  border-color: #d0e3ff;
+  box-shadow: none;
+}
+.library-shell .library-list {
+  gap: 18px;
+}
+.library-shell .patent-library-month-heading {
+  padding: 0;
+  min-height: 34px;
+  border: 0;
+  font-size: 16px;
+  color: var(--library-ink);
+  gap: 14px;
+}
+.library-shell .patent-library-month-count {
+  font-size: 12px;
+  color: var(--library-muted);
+}
+.library-shell .library-month-collapse > .spatial-collapse__content > .patent-library-month-cards {
+  padding-top: 8px;
+}
+.library-shell .library-card {
+  border-color: var(--library-line);
+  border-radius: 12px;
+}
+.library-shell .library-card h2 {
+  font-weight: 600;
+}
+.library-shell .patent-type-badge {
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  justify-self: start;
+  width: max-content;
+}
+.library-shell .patent-type-badge--invention {
+  color: #0968e8;
+  background: #edf4ff;
+  border-color: #c5dcff;
+}
+.library-shell .patent-type-badge--utility-model {
+  color: #087f51;
+  background: #e9f8f0;
+  border-color: #bfead5;
+}
+.library-shell .patent-library-month-cards[data-view-mode="single"] {
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+.patent-list-columns,
+.library-shell .patent-list-row {
+  display: grid;
+  grid-template-columns: 28px minmax(160px, 1fr) minmax(90px, 0.44fr) 116px 170px 32px;
+  align-items: center;
+  column-gap: 18px;
+  padding: 0 14px;
+}
+.patent-list-columns {
+  min-height: 38px;
+  margin: 0 0 -4px;
+  border-bottom: 1px solid var(--library-line);
+  color: var(--library-muted);
+  font-size: 13px;
+}
+.library-shell .patent-list-row {
+  min-height: 60px;
+  border: 0;
+  border-bottom: 1px solid var(--library-line);
+  border-radius: 0;
+  background: transparent;
+  transition:
+    background-color 400ms ease-in-out,
+    box-shadow 400ms ease-in-out;
+  cursor: default;
+}
+.library-shell .patent-list-row:hover {
+  background: #f6f9fd;
+}
+.library-shell .patent-list-row:focus-within,
+.library-shell .patent-list-row.is-snapshot-restore-highlight {
+  background: #eaf3ff;
+  border-radius: 10px;
+  box-shadow: none;
+}
+.library-shell .patent-list-row:focus-visible {
+  outline: 2px solid #9cc5ff;
+  outline-offset: -2px;
+}
+.patent-list-row__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.library-shell .patent-list-row h2 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+.patent-list-row__customer {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #48566c;
+}
+.patent-list-row__date {
+  font-size: 12px;
+  color: #637189;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.library-shell .patent-list-row .patent-card-actions {
+  margin: 0;
+  justify-self: end;
+}
+.library-shell .patent-list-row .patent-card-menu-trigger {
+  border: 0;
+  background: transparent;
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 8px;
+}
+.library-shell .patent-list-row .patent-card-menu-trigger:hover {
+  background: #dceaff;
+}
+.patent-list-row__selection {
+  display: grid;
+  place-items: center;
+}
+.library-shell
+  :is(
+    .patent-list-select,
+    .patent-list-row .patent-export-checkbox,
+    .patent-list-columns .patent-export-checkbox
+  ) {
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #adbcd0;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+}
+.library-shell
+  :is(
+    .patent-list-select,
+    .patent-list-row .patent-export-checkbox,
+    .patent-list-columns .patent-export-checkbox
+  ):hover:not(:disabled) {
+  border-color: #1670ff;
+  background: #eaf3ff;
+}
+.library-shell
+  :is(
+    .patent-list-select,
+    .patent-list-row .patent-export-checkbox,
+    .patent-list-columns .patent-export-checkbox
+  ):disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.library-shell
+  :is(.patent-list-row, .patent-list-columns)
+  .patent-export-checkbox:is(:checked, :indeterminate) {
+  border-color: #1670ff;
+  background: #1670ff;
+}
+.library-shell :is(.patent-list-row, .patent-list-columns) .patent-export-checkbox:checked::after {
+  content: "";
+  width: 4px;
+  height: 8px;
+  margin-top: -2px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.library-shell
+  :is(.patent-list-row, .patent-list-columns)
+  .patent-export-checkbox:indeterminate::after {
+  content: "";
+  width: 8px;
+  border-top: 2px solid #fff;
+}
+.library-shell :is(.patent-list-row, .patent-list-columns) .patent-export-checkbox:focus-visible {
+  outline: 2px solid #1670ff;
+  outline-offset: 2px;
+}
+.library-shell .patent-list-row .library-card-warning {
+  grid-column: 2 / -1;
+  padding-bottom: 16px;
+}
+.library-shell .patent-list-row.is-quarantined {
+  background: #fff9f8;
+}
+.library-shell .library-empty {
+  padding: 64px 20px;
+  color: var(--library-muted);
+  text-align: center;
+}
+.library-shell button:focus-visible {
+  outline: 2px solid #1670ff;
+  outline-offset: 2px;
+}
+@media (max-width: 1199px) {
+  .library-shell {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+  .library-wordmark {
+    gap: 6px;
+    font-size: 16px;
+    margin-inline: 4px;
+  }
+  .library-wordmark .library-wordmark__work {
+    font-size: 13px;
+  }
+  .library-shell .library-desktop-view {
+    padding-inline: 22px;
+  }
+}
+@container (max-width: 900px) {
+  .patent-list-columns,
+  .library-shell .patent-list-row {
+    grid-template-columns: 24px minmax(120px, 1fr) minmax(70px, 0.4fr) 94px 134px 28px;
+    column-gap: 12px;
+    padding-inline: 8px;
+  }
+  .library-shell .patent-type-badge {
+    padding-inline: 8px;
+  }
+}
+@container (max-width: 680px) {
+  .patent-list-columns {
+    display: none;
+  }
+  .library-shell .patent-list-row {
+    grid-template-columns: 24px minmax(0, 1fr) auto 28px;
+    row-gap: 6px;
+    padding: 14px 8px;
+  }
+  .patent-list-row__selection {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+  .patent-list-row__title {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .patent-list-row__customer {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .patent-list-row__date {
+    grid-column: 3;
+    grid-row: 2;
+    font-size: 12px;
+  }
+  .library-shell .patent-list-row .patent-type-badge {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .library-shell .patent-list-row .patent-card-actions {
+    grid-column: 4;
+    grid-row: 1 / 3;
+  }
+}
+@media (max-width: 760px) {
+  .library-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .library-sidebar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--library-line);
+    overflow: visible;
+  }
+  .library-wordmark {
+    margin: 0;
+  }
+  .library-sidebar__label,
+  .library-sidebar__divider {
+    display: none;
+  }
+  .library-sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .library-shell .library-sidebar :where(nav) > button {
+    width: auto;
+    min-height: 34px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 14px;
+  }
+  .library-sidebar :where(nav) > button > svg {
+    width: 16px;
+    height: 16px;
+  }
+  .library-shell .library-desktop-view {
+    padding-inline: 16px;
+  }
+  .library-shell .library-header {
+    flex-wrap: wrap;
+  }
+  .library-shell .library-header-actions {
+    justify-content: flex-start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .library-shell .library-sidebar :where(nav) > button,
+  .library-shell .library-header button,
+  .library-shell .patent-library-view-toggle button,
+  .library-shell .patent-list-row {
+    transition: none;
+  }
+}
+
+.library-shell .patent-list-title-button {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 0;
+  border-radius: 6px;
+  --ui-button-hover-surface: #eaf0f9;
+  --ui-button-hover-ink: #34465e;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.library-shell .patent-list-row h2 {
+  font-size: 15px;
+  font-weight: 500;
+}
+.library-shell .patent-list-row__customer {
+  font-size: 13px;
+}
+.library-shell .patent-list-row__date {
+  font-size: 12px;
+}
+.library-shell .patent-list-columns {
+  font-size: 13px;
+}
+.library-shell .patent-library-search input[type="search"] {
+  font-size: 14px;
+}
+.library-shell .library-heading h1 {
+  font-size: 24px;
+}
+@container (max-width: 900px) {
+  .library-shell .patent-list-row__date {
+    font-size: 12px;
+  }
+  .library-shell .patent-list-row h2 {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .library-shell .patent-list-row__customer {
+    font-size: 13px;
+  }
+}
+@container (max-width: 680px) {
+  .library-shell .patent-list-row__date {
+    font-size: 12px;
+  }
+}
+
+.library-shell .library-header {
+  position: relative;
+  z-index: 2;
+}
+.library-shell .patent-library-filters {
+  position: relative;
+  z-index: 1;
+}
+.library-shell .patent-list-row:has(input:checked) {
+  background: #eaf3ff;
+  border-radius: 10px;
+}
+@media (min-width: 1200px) {
+  .library-shell {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .library-shell .library-desktop-view {
+    padding-inline: 30px;
+  }
+  .library-shell .library-toolbar {
+    padding-top: 28px;
+  }
+  .library-shell .library-header {
+    margin-bottom: 20px;
+  }
+  .library-shell .library-header button {
+    min-height: 36px;
+    font-size: 14px;
+    padding-inline: 14px;
+  }
+  .library-shell .patent-library-search {
+    height: 38px;
+  }
+  .library-shell .patent-library-search input[type="search"] {
+    height: 36px;
+    font-size: 14px;
+  }
+  .library-shell .library-filter-select select {
+    height: 38px;
+    font-size: 13px;
+    width: 144px;
+  }
+  .library-shell .patent-library-view-toggle {
+    min-height: 38px;
+  }
+  .library-shell .patent-library-view-toggle button {
+    min-height: 30px;
+    width: 34px;
+  }
+  .library-shell .library-sidebar :where(nav) > button {
+    font-size: 14px;
+    min-height: 40px;
+  }
+  .library-shell .library-sidebar__label {
+    font-size: 12px;
+  }
+  .library-shell .patent-list-columns,
+  .library-shell .patent-list-row {
+    grid-template-columns: 36px minmax(160px, 1fr) minmax(100px, 0.6fr) 144px 180px 32px;
+    column-gap: 22px;
+    padding-inline: 18px;
+  }
+  .library-shell .patent-list-columns {
+    min-height: 38px;
+    font-size: 13px;
+  }
+  .library-shell .patent-list-row {
+    min-height: 60px;
+  }
+  .library-shell .patent-list-row h2 {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .library-shell .patent-list-row__customer {
+    font-size: 13px;
+  }
+  .library-shell .patent-list-row__date {
+    font-size: 12px;
+  }
+  .library-shell .patent-type-badge {
+    font-size: 12px;
+  }
+}
+/* Application actions stay available without an editor menu row. */
+.library-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: visible;
+}
+.library-sidebar__footer {
+  margin-top: auto;
+  padding-top: 24px;
+}
+.library-shell .library-application-menu {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid var(--library-line);
+  background: transparent;
+  z-index: 50;
+}
+.library-application-menu .menu-bar__menu-group {
+  display: block;
+}
+.library-shell .library-application-menu > button,
+.library-shell .library-application-menu :where(.menu-bar__menu-group) > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--library-muted);
+  font-size: 13px;
+  text-align: left;
+  transition:
+    background-color 400ms ease-in-out,
+    color 400ms ease-in-out;
+}
+.library-shell .library-application-menu > button:hover,
+.library-shell .library-application-menu :where(.menu-bar__menu-group) > button:hover {
+  background: #eaf0f8;
+  color: var(--library-ink);
+}
+.library-application-menu .help-menu {
+  --dropdown-open-direction: up;
+  top: auto;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+}
+.file-menu.format-submenu.library-official-websites-menu {
+  position: fixed;
+  left: var(--library-websites-left, 304px);
+  top: 64px;
+  bottom: auto;
+  height: max-content;
+  align-content: start;
+  width: 280px;
+  max-height: calc(100vh - 88px);
+}
+.library-more-menu {
+  position: relative;
+}
+.library-shell .library-header .library-more-menu > button {
+  padding-inline: 10px;
+}
+.library-header-dropdown {
+  position: fixed;
+  z-index: var(--ui-layer-panel, 500);
+  top: 0;
+  left: 0;
+  right: auto;
+  display: grid;
+  padding: 6px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  border: 1px solid #d9e1ec;
+  border-radius: var(--ui-radius-window, 12px);
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(20 25 35 / 14%);
+}
+.library-import-menu__panel.library-header-dropdown {
+  width: 218px;
+}
+.library-more-menu__panel.library-header-dropdown {
+  width: 200px;
+}
+.library-header-dropdown > button {
+  width: 100%;
+  min-height: 36px;
+  justify-content: flex-start;
+  padding: 0 12px;
+  font-size: 14px;
+  white-space: nowrap;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+.library-header-dropdown > button:hover,
+.library-header-dropdown > button:focus-visible {
+  background: #eef3fa;
+}
+.window-shell.is-library-active:has(.library-shell) {
+  grid-template-rows: 38px minmax(0, 1fr) 26px;
+}
+@media (max-width: 760px) {
+  .library-sidebar {
+    flex-direction: row;
+  }
+  .library-sidebar__footer {
+    margin-top: 0;
+    padding-top: 0;
+    width: 100%;
+  }
+  .library-shell .library-application-menu {
+    display: flex;
+    padding-top: 8px;
+  }
+  .library-shell .library-application-menu > button,
+  .library-shell .library-application-menu :where(.menu-bar__menu-group) > button {
+    width: auto;
+    gap: 6px;
+    padding-inline: 10px;
+  }
+  .library-application-menu .help-menu {
+    --dropdown-open-direction: down;
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: auto;
+    right: 0;
+    width: min(280px, calc(100vw - 32px));
+  }
+  .file-menu.format-submenu.library-official-websites-menu {
+    left: 16px;
+    top: 160px;
+    right: 16px;
+    bottom: auto;
+    width: auto;
+    max-height: calc(100vh - 176px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .library-shell .library-application-menu > button,
+  .library-shell .library-application-menu :where(.menu-bar__menu-group) > button {
+    transition: none;
+  }
+}
+
+.file-menu.format-submenu.library-official-websites-menu {
+  z-index: 60;
+  font-size: 13px;
+}
+.file-menu.library-official-websites-menu button {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+}
+.file-menu.library-official-websites-menu button:hover,
+.file-menu.library-official-websites-menu button:focus-visible {
+  background: #eef3fa;
+}

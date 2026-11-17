@@ -1,0 +1,183 @@
+.ipc-data-center-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  align-self: center;
+  height: 28px;
+  margin: 0 10px 0 6px;
+  padding: 0 10px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.ipc-data-center-trigger:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+.ipc-data-center-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+.ipc-data-center-layer[hidden] {
+  display: none;
+}
+.ipc-data-center-window {
+  position: absolute;
+  top: 48px;
+  right: 24px;
+  width: min(860px, calc(100vw - 32px));
+  height: calc(100vh - 64px);
+  max-width: 100vw;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  overflow: hidden;
+  border-radius: var(--ui-radius-window, 12px);
+  background: white;
+  border: 1px solid #d9e1ec;
+  box-shadow: 0 14px 36px rgb(37 55 80 / 16%);
+}
+.ipc-data-center-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: 40px;
+  padding: 0 10px 0 16px;
+  background: linear-gradient(to right, #2046b5, #3572e5);
+  color: #fff;
+  border-bottom: 1px solid #2046b5;
+  font-size: 14px;
+}
+.ipc-data-center-window-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ipc-data-center-window-button {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.ipc-data-center-window-button:hover {
+  background: #ffffff26;
+  color: #fff;
+}
+.ipc-data-center-window-button--close:hover {
+  background: #dc2626;
+  color: #fff;
+}
+.ipc-data-center-window-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+.ipc-data-center-resize {
+  position: absolute;
+  z-index: 3;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  touch-action: none;
+}
+.ipc-data-center-resize--e {
+  right: 0;
+  top: 40px;
+  bottom: 12px;
+  width: 6px;
+  cursor: ew-resize;
+}
+.ipc-data-center-resize--s {
+  bottom: 0;
+  left: 0;
+  right: 12px;
+  height: 6px;
+  cursor: ns-resize;
+}
+.ipc-data-center-resize--se {
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+}
+.ipc-data-center-content {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+}
+.ipc-data-center-content iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+/* Keep pointer delivery in the host while resizing across the separate iframe. */
+.ipc-data-center-window[data-resizing="true"] iframe,
+.ipc-data-center-window[data-dragging="true"] iframe {
+  pointer-events: none;
+}
+.ipc-data-center-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #f8fafc;
+  color: #43566f;
+}
+
+.ipc-data-center-window-button--labeled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  -webkit-app-region: no-drag;
+}
+
+/* Exclude the floating tool from the native window drag region beneath it. */
+.ipc-data-center-window,
+.ipc-data-center-header {
+  -webkit-app-region: no-drag;
+}
+
+.ipc-data-center-resize--sw,
+.ipc-data-center-resize--ne,
+.ipc-data-center-resize--nw {
+  width: 14px;
+  height: 14px;
+}
+.ipc-data-center-resize--sw {
+  left: 0;
+  bottom: 0;
+  cursor: nesw-resize;
+}
+.ipc-data-center-resize--ne {
+  right: 0;
+  top: 0;
+  cursor: nesw-resize;
+}
+.ipc-data-center-resize--nw {
+  left: 0;
+  top: 0;
+  cursor: nwse-resize;
+}

@@ -1,0 +1,26 @@
+.claims-description-preview .standard-dialog__body {
+  min-height: 0;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.claims-description-preview__text {
+  min-height: 180px;
+  flex: 1;
+  max-height: 55vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  color: #263244;
+  font-family: "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.claims-description-preview__text > p {
+  margin: 0;
+  text-indent: 2em;
+}

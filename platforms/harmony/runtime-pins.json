@@ -1,0 +1,12 @@
+{
+  "release": "v37.2.3.20260917.1",
+  "electron": "37.2.0",
+  "node": "22.17.0",
+  "architecture": "arm64",
+  "archiveFile": "libelectron_138.tar.gz",
+  "archiveSha256": "6adfb7a3e6e0adec10a644fad4d4a6bb67645bd6887a499f35676398f7603fa2",
+  "downloadZipSha256": "8ddac153018f6bdbd02ac65c832b03a380f69585b4d05068c11a6e5abab99e66",
+  "source": "https://devcloud.cn-north-4.huaweicloud.com/codehub/project/b19f5ea8ffd4492ea8c06ca2ebf3f858/codehub/2821214/home?ref=electron37-release",
+  "sqliteVersion": "13.0.3",
+  "sqliteSha256": "b886248d236fb8de4450a250d9962ae21b4659e31b1de9e8fc0e0a2510260d7f"
+}

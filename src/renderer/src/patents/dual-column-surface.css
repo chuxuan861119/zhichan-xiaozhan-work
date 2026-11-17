@@ -1,0 +1,135 @@
+.editor-workspace.has-dual-column-surface {
+  overflow: auto hidden;
+  padding-block: 0;
+}
+.patent-page-with-rail.dual-column-layout {
+  /* biome-ignore lint/complexity/noImportantStyles: override the single-view inline zoom without mutating document settings. */
+  --patent-page-zoom: var(--column-zoom, 1) !important;
+  position: relative;
+  display: block;
+  height: calc(var(--column-height, 600px) + 20px);
+  min-width: calc(var(--column-width) * 2 + var(--column-rail-width) + 34px);
+  width: var(--column-group-width);
+  margin-inline: auto;
+  isolation: isolate;
+}
+.dual-column-layout > .patent-page-zoom-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  transform-origin: top left;
+}
+.dual-column-layout > .document-structure-ruler {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: var(--column-ruler-width);
+}
+.dual-column-layout > .document-structure-ruler[data-navigation="true"] {
+  /* biome-ignore lint/complexity/noImportantStyles: navigation widens only the ruler's inline clipping, while its panel preserves vertical slice clipping. */
+  clip-path: none !important;
+  z-index: 7;
+}
+.patent-page-with-rail.dual-column-layout .patent-book-rich-text {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  border-radius: 0;
+}
+.dual-column-layout > .patent-global-function-rail-slot {
+  position: absolute;
+  left: calc(var(--column-width) * 2 + 34px);
+  top: 20px;
+  z-index: 6;
+}
+.dual-column-edge-toggle {
+  position: relative;
+  align-self: flex-start;
+  top: 20px;
+  pointer-events: auto;
+}
+.dual-column-layout
+  > .patent-global-function-rail-slot[data-layout="overlay"]
+  .patent-global-function-rail {
+  right: var(--dual-column-overlay-right, 0px);
+}
+.dual-column-paper {
+  position: absolute;
+  top: 0;
+  width: var(--column-width);
+  height: calc(var(--column-height) + 20px);
+  pointer-events: none;
+  clip-path: inset(-1px -9px -30px -9px);
+}
+.dual-column-paper[data-side="0"] {
+  left: 0;
+}
+.dual-column-paper[data-side="1"] {
+  left: calc(var(--column-width) + 20px);
+  padding-top: 20px;
+  clip-path: inset(-30px -9px -1px -9px);
+}
+.dual-column-paper-background {
+  position: absolute;
+  left: var(--column-ruler-slot);
+  width: var(--column-paper-width);
+  top: 0;
+  bottom: 0;
+  background: #fff;
+  outline: 1px solid #d5d9e0;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgb(20 25 35 / 10%);
+}
+.dual-column-paper[data-side="0"] > .dual-column-paper-background {
+  bottom: 20px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.dual-column-paper[data-side="1"] > .dual-column-paper-background {
+  top: 20px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.dual-column-layout[data-flow-mode="off"] .dual-column-paper-background {
+  border-radius: 12px;
+}
+.dual-column-copy {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--column-ruler-slot) 1fr;
+  pointer-events: none;
+  user-select: none;
+}
+.dual-column-copy > .document-structure-ruler {
+  grid-column: 1;
+  width: var(--column-ruler-width);
+}
+.dual-column-copy > .patent-page-zoom-frame {
+  grid-column: 2;
+}
+.dual-column-paper .dual-column-copy {
+  clip-path: inset(0); /* clipping viewport is supplied by the paper's outer clip */
+}
+.dual-column-scrollbar {
+  position: fixed;
+  overflow: hidden scroll;
+  padding: 0;
+  border: 0;
+  z-index: 8;
+  overscroll-behavior: contain;
+}
+.dual-column-scrollbar > div {
+  width: 1px;
+  pointer-events: none;
+}
+.dual-column-selection {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.dual-column-selection > span {
+  position: absolute;
+  background: rgb(81 128 245 / 27%);
+}

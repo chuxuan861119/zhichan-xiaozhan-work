@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <VendorRoot>../vendor</VendorRoot>
+    <CadSource>$(VendorRoot)/ACadSharp-d7dc111023477d8a9fffc2153139459c95b4f345</CadSource>
+    <Utilities>$(VendorRoot)/CSUtilities-fdf1403ede6e3376a0baa1deac166cbe4d21262e</Utilities>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(CadSource)/src/ACadSharp/**/*.cs" Exclude="$(CadSource)/**/obj/**/*.cs;$(CadSource)/**/bin/**/*.cs" />
+    <None Include="$(CadSource)/LICENSE" Link="licenses/ACadSharp-MIT.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(Utilities)/LICENSE" Link="licenses/CSUtilities-MIT.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Import Project="$(Utilities)/CSMath/CSMath.projitems" />
+  <Import Project="$(Utilities)/CSUtilities/CSUtilities.projitems" />
+</Project>

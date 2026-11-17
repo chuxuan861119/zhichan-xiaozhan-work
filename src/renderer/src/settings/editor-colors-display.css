@@ -1,0 +1,62 @@
+/* Display-only overrides: never included in the export renderer or print media. */
+@media screen {
+  :root[data-editor-colors] .editor-workspace,
+  :root[data-editor-colors] .dual-document-workspace,
+  :root[data-editor-colors] .dual-document-pane {
+    --document-workspace-background: var(--editor-display-canvas);
+    background-color: var(--document-workspace-background);
+  }
+  :root[data-editor-colors] .dual-document-pane[data-active="false"],
+  :root[data-editor-colors] .dual-document-pane[data-active="false"] .editor-workspace {
+    --document-workspace-background: var(--editor-display-inactive-canvas);
+    --editor-display-canvas-ink: var(--editor-display-inactive-canvas-ink);
+  }
+  :root[data-editor-colors] .dual-document-pane,
+  :root[data-editor-colors] .dual-document-pane .editor-workspace {
+    transition: background-color var(--ui-motion-spatial, 400ms) ease-in-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :root[data-editor-colors] .dual-document-pane,
+    :root[data-editor-colors] .dual-document-pane .editor-workspace {
+      transition: none;
+    }
+  }
+  :root[data-editor-colors]
+    .editor-workspace
+    :is(
+      .editor-paper,
+      .patent-book-rich-text,
+      .drawing-page,
+      .drawings-editor,
+      .abstract-drawing-editor,
+      .drawing-pair-row,
+      .dual-column-paper-background
+    ) {
+    background-color: var(--editor-display-page);
+  }
+  :root[data-editor-colors] .editor-workspace .dual-column-layout .patent-book-rich-text {
+    background: transparent;
+  }
+  :root[data-editor-colors] .editor-workspace .drawing-page.is-file-drag-over {
+    background: #eff6ff;
+  }
+  :root[data-editor-colors]
+    .document-structure-ruler
+    :is(.document-structure-ruler__label, .document-structure-ruler__label--wide) {
+    color: var(--editor-display-canvas-ink);
+  }
+  :root[data-editor-colors] :is(.patent-global-function-rail, .assistant-side-panel) {
+    --assistant-panel-background: var(--editor-display-panel);
+    --assistant-panel-header-background: var(--editor-display-panel);
+    --assistant-panel-color: var(--editor-display-panel-ink);
+    --assistant-panel-heading: var(--editor-display-panel-ink);
+    --assistant-panel-kicker: var(--editor-display-panel-muted);
+    --assistant-panel-border: var(--editor-display-panel-line);
+    --assistant-panel-header-border: var(--editor-display-panel-line);
+    color: var(--editor-display-panel-ink);
+  }
+  :root[data-editor-colors] .assistant-side-panel {
+    background-color: var(--editor-display-panel);
+    border-color: var(--editor-display-panel-line);
+  }
+}

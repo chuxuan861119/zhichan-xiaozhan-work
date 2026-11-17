@@ -1,0 +1,26 @@
+.cad-label-keyword-prompt {
+  box-sizing: border-box;
+  padding: .35em;
+  font-family: var(--font-family, sans-serif);
+  font-size: inherit;
+  line-height: 1.5;
+  cursor: auto;
+}
+.drawing-workspace .cad-label-keyword-prompt input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 2.5em;
+  min-height: 0;
+  padding: .4em .7em;
+  border: .07em solid var(--editor-display-panel-line, #d4dce8);
+  border-radius: .6em;
+  background: var(--editor-display-panel-bg, #fff);
+  color: var(--text-primary, #202830);
+  box-shadow: 0 .15em .65em #172b4d1a;
+  font: inherit;
+  cursor: text;
+}
+.drawing-workspace .cad-label-keyword-prompt input::placeholder { color: #858b94; }
+.drawing-workspace .cad-label-keyword-prompt input:focus-visible { outline: .1em solid var(--rail-accent, #4285cc); outline-offset: 0; }
+.cad-label-keyword-prompt [role="alert"] { color: #c62828; font-size: .8em; }

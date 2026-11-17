@@ -1,0 +1,208 @@
+.reference-number-help {
+  width: 540px;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.reference-number-help .brand-corner {
+  overflow: visible;
+  width: 260px;
+  height: 180px;
+}
+.reference-number-help .brand-corner img {
+  top: -164px;
+  opacity: 0.16;
+}
+.reference-number-help .example-heading {
+  margin-top: 28px;
+}
+.reference-number-help .registry {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  color: #737a85;
+  font-size: 12px;
+  align-items: center;
+}
+.reference-number-help .registry span {
+  border: 1px solid #e4e8ee;
+  border-radius: 6px;
+  padding: 4px 9px;
+  background: #fff;
+  color: #535f6c;
+}
+.reference-number-help .sample {
+  background: #f6f8fa;
+  border: 1px solid #eceff3;
+  border-radius: 12px;
+  padding: 22px;
+  font-size: 15px;
+  line-height: 2;
+  color: #646e7a;
+}
+.reference-number-help .sample p {
+  margin: 0;
+}
+.reference-number-help .sample h4 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 13px;
+  color: #343b45;
+  font-weight: 600;
+}
+.reference-number-help .sample em {
+  font-style: normal;
+  color: #7c3aed;
+}
+.reference-number-help .sample-arrow {
+  text-align: center;
+  color: #8a98aa;
+  font-size: 22px;
+  line-height: 1;
+  margin: 10px 0;
+}
+.reference-number-help .sample-note {
+  font-size: 12px;
+  color: #737a85;
+  margin: 12px 0 0;
+}
+.reference-number-help .sample-note::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7c3aed;
+  margin-right: 7px;
+  vertical-align: middle;
+}
+.reference-number-help .usage {
+  margin: 24px 0 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #737a85;
+}
+.reference-number-help .usage strong {
+  color: #343b45;
+  font-weight: 600;
+}
+.reference-number-help .result {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #737a85;
+}
+.reference-number-help.compact-panel {
+  width: 360px;
+  padding: 22px;
+}
+.reference-number-help.compact-panel .brand-corner {
+  width: 76px;
+  height: 76px;
+}
+.reference-number-help.compact-panel .brand-corner img {
+  opacity: 0.8;
+}
+.reference-number-help {
+  width: 510px;
+  padding: 28px;
+}
+.reference-number-help .sample mark {
+  background: #e8efff;
+  color: inherit;
+  padding: 2px 3px;
+  border-radius: 3px;
+}
+.reference-number-help .sample b {
+  font-weight: 400;
+  color: #2563eb;
+}
+.reference-number-help .registry-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border: 1px solid #e4e9f0;
+  border-radius: 9px;
+  font-size: 12px;
+  color: #7b8797;
+}
+.reference-number-help .registry-result strong {
+  font-weight: 500;
+  color: #455d7d;
+}
+.reference-number-help .custom-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0;
+  color: #7b8797;
+  font-size: 12px;
+}
+.reference-number-help .custom-value strong {
+  font-size: 15px;
+  color: #455d7d;
+  font-weight: 500;
+}
+.reference-number-help .footnote {
+  color: #7b8797;
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 12px 0 0;
+}
+.reference-number-help .number-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+}
+.reference-number-help .number-comparison .sample {
+  padding: 20px 16px;
+}
+.reference-number-help .number-comparison .sample-arrow {
+  align-self: center;
+  margin: 0;
+}
+.reference-number-help .keyword-block {
+  border-radius: 0.34em;
+  background: #e5e7eb;
+  font-size: 0.9em;
+  padding: 0;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.reference-number-help .keyword-block.recent {
+  background: #dcfce7;
+}
+.reference-number-help .number-comparison .sample p {
+  color: #24272c;
+}
+.reference-number-help {
+  width: 650px;
+}
+@media (max-width: 700px) {
+  .reference-number-help .number-comparison {
+    grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+    gap: 5px;
+  }
+  .reference-number-help .number-comparison .sample {
+    padding: 16px 10px;
+  }
+}
+.reference-number-help .custom-comparison .custom-value {
+  padding: 12px 18px;
+  border: 1px solid #dfe8f5;
+  border-radius: 10px;
+  background: #f0f5fc;
+  color: #64758c;
+}
+.reference-number-help .custom-comparison .custom-value strong {
+  padding: 2px 10px;
+  border: 1px solid #d7e2f1;
+  border-radius: 6px;
+  background: #fff;
+  color: #355c91;
+}

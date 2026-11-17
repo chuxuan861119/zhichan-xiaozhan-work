@@ -1,0 +1,22 @@
+.reference-mark-panel .reference-mark-panel__add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  color: var(--editor-display-panel-accent, #4285cc);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+.reference-mark-panel .reference-mark-panel__add:hover:not(:disabled) {
+  background: var(--rail-hover, #edf3fb);
+}
+.reference-mark-add-form { display: grid; gap: 16px; }
+.reference-mark-add-form label { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; }
+.reference-mark-add-form input { width: 100%; min-width: 0; }
+.reference-mark-add-hint { margin: 0; color: var(--text-muted, #737780); font-size: 13px; line-height: 1.6; }
+.reference-mark-add-error { margin: 0; color: #c62828; font-size: 13px; }

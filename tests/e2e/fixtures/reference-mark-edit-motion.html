@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>附图标记编辑动画回归（合成数据）</title></head>
+  <body><div id="root"></div><script type="module">
+    import RefreshRuntime from "/@react-refresh";
+
+    RefreshRuntime.injectIntoGlobalHook(window);
+    window.$RefreshReg$ = () => {};
+    window.$RefreshSig$ = () => type => type;
+    window.__vite_plugin_react_preamble_installed__ = true;
+    await import("./reference-mark-edit-motion.tsx");
+  </script></body>
+</html>

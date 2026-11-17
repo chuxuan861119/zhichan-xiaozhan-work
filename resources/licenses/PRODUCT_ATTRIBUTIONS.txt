@@ -1,0 +1,7 @@
+This software is based in part on the work of the FreeType Team.
+FreeType is used through the bundled Sharp/libvips and CAD rendering components.
+The FreeType copyright notices and full license are included in THIRD_PARTY_NOTICES.txt
+and sharp-libvips/licenses/components/freetype/.
+
+This software is based in part on the work of the Independent JPEG Group.
+The corresponding JPEG library license notices are included in THIRD_PARTY_NOTICES.txt.

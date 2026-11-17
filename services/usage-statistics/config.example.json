@@ -1,0 +1,9 @@
+{
+  "databasePath": "/srv/usage-private/usage.sqlite",
+  "publicVersionGroups": [],
+  "releases": [],
+  "port": 8789,
+  "retentionMonths": 18,
+  "requestsPerMinute": 600,
+  "preciseReleases": []
+}

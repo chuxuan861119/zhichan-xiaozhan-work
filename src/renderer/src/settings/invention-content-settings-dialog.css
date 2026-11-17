@@ -1,0 +1,66 @@
+.invention-content-settings {
+  display: grid;
+  gap: 16px;
+  color: #334155;
+  font-size: 14px;
+}
+.invention-content-settings p {
+  margin: 0;
+  line-height: 1.65;
+}
+.invention-content-settings fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.invention-content-settings legend {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.invention-content-settings__choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.invention-content-settings__choices label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.invention-content-settings__choices label:has(:checked) {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+.invention-content-settings__custom {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.invention-content-settings__custom input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+}
+.invention-content-settings__preview {
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.invention-content-settings__preview span,
+.invention-content-settings__hint {
+  color: #64748b;
+  font-size: 12px;
+}
+.invention-content-settings__preview p {
+  margin-top: 6px;
+}

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>ACadSharp.Local</AssemblyName>
+    <LangVersion>preview</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <CadSource>$(VendorRoot)/ACadSharp-d7dc111023477d8a9fffc2153139459c95b4f345</CadSource>
+    <Utilities>$(VendorRoot)/CSUtilities-fdf1403ede6e3376a0baa1deac166cbe4d21262e</Utilities>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(CadSource)/src/ACadSharp/**/*.cs" Exclude="$(CadSource)/**/obj/**/*.cs;$(CadSource)/**/bin/**/*.cs;$(CadSource)/src/ACadSharp/Tables/Collections/Table.cs;$(CadSource)/src/ACadSharp/Objects/CadDictionary.cs" />
+    <Compile Include="patched/**/*.cs" />
+    <Compile Include="$(WorkbenchRoot)/tools/drawing-converter/reader-source/ReadOnlyDetailReference.cs" />
+    <Compile Include="$(WorkbenchRoot)/tools/drawing-converter/reader-source/DwgObjectReader.DetailReference.cs" />
+    <Compile Include="$(WorkbenchRoot)/tools/harmony-probe/cad-wasm/reader/ImportRemovalHandlers.cs" />
+    <None Include="$(CadSource)/LICENSE" Link="licenses/ACadSharp-MIT.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(Utilities)/LICENSE" Link="licenses/CSUtilities-MIT.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Import Project="$(Utilities)/CSMath/CSMath.projitems" />
+  <Import Project="$(Utilities)/CSUtilities/CSUtilities.projitems" />
+</Project>

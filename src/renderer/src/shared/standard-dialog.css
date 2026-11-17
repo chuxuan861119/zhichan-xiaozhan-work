@@ -1,0 +1,385 @@
+.standard-dialog-overlay {
+  --standard-dialog-overlay: rgb(15 23 42 / 38%);
+  --standard-dialog-surface: #ffffff;
+  --standard-dialog-border: #cbd5e1;
+  --standard-dialog-divider: #e2e8f0;
+  --standard-dialog-title: #172033;
+  --standard-dialog-text: #25324a;
+  --standard-dialog-muted: #65738a;
+  --standard-dialog-danger: #c92a2a;
+  --standard-dialog-radius: var(--ui-radius-window, 12px);
+  --standard-dialog-control-radius: 6px;
+  --standard-dialog-control-height: 34px;
+  --standard-dialog-safe-space: 24px;
+  --standard-dialog-header-padding: 12px 20px;
+  --standard-dialog-body-padding: 16px 20px;
+  --standard-dialog-footer-padding: 12px 20px;
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--standard-dialog-safe-space);
+  background: var(--standard-dialog-overlay);
+  animation: standard-dialog-overlay-in var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+.standard-dialog-overlay--modeless {
+  pointer-events: none;
+  background: transparent;
+}
+.standard-dialog-overlay--modeless > .standard-dialog {
+  pointer-events: auto;
+}
+
+.standard-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(var(--standard-dialog-width), calc(100vw - 2 * var(--standard-dialog-safe-space)));
+  max-height: min(
+    var(--standard-dialog-max-height, 640px),
+    calc(100dvh - 2 * var(--standard-dialog-safe-space))
+  );
+  overflow: hidden;
+  color: var(--standard-dialog-text);
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  background: var(--standard-dialog-surface);
+  border: 1px solid var(--ui-window-border, #d5d9e0);
+  border-radius: var(--standard-dialog-radius);
+  box-shadow: var(--ui-shadow-dialog, 0 10px 28px rgb(20 25 35 / 10%));
+  animation: standard-dialog-window-in var(--ui-motion-spatial, 400ms) ease-in-out;
+}
+
+.standard-dialog--s {
+  --standard-dialog-width: 420px;
+}
+
+.standard-dialog--m {
+  --standard-dialog-width: 560px;
+}
+
+.standard-dialog--l {
+  --standard-dialog-width: 840px;
+  --standard-dialog-max-height: 640px;
+}
+
+.standard-dialog--xl {
+  --standard-dialog-width: 1080px;
+  --standard-dialog-max-height: 720px;
+  height: min(720px, calc(100dvh - 2 * var(--standard-dialog-safe-space)));
+}
+
+.standard-dialog--resizable {
+  max-height: calc(100dvh - 2 * var(--standard-dialog-safe-space));
+}
+
+.standard-dialog__header {
+  min-height: 54px;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: var(--standard-dialog-header-padding);
+  background: #fff;
+  border-bottom: 1px solid var(--standard-dialog-divider);
+}
+
+.standard-dialog--movable .standard-dialog__header {
+  cursor: default;
+  user-select: none;
+}
+
+.standard-dialog .dialog-titlebar--draggable {
+  cursor: default;
+  user-select: none;
+}
+
+.standard-dialog--movable .standard-dialog__header button,
+.standard-dialog--movable .standard-dialog__header input,
+.standard-dialog--movable .standard-dialog__header textarea,
+.standard-dialog--movable .standard-dialog__header select {
+  cursor: default;
+  user-select: auto;
+}
+
+.standard-dialog__heading {
+  min-width: 0;
+}
+
+.standard-dialog__title {
+  margin: 0;
+  color: var(--standard-dialog-title);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.standard-dialog__subtitle {
+  margin: 3px 0 0;
+  color: var(--standard-dialog-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.standard-dialog__close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  padding: 0;
+  color: var(--standard-dialog-muted);
+  font:
+    400 22px / 28px system-ui,
+    sans-serif;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.standard-dialog__close:hover:not(:disabled) {
+  color: var(--standard-dialog-title);
+  background: #f1f4f8;
+}
+
+.standard-dialog__close:focus-visible {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 1px;
+}
+
+.standard-dialog__close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Keep workspace-wide button rules out of modal close controls. */
+button.standard-dialog__close.dialog-close-control,
+button.dialog-close-button.dialog-close-control {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  color: #65738a;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+button.standard-dialog__close.dialog-close-control:hover:not(:disabled),
+button.dialog-close-button.dialog-close-control:hover:not(:disabled) {
+  color: #334155;
+  background: #f1f4f8;
+  border-color: #cbd5e1;
+}
+
+button.standard-dialog__close.dialog-close-control:focus-visible,
+button.dialog-close-button.dialog-close-control:focus-visible {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 1px;
+}
+
+button.standard-dialog__close.dialog-close-control:disabled,
+button.dialog-close-button.dialog-close-control:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.dialog-close-control > .dialog-close-icon {
+  display: block;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  pointer-events: none;
+}
+
+.standard-dialog__body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: var(--standard-dialog-body-padding);
+  background: #fff;
+}
+
+/* Only dialog copy is normalized; document previews retain their own typography. */
+.standard-dialog__body > :where(p, ul, ol) {
+  margin-block: 0;
+  overflow-wrap: anywhere;
+}
+
+.standard-dialog__body > :where(p + p, p + ul, p + ol, ul + p, ol + p) {
+  margin-block-start: 12px;
+}
+
+.standard-dialog__body
+  :where(
+    input:not([type]),
+    input[type="text"],
+    input[type="number"],
+    input[type="search"],
+    input[type="password"],
+    select,
+    textarea
+  ) {
+  min-height: var(--standard-dialog-control-height);
+  padding: 6px 10px;
+  color: var(--standard-dialog-text);
+  font:
+    13px / 1.5 "Segoe UI",
+    "Microsoft YaHei UI",
+    sans-serif;
+  background: #fff;
+  border: 1px solid var(--standard-dialog-border);
+  border-radius: var(--standard-dialog-control-radius);
+}
+
+.standard-dialog__danger-message {
+  margin: 0;
+  color: var(--standard-dialog-danger);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.standard-dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 58px;
+  padding: var(--standard-dialog-footer-padding);
+  background: #fff;
+  border-top: 1px solid var(--standard-dialog-divider);
+}
+
+.standard-dialog__footer button {
+  min-width: 80px;
+  max-width: 100%;
+  min-height: var(--standard-dialog-control-height);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  color: #25344a;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--standard-dialog-control-radius);
+  transition:
+    color 120ms ease-in-out,
+    background-color 120ms ease-in-out,
+    border-color 120ms ease-in-out;
+}
+
+.standard-dialog__footer button:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.standard-dialog__footer button:focus-visible {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 1px;
+}
+
+.standard-dialog__footer .primary-button {
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.standard-dialog__footer .primary-button:hover:not(:disabled) {
+  color: #fff;
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.standard-dialog__footer .standard-dialog__danger-button {
+  color: #fff;
+  background: var(--standard-dialog-danger);
+  border-color: var(--standard-dialog-danger);
+}
+
+.standard-dialog__footer .standard-dialog__danger-button:hover:not(:disabled) {
+  color: #fff;
+  background: #b42318;
+  border-color: #b42318;
+}
+
+.standard-dialog__footer button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+@keyframes standard-dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes standard-dialog-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (max-width: 680px), (max-height: 600px) {
+  .standard-dialog-overlay {
+    --standard-dialog-safe-space: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .standard-dialog-overlay,
+  .standard-dialog {
+    animation: none;
+  }
+}
+
+.motion-presence[data-motion-state="closing"] > .standard-dialog-overlay,
+.standard-dialog-overlay[data-motion="exit"] {
+  pointer-events: none;
+  animation: standard-dialog-overlay-out var(--ui-motion-spatial, 400ms) ease-in-out forwards;
+}
+.motion-presence[data-motion-state="closing"] > .standard-dialog-overlay > .standard-dialog,
+.standard-dialog-overlay[data-motion="exit"] > .standard-dialog {
+  pointer-events: none;
+  animation: standard-dialog-window-out var(--ui-motion-spatial, 400ms) ease-in-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .standard-dialog-overlay[data-motion="exit"],
+  .standard-dialog-overlay[data-motion="exit"] > .standard-dialog {
+    animation: none;
+  }
+}
+
+@keyframes standard-dialog-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes standard-dialog-window-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

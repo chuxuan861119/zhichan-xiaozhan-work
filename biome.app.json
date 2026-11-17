@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["./biome.json"],
+  "files": {
+    "includes": [
+      "**",
+      "!out-*",
+      "!website/**",
+      "!docs/**",
+      "!build/icon.svg",
+      "!resources/drawio/app",
+      "!resources/ipc-data-center",
+      "!tests/fixtures/vector-image/patent-black-output.svg",
+      "!tests/fixtures/vector-image/render-reference.svg"
+    ]
+  }
+}

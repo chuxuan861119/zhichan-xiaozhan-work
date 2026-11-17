@@ -1,0 +1,463 @@
+.standard-dialog.legislation-dialog {
+  width: min(1180px, 90vw);
+  height: 88vh;
+  max-height: 96vh;
+  border: 0;
+  border-radius: var(--ui-radius-window, 12px);
+  overflow: hidden;
+  color: #202124;
+}
+.standard-dialog.legislation-dialog--expanded {
+  width: 97vw;
+  height: 96vh;
+}
+.legislation-dialog .standard-dialog__header {
+  gap: 10px;
+  padding: 20px 24px 14px;
+  background: #0369b3;
+  border-bottom-color: #0369b3;
+}
+.legislation-dialog button.legislation-dialog__maximize {
+  margin-left: auto;
+  background: transparent;
+  color: #ffffff;
+  box-shadow: none;
+  font:
+    13px / 1.5 "Segoe UI",
+    "Microsoft YaHei",
+    sans-serif;
+  cursor: pointer;
+}
+.legislation-dialog button.standard-dialog__close.dialog-close-control {
+  color: #ffffff;
+}
+.legislation-dialog button.legislation-dialog__maximize:hover:not(:disabled),
+.legislation-dialog button.standard-dialog__close.dialog-close-control:hover:not(:disabled) {
+  color: #ffffff;
+  background: #ffffff26;
+}
+.legislation-dialog button.legislation-dialog__maximize:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.legislation-dialog .standard-dialog__title {
+  font-size: 21px;
+  color: #ffffff;
+}
+.legislation-dialog .standard-dialog__subtitle {
+  font-size: 12px;
+  color: #e1effa;
+}
+.standard-dialog__body.legislation-reader {
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+.legislation-reader__shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.legislation-reader button,
+.legislation-reader input,
+.legislation-reader select {
+  font:
+    13px / 1.5 "Segoe UI",
+    "Microsoft YaHei",
+    sans-serif;
+}
+.legislation-reader button {
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 11px;
+  background: transparent;
+  color: #45484d;
+  cursor: pointer;
+}
+.legislation-reader button:hover {
+  background: #e9ebef;
+}
+.legislation-reader button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.legislation-reader button:focus-visible,
+.legislation-reader input:focus-visible,
+.legislation-reader select:focus-visible {
+  outline: 2px solid #4285e9;
+  outline-offset: 1px;
+}
+.legislation-reader__top,
+.legislation-reader__toolbar,
+.legislation-reader__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  flex: none;
+  background: #fafafa;
+}
+.legislation-reader__top {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.legislation-more {
+  position: relative;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.legislation-more__menu fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.legislation-more > button {
+  min-width: 36px;
+  font-size: 22px;
+  line-height: 20px;
+  letter-spacing: 2px;
+}
+.legislation-more > button[aria-pressed="true"] {
+  color: #0369b3;
+  background: #e5f1fa;
+}
+.legislation-more__menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(340px, 75vw);
+  max-height: min(480px, calc(100vh - 280px));
+  overflow-y: auto;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e4e6e9;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px #17203324;
+}
+.legislation-more__category {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  color: #7a818c;
+}
+.legislation-more__menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 6px;
+}
+.legislation-more__menu button[aria-checked="true"] {
+  color: #0369b3;
+  background: #edf5fc;
+}
+.legislation-reader__note {
+  flex: none;
+  margin: 0;
+  padding: 8px 24px;
+  background: #fff8e8;
+  color: #765c25;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.legislation-reader__tabs {
+  border: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  border-radius: 10px;
+  background: #eceef1;
+}
+.legislation-reader__tabs > button {
+  min-width: 94px;
+}
+.legislation-reader__tabs button[aria-pressed="true"] {
+  color: #202124;
+  background: #fff;
+  box-shadow: 0 1px 4px #00000018;
+  font-weight: 600;
+}
+.legislation-reader__toolbar {
+  border-bottom: 1px solid #e6e7ea;
+  padding-top: 0;
+}
+.legislation-reader__toolbar input {
+  min-width: 100px;
+  flex: 1;
+  border: 1px solid #e2e4e7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 7px 10px;
+}
+.legislation-reader select {
+  border: 1px solid #e2e4e7;
+  border-radius: 8px;
+  padding: 7px;
+  background: #fff;
+}
+.legislation-reader__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 24px;
+  font-size: 14px;
+  border-bottom: 1px solid #eceef0;
+}
+.legislation-reader__metadata span,
+.legislation-reader__footer {
+  font-size: 12px;
+  color: #71757e;
+}
+.legislation-reader__columns {
+  display: grid;
+  grid-template-columns: 205px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.legislation-reader__outline {
+  padding: 14px 10px;
+  overflow: auto;
+  border-right: 1px solid #eceef0;
+  background: #fafafa;
+}
+.legislation-reader__outline button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.legislation-reader__outline ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 9px;
+}
+.legislation-reader__text-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.legislation-reader__match-count {
+  flex: none;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #7b8089;
+}
+.legislation-reader__text {
+  overflow: auto;
+  padding: 0 32px 28px;
+  flex: 1;
+  line-height: 1.9;
+  color: #25272c;
+  user-select: text;
+}
+.legislation-reader__text p {
+  margin: 0 0 1em;
+  text-indent: 2em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.legislation-reader__text p.legislation-reader__chapter {
+  text-indent: 0;
+  text-align: center;
+  font-weight: 650;
+  padding-top: 14px;
+}
+.legislation-reader__text p[data-article-target="true"] {
+  background: #eaf4fc;
+  border-radius: 6px;
+}
+.legislation-common {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 18px 24px 24px;
+  background: #f5f6f8;
+}
+.legislation-common__note {
+  color: #687180;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0 0 14px;
+}
+.legislation-common__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.legislation-common__filters button[aria-pressed="true"] {
+  background: #e2eefb;
+  color: #075ea3;
+}
+.legislation-common__list {
+  columns: 3 320px;
+  column-gap: 14px;
+}
+.legislation-common__card {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 14px;
+  break-inside: avoid-column;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #e6e8ed;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.75;
+  user-select: text;
+}
+.legislation-common__card h3 {
+  margin: 0 0 5px;
+  font-size: 16px;
+}
+.legislation-common__citation {
+  font-size: 12px;
+  color: #0369b3;
+}
+.legislation-common__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.legislation-common__badge {
+  padding: 1px 7px;
+  border: 1px solid #0878d1;
+  border-radius: 6px;
+  background: #0878d1;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+.legislation-common__card p {
+  margin: 10px 0;
+  user-select: text;
+}
+.legislation-common__card details p {
+  text-indent: 2em;
+}
+.legislation-common__card summary {
+  cursor: pointer;
+  color: #526174;
+}
+.legislation-reader mark {
+  background: #fff0a8;
+  color: inherit;
+}
+.legislation-reader mark[data-current="true"] {
+  background: #ffc96b;
+}
+.legislation-reader__footer {
+  border-top: 1px solid #e6e7ea;
+  flex-wrap: wrap;
+}
+.legislation-reader__footer > span:first-child {
+  margin-right: auto;
+}
+.legislation-reader [role="alert"] {
+  color: #b42318;
+  font-size: 13px;
+  padding: 8px;
+}
+.legislation-reader__pdf-area {
+  position: relative;
+  min-width: 0;
+  background: #f0f1f3;
+}
+.legislation-reader__pagination {
+  position: absolute;
+  left: calc(50% + 102.5px);
+  transform: translateX(-50%);
+}
+.legislation-reader__footer--pdf {
+  position: relative;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+.legislation-common__card button.legislation-common__locate {
+  display: block;
+  margin-left: auto;
+  color: #5293c9;
+}
+@media (max-width: 1100px) {
+  .legislation-reader__footer--pdf .legislation-reader__pagination {
+    position: static;
+    transform: none;
+    margin-inline: auto;
+  }
+}
+.legislation-reader__page-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.legislation-reader__page-controls button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.legislation-reader__pdf-badge {
+  position: absolute;
+  top: 10px;
+  right: 22px;
+  z-index: 3;
+  pointer-events: none;
+  background: #fff;
+  color: #b42318;
+  border: 1px solid #e8cac7;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.legislation-reader__page-controls input {
+  width: 65px;
+  border: 1px solid #dadde2;
+  border-radius: 5px;
+}
+.legislation-reader__pdf-scroll {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+.legislation-reader__pdf-scroll .textLayer,
+.legislation-reader__pdf-scroll .textLayer span {
+  user-select: text;
+}
+.legislation-reader__pdf-area > [role="status"],
+.legislation-reader__pdf-area > [role="alert"] {
+  position: absolute;
+  top: 45px;
+  left: 15px;
+  z-index: 2;
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+}
+@media (max-width: 800px) {
+  .legislation-reader__columns {
+    grid-template-columns: 145px minmax(0, 1fr);
+  }
+  .legislation-reader__toolbar,
+  .legislation-reader__top {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .legislation-reader__text {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}

@@ -1,0 +1,114 @@
+.cad-properties-panel {
+  min-width: 0;
+  margin-top: 14px;
+  padding-top: 14px;
+  color: var(--rail-ink, var(--drawing-text, #202124));
+  border-top: 1px solid var(--rail-line, var(--drawing-border, #e8e8ee));
+}
+
+.cad-properties-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cad-properties-heading h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.cad-properties-heading > span {
+  color: var(--rail-muted, var(--drawing-secondary, #727783));
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cad-properties-form {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.cad-properties-panel .cad-property-field {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.8fr) minmax(0, 1.4fr);
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cad-properties-panel .cad-property-field--text {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.cad-properties-panel .cad-property-field :is(input, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 8px;
+  color: inherit;
+  background: var(--rail-surface, transparent);
+  border: 1px solid var(--rail-line, var(--drawing-border, #e8e8ee));
+  border-radius: 7px;
+  font: inherit;
+  user-select: text;
+}
+
+.cad-properties-panel .cad-property-field textarea {
+  max-height: 144px;
+  resize: vertical;
+}
+
+.cad-property-field :is(input, textarea)::placeholder {
+  color: var(--rail-muted, var(--drawing-secondary, #727783));
+}
+
+.cad-properties-panel :is(input, textarea, button):focus-visible {
+  outline: 2px solid var(--rail-accent, var(--drawing-accent, #0071e3));
+  outline-offset: 2px;
+}
+
+.cad-properties-panel .cad-properties-apply,
+.patent-global-function-rail .cad-properties-panel .cad-properties-apply {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 10px;
+  color: var(--rail-accent, var(--drawing-accent, #0071e3));
+  background: color-mix(in srgb, var(--rail-accent, #0071e3) 9%, transparent);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cad-properties-panel .cad-properties-apply:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--rail-accent, #0071e3) 15%, transparent);
+}
+
+.cad-properties-panel :is(input, textarea, button):disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cad-properties-panel :is(.cad-property-note, .cad-property-error) {
+  margin: 0;
+  color: var(--rail-muted, var(--drawing-secondary, #727783));
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.cad-properties-panel .cad-property-field [aria-invalid="true"] {
+  border-color: var(--rail-accent, var(--drawing-accent, #0071e3));
+}

@@ -1,0 +1,175 @@
+{
+  "upstream": {
+    "repository": "https://github.com/jgraph/drawio",
+    "tag": "v30.0.4",
+    "commit": "88ee1f5ab4d40603a8f3aaa0d9d6dc3794c6b3f0",
+    "license": "Apache-2.0"
+  },
+  "files": [
+    {
+      "path": "app/adapter.html",
+      "bytes": 304,
+      "sha256": "c40276fc49245ec7c35e6166824e2ffaa402add84931ede0a559e38c06e31fec"
+    },
+    {
+      "path": "app/adapter.js",
+      "bytes": 18355,
+      "sha256": "28df07e6097e0a637d60d9497aa5c5b9d112a1b98be33cdb82f193554a9ae303"
+    },
+    {
+      "path": "app/circuit-component-policy.js",
+      "bytes": 8111,
+      "sha256": "37f98d4d144e1dc05a6c9b2a28d4e6063e383f5ce555f8ad5e06dcd0b38332f7"
+    },
+    {
+      "path": "app/circuit-domain.js",
+      "bytes": 3739,
+      "sha256": "2c845baa11f0f73eeb7849b7e9e148e7c05f288e668997cf434c6b96d526038c"
+    },
+    {
+      "path": "app/circuit-quick-wiring.js",
+      "bytes": 16413,
+      "sha256": "e6c5a665c19cf1d86c03ad6f3266fcd1d312c6e2f4cc5570910c3e9757791563"
+    },
+    {
+      "path": "app/drawing-tools.js",
+      "bytes": 11296,
+      "sha256": "ce8348d34f0cb8c9c284c08356a9940b9195516741fa8a5750530f7de1bdfdff"
+    },
+    {
+      "path": "app/embed-bridge.js",
+      "bytes": 35045,
+      "sha256": "3c9456f4ac6e3967a534e7bde7095f711b729d792e26bc00726eea1bf920eaf6"
+    },
+    {
+      "path": "app/embed-config.js",
+      "bytes": 174,
+      "sha256": "1080f8fb29bffb03828574b8063fe54d027c70ae10108d417acaa417fa820b0a"
+    },
+    {
+      "path": "app/embed.html",
+      "bytes": 2779,
+      "sha256": "1e755345d0b06e961f489b083bdc1d4a978884b5dfbd6f01b0ceb5a18eabd8ba"
+    },
+    {
+      "path": "app/index.html",
+      "bytes": 2514,
+      "sha256": "317d1b5d3c415f3a2b04b978f6e60021f33a14686bb92f9668c9ed5fca60bb14"
+    },
+    {
+      "path": "app/js/app.min.js",
+      "bytes": 9329374,
+      "sha256": "b5ee385679b095cc171c31253440b8a7bb2ee77b875225b472ae3779544fd163"
+    },
+    {
+      "path": "app/js/bootstrap.js",
+      "bytes": 10221,
+      "sha256": "68e61f48dacf1494ad7011a8a1d941fb525df78d8ecaf6b6cc6855cf492cd6b9"
+    },
+    {
+      "path": "app/js/extensions.min.js",
+      "bytes": 4787545,
+      "sha256": "e1a4a9ee716a9a5a26988c2230c9982a7c331402a27122f6643c5d787ba3f2f3"
+    },
+    {
+      "path": "app/js/main.js",
+      "bytes": 469,
+      "sha256": "38abfb50eb05b41965e6f59cd5b6cfacd7d27fdd3bc47443996ea9e7afe07550"
+    },
+    {
+      "path": "app/js/PostConfig.js",
+      "bytes": 184,
+      "sha256": "f2d23f527927099521932e01dc2b18b9e683eb7cdf6646802e645b2d2d7a620b"
+    },
+    {
+      "path": "app/js/PreConfig.js",
+      "bytes": 852,
+      "sha256": "b1a8e4b3c9a269e30d921638b7c21d5e57d7a6f51b6ff6cc21b34e93b1061117"
+    },
+    {
+      "path": "app/js/shapes-14-6-5.min.js",
+      "bytes": 1445428,
+      "sha256": "face6a73a0b10c9f69ab4bffce53555c612a7538a258f129b9280b6cb321071a"
+    },
+    {
+      "path": "app/js/stencils.min.js",
+      "bytes": 7585050,
+      "sha256": "d16deb57957c248db64483071d4d43ed9c6e07de0257bb90ce4614c265e3d774"
+    },
+    {
+      "path": "app/mxgraph/css/common.css",
+      "bytes": 3696,
+      "sha256": "95710454db13cc76e51a84eb80d212174b941e7d60fc3c65a8e93e31a6e68b14"
+    },
+    {
+      "path": "app/patent-localization.js",
+      "bytes": 103742,
+      "sha256": "3397bc65e2e1936f6913c55a1e2be17589b4eadf75374dba9105014123c08b35"
+    },
+    {
+      "path": "app/patent-toolbar.css",
+      "bytes": 4711,
+      "sha256": "739e985e6fa8fca9b5d3575d35b3eb603c44f9ebedfe5fe83c7a2fe8adf87738"
+    },
+    {
+      "path": "app/resources/dia_zh.txt",
+      "bytes": 50995,
+      "sha256": "ba37445e8b8dd3e6d951fd5e0f192cd4cc23107a989771ab62e87271a1e9b407"
+    },
+    {
+      "path": "app/resources/dia.txt",
+      "bytes": 53325,
+      "sha256": "b58ba9a6750a5df7d374cafec61c89a29c3ea0a21dfbd1ba358d3aa0dfe7bed6"
+    },
+    {
+      "path": "app/resources/patent_zh.txt",
+      "bytes": 49727,
+      "sha256": "da58be0d6b6153c9e9d80e2b27c6d8e9ee9b64b4a35472956a5b4412e570b157"
+    },
+    {
+      "path": "app/stencils/arrows.xml",
+      "bytes": 29269,
+      "sha256": "10f898401fa8cac6164b031b75a66580a8b2a1fb79070f69fbd62510ac6b0eaa"
+    },
+    {
+      "path": "app/stencils/basic.xml",
+      "bytes": 44951,
+      "sha256": "6b27bf419817fdb40d0c4e3baf8db98fa405413225accf188449d469ad7dd4a9"
+    },
+    {
+      "path": "app/stencils/bpmn.xml",
+      "bytes": 44822,
+      "sha256": "1acea101b557e4657ea78fee2904122b51f2efb1a4c27614651923326db8519c"
+    },
+    {
+      "path": "app/stencils/flowchart.xml",
+      "bytes": 32497,
+      "sha256": "c68fcc977ac82bd3ccbee79223a4a6a37af3c6068eab25aac2d3803a30076b9a"
+    },
+    {
+      "path": "app/styles/grapheditor.css",
+      "bytes": 62705,
+      "sha256": "05b11d7e21ed5b32ab66555fbd37ab57a7f4fe41f0d6f08b523ca56ad7b72c11"
+    },
+    {
+      "path": "app/styles/high-contrast.css",
+      "bytes": 2980,
+      "sha256": "f0dde60cb72e43f25b2a0a5c8fac4dcd04173f9ca1f5f710d9008e4f229bf427"
+    },
+    {
+      "path": "templates/patent-basic-flowchart.drawio",
+      "bytes": 168,
+      "sha256": "9f4848fde1df6584700510e2daa22d8b17a319245d93360b11afb68e6ce57a20"
+    },
+    {
+      "path": "templates/patent-method-flow.drawio",
+      "bytes": 168,
+      "sha256": "0a5a0334a522d171fceafedd0f8b21e26e6476878b4dfdea95adcd3730637cf9"
+    },
+    {
+      "path": "templates/patent-system-flow.drawio",
+      "bytes": 168,
+      "sha256": "cf4b771e968155234202b19ab4b4e0d8aec3e329c11d6c439c017c42828f1450"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="800" viewBox="0 0 560 400">
+  <title>知产小栈Work 安装指引</title>
+  <rect width="560" height="400" fill="#f7f9fc"/>
+  <g font-family="PingFang SC,Helvetica,Arial,sans-serif" text-anchor="middle">
+    <text x="280" y="52" font-size="23" font-weight="600" fill="#17233b">知产小栈Work</text>
+    <text x="280" y="90" font-size="16" fill="#536078">双击左侧软件，选择“安装并打开”</text>
+    <text x="280" y="330" font-size="15" fill="#17233b">也可以将软件拖到右侧“应用程序”</text>
+    <text x="280" y="360" font-size="12" fill="#69768c">首次打开可保留在 Dock；拖入安装后请从应用程序中打开</text>
+  </g>
+  <path d="M248 204h64m-14-14 14 14-14 14" fill="none" stroke="#99aac4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,91 @@
+{
+  "pyodide": "0.29.3",
+  "ezdxf": "1.4.4",
+  "files": {
+    "pyodide.mjs": "23213d27e9dacbda6f25f955fb38dabfc40ada082c04ee253047ea5dddcaa3b5",
+    "pyodide.asm.js": "1263f02b5b26099b96112378156f242dd98b39a8201ba7765e5fe3d455c5ce91",
+    "pyodide.asm.wasm": "e2f4ee75b325e35eb31bfb8c613d4dd5098f5502c156a97847686875b5025480",
+    "python_stdlib.zip": "4298b6ee445cb724c3973437da47789752b9e6ff4e26619026b283ec801fc46b",
+    "package.json": "81f7cf8ee62633854d610a040efe15d3f9e80cfc78fbc32426860419b8712924",
+    "numpy-2.2.5-cp313-cp313-pyodide_2025_0_wasm32.whl": "6eaab6a7bb658d71ebe702911a3deab715323642462eb41b65565ca6a7cc23f1",
+    "pillow-11.3.0-cp313-cp313-pyodide_2025_0_wasm32.whl": "7e1168616481f685f277d7fad1d197f3a625540542a2cd292cdc8958ab083d6e",
+    "fonttools-4.56.0-py3-none-any.whl": "9d6518c8ad4d88019bc72045108eca154301014215222408aa047cf4955c726d",
+    "pyparsing-3.2.1-py3-none-any.whl": "8f314b856e7e87cb3a426ce4db341308199157f6a757256e215e4d418e216d86",
+    "typing_extensions-4.15.0-py3-none-any.whl": "b57583f623dd3df72e6ace8a4061c3e4f0683755165ef73b4cd44ac3df92ddb9",
+    "ezdxf-1.4.4-py3-none-any.whl": "666edda631ba717270293b734f5d58dd97a1d1aba4787187f09d0cc584645865"
+  },
+  "packages": {
+    "numpy": {
+      "depends": [],
+      "file_name": "numpy-2.2.5-cp313-cp313-pyodide_2025_0_wasm32.whl",
+      "imports": ["numpy"],
+      "install_dir": "site",
+      "name": "numpy",
+      "package_type": "package",
+      "sha256": "6eaab6a7bb658d71ebe702911a3deab715323642462eb41b65565ca6a7cc23f1",
+      "unvendored_tests": false,
+      "version": "2.2.5"
+    },
+    "pillow": {
+      "depends": [],
+      "file_name": "pillow-11.3.0-cp313-cp313-pyodide_2025_0_wasm32.whl",
+      "imports": ["PIL"],
+      "install_dir": "site",
+      "name": "Pillow",
+      "package_type": "package",
+      "sha256": "7e1168616481f685f277d7fad1d197f3a625540542a2cd292cdc8958ab083d6e",
+      "unvendored_tests": false,
+      "version": "11.3.0"
+    },
+    "fonttools": {
+      "depends": [],
+      "file_name": "fonttools-4.56.0-py3-none-any.whl",
+      "imports": ["fontTools"],
+      "install_dir": "site",
+      "name": "fonttools",
+      "package_type": "package",
+      "sha256": "9d6518c8ad4d88019bc72045108eca154301014215222408aa047cf4955c726d",
+      "unvendored_tests": false,
+      "version": "4.56.0"
+    },
+    "pyparsing": {
+      "depends": [],
+      "file_name": "pyparsing-3.2.1-py3-none-any.whl",
+      "imports": ["pyparsing"],
+      "install_dir": "site",
+      "name": "pyparsing",
+      "package_type": "package",
+      "sha256": "8f314b856e7e87cb3a426ce4db341308199157f6a757256e215e4d418e216d86",
+      "unvendored_tests": false,
+      "version": "3.2.1"
+    },
+    "typing-extensions": {
+      "depends": [],
+      "file_name": "typing_extensions-4.15.0-py3-none-any.whl",
+      "imports": ["typing_extensions"],
+      "install_dir": "site",
+      "name": "typing-extensions",
+      "package_type": "package",
+      "sha256": "b57583f623dd3df72e6ace8a4061c3e4f0683755165ef73b4cd44ac3df92ddb9",
+      "unvendored_tests": false,
+      "version": "4.15.0"
+    },
+    "ezdxf": {
+      "name": "ezdxf",
+      "version": "1.4.4",
+      "file_name": "ezdxf-1.4.4-py3-none-any.whl",
+      "sha256": "666edda631ba717270293b734f5d58dd97a1d1aba4787187f09d0cc584645865",
+      "imports": ["ezdxf"],
+      "depends": ["numpy", "fonttools", "pyparsing", "typing-extensions"],
+      "install_dir": "site",
+      "package_type": "package"
+    }
+  },
+  "info": {
+    "abi_version": "2025_0",
+    "arch": "wasm32",
+    "platform": "emscripten_4_0_9",
+    "python": "3.13.2",
+    "version": "0.28.0.dev0"
+  }
+}

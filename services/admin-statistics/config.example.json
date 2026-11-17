@@ -1,0 +1,15 @@
+{
+  "privateDirectory": "/var/lib/zcxzz-admin",
+  "trafficPath": "/var/lib/zcxzz-admin/traffic.json",
+  "databasePath": "/var/lib/zcxzz-admin/usage.sqlite",
+  "assetsDirectory": "/opt/zcxzz-statistics/current/public",
+  "origin": "https://zcxzz.cn",
+  "port": 8790,
+  "usagePort": 8789,
+  "publicVersionGroups": [],
+  "releases": [],
+  "retentionMonths": 18,
+  "clientReleaseActive": false,
+  "snapshotView": "releases",
+  "preciseReleases": []
+}

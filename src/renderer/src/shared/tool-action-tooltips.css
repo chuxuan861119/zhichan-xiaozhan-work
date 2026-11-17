@@ -1,0 +1,41 @@
+.tool-action-tooltip {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  display: grid;
+  gap: 6px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--ui-radius-window, 12px);
+  background: #fff;
+  color: #243247;
+  box-shadow: 0 4px 16px #0f172a26;
+  font:
+    13px / 1.5 "Microsoft YaHei",
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.tool-action-tooltip__description {
+  font-weight: 500;
+}
+.tool-action-tooltip__shortcut {
+  color: #64748b;
+  font-size: 12px;
+}
+.tool-action-tooltip kbd {
+  font: inherit;
+  color: #475569;
+}
+
+.tool-action-tooltip--compact {
+  padding: 6px 10px;
+  border-radius: var(--ui-radius-control, 6px);
+  background: #fdfdfd;
+  color: #334155;
+  box-shadow: 0 3px 12px rgb(15 23 42 / 14%);
+  font-size: 12px;
+}

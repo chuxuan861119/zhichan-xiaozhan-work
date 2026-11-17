@@ -1,0 +1,184 @@
+.patent-folder {
+  width: min(880px, calc(100vw - 40px));
+}
+.patent-folder .standard-dialog__header {
+  min-height: 44px;
+  padding: 6px 20px;
+}
+.patent-folder .standard-dialog__heading {
+  flex: 1;
+}
+.patent-folder .standard-dialog__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.patent-folder__body {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: min(400px, 50vh);
+}
+.patent-folder__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--ui-border, #e4e8ee);
+  color: var(--ui-text-muted, #748095);
+  font-size: 13px;
+}
+.patent-folder__toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ui-text, #25364d);
+}
+.patent-folder__files {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 2px;
+  padding: 6px 12px 12px;
+  overflow: auto;
+  user-select: none;
+}
+.patent-folder__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px 76px;
+  gap: 16px;
+  padding: 10px 25px 8px 61px;
+  color: var(--ui-text-muted, #748095);
+  font-size: 12px;
+}
+.patent-folder__toolbar,
+.patent-folder__columns {
+  flex-shrink: 0;
+}
+.patent-folder__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px;
+  gap: 8px;
+  align-items: center;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+.patent-folder__row:hover {
+  background: #f4f6f9;
+}
+.patent-folder__row[data-selected="true"] {
+  background: #edf4ff;
+  border-color: #bdd3f5;
+}
+.patent-folder__row-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 8px;
+  margin-right: 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #315f9e;
+  font-size: 12px;
+}
+.patent-folder__row-export:hover:not(:disabled) {
+  background: #e5edf9;
+}
+.patent-folder__selection-rectangle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  border: 1px solid #81a9e7;
+  background: rgb(66 130 223 / 12%);
+}
+.patent-folder__file {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 132px;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 16px;
+  min-height: 42px;
+  padding: 8px 12px;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--ui-text, #25364d);
+  min-width: 0;
+  cursor: default;
+}
+.patent-folder__file:hover {
+  background: transparent;
+}
+.patent-folder__file[aria-selected="true"] {
+  background: transparent;
+  border-color: transparent;
+}
+.patent-folder__file:focus-visible {
+  outline: 2px solid #6697df;
+  outline-offset: 2px;
+}
+.patent-folder__icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: #4977b8;
+}
+.patent-folder__file--flowchart .patent-folder__icon {
+  color: #668a77;
+}
+.patent-folder__file--drawing .patent-folder__icon {
+  color: #918067;
+}
+.patent-folder__name {
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.patent-folder__file small,
+.patent-folder__hint,
+.patent-folder__status {
+  color: var(--ui-text-muted, #748095);
+  font-size: 12px;
+}
+.patent-folder__status.is-success {
+  color: #28704e;
+}
+.patent-folder__status {
+  margin-right: auto;
+}
+.patent-folder__format {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.patent-folder__format select {
+  padding: 6px 10px;
+  border: 1px solid #dbe1ea;
+  border-radius: 7px;
+  background: white;
+}
+.patent-folder .standard-dialog__footer {
+  flex-wrap: wrap;
+}
+@media (max-width: 560px) {
+  .patent-folder__file {
+    grid-template-columns: 22px minmax(0, 1fr) 100px;
+    gap: 10px;
+  }
+  .patent-folder__columns {
+    grid-template-columns: minmax(0, 1fr) 100px 76px;
+    gap: 10px;
+    padding-left: 57px;
+  }
+}

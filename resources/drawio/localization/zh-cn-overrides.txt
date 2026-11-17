@@ -1,0 +1,10 @@
+# Patent Workbench supplemental Simplified Chinese terminology.
+# Product and file-format names intentionally remain draw.io, SVG, PDF, PNG,
+# JPEG, and XML as supplied by the official resource.
+
+diagram=流程图
+drawing=流程图{1}
+moreShapes=扩展图库
+smoothing=平滑
+uml=统一建模语言
+url=网址

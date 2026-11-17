@@ -1,0 +1,91 @@
+.paste-formatting-options {
+  position: fixed;
+  right: 24px;
+  bottom: 44px;
+  z-index: var(--ui-layer-popover, 40);
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1px solid #dfe5ed;
+  border-radius: var(--ui-radius-window, 12px);
+  background: #fff;
+  color: #263449;
+  box-shadow: 0 8px 30px #24344924;
+  font:
+    13px / 1.5 "Microsoft YaHei",
+    sans-serif;
+}
+.paste-formatting-options header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.paste-formatting-options button {
+  cursor: pointer;
+  font: inherit;
+  border: 1px solid #dfe5ed;
+  border-radius: 7px;
+  padding: 7px 10px;
+  background: #fff;
+  color: inherit;
+}
+.paste-formatting-options header button {
+  border: 0;
+  padding: 0 8px;
+  font-size: 20px;
+}
+.paste-formatting-choices {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.paste-formatting-choices button[aria-pressed="true"] {
+  color: #245eda;
+  background: #eef4ff;
+  border-color: #bad0fc;
+}
+.paste-formatting-options details {
+  margin-top: 10px;
+  color: #866126;
+}
+.paste-formatting-options summary {
+  cursor: pointer;
+}
+.paste-formatting-options ul {
+  padding-left: 20px;
+  margin: 8px 0 0;
+}
+
+.paste-formatting-options--rail {
+  position: static;
+  width: 100%;
+  max-height: none;
+  box-shadow: none;
+  border-radius: 8px;
+  padding: 12px;
+  order: -1;
+}
+.paste-formatting-options--rail .paste-formatting-choices {
+  flex-direction: column;
+}
+.patent-function-rail-scope:has(.paste-formatting-options--rail) [aria-label="展开功能栏"]::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  animation: paste-rail-notice 5s forwards;
+}
+@keyframes paste-rail-notice {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

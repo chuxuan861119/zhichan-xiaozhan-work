@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
+    <title>IPC数据中心</title>
+    
+    <!-- 本地依赖，避免弱网或离线时样式丢失 -->
+    
+    
+    
+    
+    
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    
+    
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .input-focus {
+                @apply focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none;
+            }
+            .no-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .no-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .pb-safe {
+                padding-bottom: env(safe-area-inset-bottom, 20px);
+            }
+            .modal-content {
+                content-visibility: auto;
+                contain-intrinsic-size: 0 500px;
+            }
+            .share-checkbox {
+                @apply transition-all duration-200;
+            }
+            .province-card {
+                @apply transition-all duration-200 cursor-pointer;
+            }
+            .province-card:active {
+                @apply scale-[0.99];
+            }
+            .selection-overlay {
+                @apply pointer-events-none;
+            }
+        }
+        
+        /* 动画定义 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+        .animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    </style>
+<link rel="stylesheet" href="desktop.css"><link rel="stylesheet" href="help-guide.css"><link rel="stylesheet" href="workbench-ui.css"><script src="workbench-ui.js"></script></head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <!-- 输入区域 -->
+    <div id="topControlPanel" class="fixed top-16 left-0 right-0 bg-white/80 backdrop-blur-md shadow-sm z-30 border-b border-gray-100">
+        <div class="container mx-auto px-4 py-2.5">
+            <div class="flex items-center space-x-3 mb-2.5">
+                <div class="flex-1 relative group">
+                    <input type="text" id="classificationInput" placeholder="输入分类号或关键词" class="w-full py-2.5 px-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-800 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-[#2046B5] focus:shadow-[0_0_0_4px_rgba(32,70,181,0.1)] focus:outline-none hover:border-gray-300" autocomplete="off" spellcheck="false" aria-label="分类号或关键词">
+                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        <i class="fa fa-keyboard-o"></i>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col items-center">
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-0">当前状态</span>
+                    <div id="statusDisplay" class="text-[11px] text-[#2046B5] font-semibold bg-blue-50/50 px-2 py-0.5 rounded-md whitespace-nowrap min-w-[76px] text-center transition-all duration-300">
+                        知产小栈
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex space-x-2">
+                <button id="queryIPCBtn" class="flex-1 bg-white text-[#2046B5] border border-[#2046B5]/30 py-2 px-2 rounded-xl font-medium text-[11px] whitespace-nowrap transition-all duration-200 ease-out hover:bg-[#2046B5] hover:text-white hover:border-[#2046B5] hover:shadow-md hover:shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 relative overflow-hidden group">
+                    <span class="relative z-10 flex items-center justify-center">
+                        <i class="fa fa-search mr-1 text-xs group-hover:animate-pulse"></i>查询IPC
+                    </span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#2046B5] to-[#3572E5] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+                
+                <button id="preExamBtn" class="flex-1 bg-white text-[#2046B5] border border-[#2046B5]/30 py-2 px-2 rounded-xl font-medium text-[11px] whitespace-nowrap transition-all duration-200 ease-out hover:bg-[#2046B5] hover:text-white hover:border-[#2046B5] hover:shadow-md hover:shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 relative overflow-hidden group">
+                    <span class="relative z-10 flex items-center justify-center">
+                        <i class="fa fa-shield mr-1 text-xs group-hover:animate-pulse"></i>预审
+                    </span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#2046B5] to-[#3572E5] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+                
+                <button id="priorityBtn" class="flex-1 bg-white text-[#2046B5] border border-[#2046B5]/30 py-2 px-2 rounded-xl font-medium text-[11px] whitespace-nowrap transition-all duration-200 ease-out hover:bg-[#2046B5] hover:text-white hover:border-[#2046B5] hover:shadow-md hover:shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 relative overflow-hidden group">
+                    <span class="relative z-10 flex items-center justify-center">
+                        <i class="fa fa-star mr-1 text-xs group-hover:animate-pulse"></i>优先审查
+                    </span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#2046B5] to-[#3572E5] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main id="mainContent" class="container mx-auto px-4 pt-0 pb-20">
+        <div id="contentArea" class="mt-5 bg-white rounded-xl shadow-sm p-4 min-h-[200px] mb-4">
+            <div class="ipc-home flex flex-col items-center justify-center py-10 text-center">
+                <div class="w-20 h-20 mb-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center shadow-sm border border-blue-100">
+                    <i class="fa fa-search text-3xl text-[#2046B5] opacity-80"></i>
+                </div>
+                <h3 class="text-base font-semibold text-gray-800 mb-3">开始查询专利分类号</h3>
+                <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 mb-4 border border-blue-100/50 w-full max-w-sm">
+                    <div class="flex items-center justify-center space-x-2 mb-2">
+                        <span class="text-sm text-gray-600">输入分类号</span>
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">如 B01D</span>
+                    </div>
+                    <div class="flex items-center justify-center space-x-2">
+                        <span class="text-sm text-gray-600">或关键词</span>
+                        <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">如 人工智能</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-center space-x-3 mb-3">
+                    <div class="flex flex-col items-center space-y-1">
+                        <div class="w-10 h-10 rounded-full bg-[#2046B5]/10 flex items-center justify-center border border-[#2046B5]/20">
+                            <i class="fa fa-search text-[#2046B5] text-sm"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">查询IPC</span>
+                    </div>
+                    <div class="w-8 h-px bg-gray-200"></div>
+                    <div class="flex flex-col items-center space-y-1">
+                        <div class="w-10 h-10 rounded-full bg-[#2046B5]/10 flex items-center justify-center border border-[#2046B5]/20">
+                            <i class="fa fa-shield text-[#2046B5] text-sm"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">预审</span>
+                    </div>
+                    <div class="w-8 h-px bg-gray-200"></div>
+                    <div class="flex flex-col items-center space-y-1">
+                        <div class="w-10 h-10 rounded-full bg-[#2046B5]/10 flex items-center justify-center border border-[#2046B5]/20">
+                            <i class="fa fa-star text-[#2046B5] text-sm"></i>
+                        </div>
+                        <span class="text-[10px] text-gray-500">优先审查</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">点击上方按钮进行不同类型的搜索</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 右下角悬浮按钮组 -->
+    <div id="floatingButtons" class="fixed bottom-20 right-4 flex flex-col items-end space-y-3 z-40 hidden">
+        <button id="shareReportBtn" onclick="toggleShareMode()" class="w-12 h-12 bg-gradient-to-r from-[#2046B5] to-[#3572E5] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-110 active:scale-95 hidden" title="生成分享报告">
+            <i class="fa fa-share-alt text-lg"></i>
+        </button>
+        
+        
+        <div class="flex items-center space-x-3">
+            <button id="exactMatchBtn" class="bg-gradient-to-r from-[#2046B5] to-[#3572E5] text-white px-4 py-2.5 rounded-lg shadow-lg font-medium text-xs transition-all duration-300 hover:shadow-xl active:scale-95 hidden">
+                <i class="fa fa-bullseye mr-1"></i>精准检索
+            </button>
+            <button id="backToTopBtn" onclick="scrollToTop()" class="w-12 h-12 bg-gradient-to-r from-[#2046B5] to-[#3572E5] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-110 active:scale-95" title="回到顶部">
+                <i class="fa fa-arrow-up text-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    
+    
+
+    <div id="preexamDataNoticeModal" class="preexam-data-notice modal-content hidden" role="dialog" aria-modal="true" aria-labelledby="preexamDataNoticeTitle" aria-describedby="preexamDataNoticeDescription">
+        <div class="preexam-data-notice-card">
+            <h3 id="preexamDataNoticeTitle">预审数据说明</h3>
+            <div id="preexamDataNoticeDescription">
+                <p>预审数据库正在持续完善，我们会持续跟进各保护中心的调整，尽量保持数据库处于最新状态。目前，部分保护中心的分类号尚未收录，已有数据也可能未涵盖最新调整。</p>
+                <p>如果您有尚未收录的分类号文件或更新版本，欢迎联系我们分享。我们会在核对后补充更新，感谢您的支持。</p>
+            </div>
+            <button id="acknowledgePreexamDataNotice" type="button">继续使用</button>
+        </div>
+    </div>
+
+    <!-- 保护中心选择弹窗 -->
+    <div id="protectionCenterModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden modal-content" onclick="if(event.target === this) closeProtectionCenterModal()">
+        <div class="bg-white rounded-xl max-w-[90%] w-[400px] max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <h3 class="text-lg font-semibold text-gray-800">选择保护中心</h3>
+                    <button onclick="openRegionSettingsModal()" class="text-gray-500 hover:text-[#2046B5] transition-colors" title="设置默认地区">
+                        <i class="fa fa-cog text-lg"></i>
+                    </button>
+                </div>
+                <button onclick="closeProtectionCenterModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4 overflow-y-auto flex-1" id="protectionCenterContent"></div>
+            <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-xl">
+                <button onclick="closeProtectionCenterModal()" class="w-full bg-[#2046B5] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#1a3a95] transition-colors">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关键词搜索弹窗 -->
+    <div id="keywordSearchModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden modal-content" onclick="if(event.target === this) closeKeywordSearchModal()">
+        <div class="bg-white rounded-xl max-w-[90%] w-[500px] max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="border-b border-gray-200 px-5 py-3 flex items-center justify-between bg-gradient-to-r from-[#2046B5] to-[#3572E5] text-white">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-keyboard-o text-lg"></i>
+                    <h3 class="text-base font-semibold">关键词搜索结果</h3>
+                </div>
+                <button onclick="closeKeywordSearchModal()" class="text-white hover:text-gray-200">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="px-5 py-4 overflow-y-auto flex-1" id="keywordSearchContent"></div>
+            <div class="border-t border-gray-200 px-5 py-3 bg-gray-50">
+                <button onclick="closeKeywordSearchModal()" class="w-full bg-[#2046B5] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#1a3a95] transition-colors">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 地区设置弹窗 -->
+    <div id="regionSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden modal-content">
+        <div class="bg-white rounded-xl max-w-[90%] w-[400px] max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800">选择常用地区</h3>
+                <button onclick="closeRegionSettingsModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4 overflow-y-auto flex-1 max-h-[60vh]" id="regionSettingsContent">
+                <div class="text-center text-gray-500 py-4">
+                    <i class="fa fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p class="text-sm">加载中...</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-xl">
+                <p class="text-xs text-gray-500 text-center mb-2">设置后，该地区将始终排在列表首位</p>
+                <button onclick="closeRegionSettingsModal()" class="w-full bg-[#2046B5] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#1a3a95] transition-colors shadow-md">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帮助模态弹窗 -->
+    <div id="helpModal" class="help-guide hidden" role="dialog" aria-modal="true" aria-labelledby="helpGuideTitle">
+      <div class="guide-shell">
+        <header class="guide-heading">
+          <div><span class="guide-eyebrow">IPC 数据中心 · 使用指南</span><h2 id="helpGuideTitle">从分类号，到你需要的信息</h2><p>选对查询方式，少走一步弯路。</p></div>
+          <button type="button" class="guide-close" onclick="toggleHelpModal()" aria-label="关闭使用说明" title="关闭使用说明"><i class="fa fa-times" aria-hidden="true"></i></button>
+        </header>
+        <div class="guide-tabs" role="tablist" aria-label="使用说明章节">
+          <button id="guide-tab-0" role="tab" aria-selected="true" aria-controls="guide-page-0" onclick="selectHelpPage(0)"><span>01</span> 开始查询</button>
+          <button id="guide-tab-1" role="tab" aria-selected="false" aria-controls="guide-page-1" tabindex="-1" onclick="selectHelpPage(1)"><span>02</span> 看懂结果</button>
+          <button id="guide-tab-2" role="tab" aria-selected="false" aria-controls="guide-page-2" tabindex="-1" onclick="selectHelpPage(2)"><span>03</span> 复制与报告</button>
+          <button id="guide-tab-3" role="tab" aria-selected="false" aria-controls="guide-page-3" tabindex="-1" onclick="selectHelpPage(3)"><span>04</span> 窗口操作</button>
+        </div>
+        <div class="guide-scroll">
+          <section id="guide-page-0" role="tabpanel" aria-labelledby="guide-tab-0" tabindex="0">
+            <div class="guide-intro"><h3>先想清楚：你要查什么？</h3><p>同一个输入框，三种用途。</p></div>
+            <figure class="guide-search-demo" aria-label="查询界面示意：输入 A01B1/02，再选择查询方式">
+              <figcaption class="guide-caption">操作示意</figcaption><div class="guide-input"><i class="fa fa-search" aria-hidden="true"></i><code>A01B1/02</code><span>输入分类号或关键词</span></div>
+              <div class="guide-paths"><div><i class="fa fa-search" aria-hidden="true"></i><b>查询IPC</b><span>这个分类号是什么意思？</span></div><div><i class="fa fa-shield" aria-hidden="true"></i><b>预审</b><span>哪些已收录中心匹配？</span></div><div><i class="fa fa-star" aria-hidden="true"></i><b>优先审查</b><span>对应哪些技术条目？</span></div></div>
+            </figure>
+            <div class="guide-two"><article class="guide-card"><span class="guide-icon"><i class="fa fa-keyboard-o" aria-hidden="true"></i></span><h4>有分类号，直接输入</h4><p><code>A01B</code> 查小类；<code>A01B1</code> 是大组简写；<code>A01B1/02</code> 查具体小组。大小写、分类号中的空格会自动整理。</p></article><article class="guide-card"><span class="guide-icon guide-icon--mint"><i class="fa fa-lightbulb-o" aria-hidden="true"></i></span><h4>没有分类号，从关键词开始</h4><p>试试“手动工具”或“人工智能”。想扩大范围，可用 <code>A01B*</code> 查询相关下级分类。</p></article></div>
+            <p class="guide-tip"><i class="fa fa-book" aria-hidden="true"></i> 想逐级浏览？点击底部“分类号词典”，从 A—H 部向下展开。</p>
+          </section>
+          <section id="guide-page-1" role="tabpanel" aria-labelledby="guide-tab-1" tabindex="0" hidden>
+            <div class="guide-intro"><h3>看结果时，留意分类层级和匹配范围</h3><p>先看代码，再看说明；不要只看“有结果”。</p></div>
+            <figure class="guide-hierarchy" aria-label="分类层级示意：A 部、A01 大类、A01B 小类、A01B1/00 大组、A01B1/02 小组">
+              <figcaption class="guide-caption">从大范围到具体内容</figcaption><div class="guide-levels"><div><code>A</code><span>部</span></div><i class="fa fa-angle-right" aria-hidden="true"></i><div><code>A01</code><span>大类</span></div><i class="fa fa-angle-right" aria-hidden="true"></i><div><code>A01B</code><span>小类</span></div><i class="fa fa-angle-right" aria-hidden="true"></i><div><code>A01B1/00</code><span>大组</span></div><i class="fa fa-angle-right" aria-hidden="true"></i><div class="guide-level-current"><code>A01B1/02</code><span>小组 · 锹；铲</span></div></div>
+            </figure>
+            <div class="guide-two"><article class="guide-card"><span class="guide-badge">预审</span><h4>按所属小类核对</h4><p>输入大组或小组时，会转换到上级小类。例如 <code>A01B1/02 → A01B</code>。未收录的编号会先提示，确认后才继续按小类查。</p><p class="guide-small">“符合／不符合”表示与内置分类范围的匹配情况。未收录地区不能据此判断。</p></article><article class="guide-card"><span class="guide-badge guide-badge--amber">优先审查</span><h4>同时看范围与排除项</h4><p>全层级检索会关联上、下级范围；精准检索聚焦相同分类范围。遇到“不含”条款，要一起阅读。</p><p class="guide-small">结果包含技术条目及关键词，不能只凭分类号命中作结论。</p></article></div>
+            <p class="guide-tip"><i class="fa fa-map-marker" aria-hidden="true"></i> 点击“保护中心”查看已收录范围；齿轮按钮可设置常用地区，让相关结果优先排列。</p>
+          </section>
+          <section id="guide-page-2" role="tabpanel" aria-labelledby="guide-tab-2" tabindex="0" hidden>
+            <div class="guide-intro"><h3>把查询结果带回工作中</h3><p>复制条目，或把预审结果保存成一张图片。</p></div>
+            <div class="guide-two guide-export">
+              <article class="guide-card"><figure class="guide-copy-art" aria-label="在优先审查结果卡片上点击鼠标右键复制的示意图"><div class="guide-mini-card"><span class="guide-badge">优先审查条目</span><b>名称 · 分类号 · 关键词</b><div class="guide-lines"><span></span><span></span></div></div><svg viewBox="0 0 72 88" role="img" aria-label="鼠标右键" class="guide-mouse"><rect x="12" y="6" width="48" height="72" rx="24" fill="white" stroke="#adc0e0" stroke-width="2"/><path d="M36 7a24 24 0 0 1 24 24v10H36Z" fill="#3572e5"/><path d="M12 41h48M36 7v34" stroke="#adc0e0" stroke-width="2"/><rect x="32" y="19" width="8" height="15" rx="4" fill="#cfdbef"/></svg><figcaption>在结果卡片上单击右键</figcaption></figure><h4>复制优先审查条目</h4><p>在卡片上点击鼠标右键，可复制数据库名称、条目名称、分类号和关键词，再到编辑器中粘贴。</p></article>
+              <article class="guide-card"><figure class="guide-report-art" aria-label="预审报告 PNG 图片示意"><div class="guide-paper"><span>预审查询报告</span><strong>G01N</strong><div class="guide-paper-columns"><div>符合<div></div><div></div></div><div>不符合<div></div><div></div></div></div></div><span class="guide-file-tag">PNG</span><figcaption>示意图，不代表实际匹配结果</figcaption></figure><h4>保存预审报告</h4><ol class="guide-steps"><li>用分类号查询预审，点击“分享报告”。</li><li>选择地区，点击“保存图片”。</li><li>检查预览，点击“保存报告图片”，选择保存位置。</li></ol></article>
+            </div>
+            <p class="guide-tip"><i class="fa fa-check-circle" aria-hidden="true"></i> 看到“已复制”或“报告图片已保存”才表示完成；取消保存不会生成文件。</p>
+          </section>
+          <section id="guide-page-3" role="tabpanel" aria-labelledby="guide-tab-3" tabindex="0" hidden>
+            <div class="guide-intro"><h3>一边查，一边写</h3><p>浮窗可以移动和缩放，编辑器仍可继续使用。</p></div>
+            <figure class="guide-window-art" aria-label="浮窗操作示意：拖动标题栏移动，拖动四角缩放，方框还原或最大化，叉号返回编辑器">
+              <figcaption class="guide-caption">窗口操作示意</figcaption><div class="guide-desktop-lines"><span></span><span></span><span></span><span></span></div><div class="guide-mini-window"><div><b>IPC数据中心</b><span><i class="fa fa-square-o" aria-hidden="true"></i><i class="fa fa-times" aria-hidden="true"></i></span></div><p><i class="fa fa-arrows" aria-hidden="true"></i> 拖标题栏移动</p><small>将鼠标移到四角，出现斜向箭头后拖动缩放</small></div>
+            </figure>
+            <div class="guide-shortcuts"><div><i class="fa fa-square-o" aria-hidden="true"></i><span><b>最大化 / 还原</b><small>放大查看，或回到原来的大小。</small></span></div><div><i class="fa fa-times" aria-hidden="true"></i><span><b>返回编辑器</b><small>隐藏浮窗；本次运行中保留查询内容。</small></span></div><div><kbd>Esc</kbd><span><b>逐层返回</b><small>先关查询页内弹层，再还原最大化窗口。</small></span></div><div><i class="fa fa-refresh" aria-hidden="true"></i><span><b>查询没有完成？</b><small>点击“重试查询”；加载失败时点“重新加载”。</small></span></div></div>
+            <details class="guide-data-note"><summary>数据范围与版本</summary><p>查询使用内置离线数据。IPC 内部版本：20260411-1。预审目前收录54家保护中心，数据库仍在持续完善。我们会持续跟进各保护中心的调整，尽量保持数据库处于最新状态。部分中心或最新版分类号可能尚未收录。欢迎联系我们分享缺失资料或更新版本，我们会在核对后补充更新。实际受理范围请结合对应官方文件复核。</p></details>
+          </section>
+        </div>
+        <footer class="guide-footer"><span id="guideProgress" aria-live="polite">1 / 4 · 开始查询</span><div><button id="guidePrevious" type="button" onclick="stepHelpPage(-1)" disabled>上一页</button><button id="guideNext" type="button" onclick="stepHelpPage(1)">下一页 <i class="fa fa-angle-right" aria-hidden="true"></i></button></div></footer>
+      </div>
+    </div>
+    <!-- IPC 分类号详情弹窗 -->
+    <div id="ipcDetailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden modal-content" onclick="if(event.target === this) closeIpcDetailModal()">
+        <div class="bg-white rounded-xl max-w-[90%] w-[500px] h-[85vh] overflow-hidden flex flex-col">
+            <div class="border-b border-gray-200 px-5 py-3 flex items-center justify-between bg-gradient-to-r from-[#2046B5] to-[#3572E5] text-white flex-shrink-0" id="modalHeaderButtons">
+                <h3 class="text-base font-semibold" id="modalTitle">分类号详情</h3>
+                <button onclick="closeIpcDetailModal()" class="text-white hover:text-gray-200">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="px-5 py-4 overflow-y-auto flex-1" id="ipcDetailContent"></div>
+            <div class="border-t border-gray-200 px-5 py-3 bg-gray-50 flex-shrink-0">
+                <button onclick="closeIpcDetailModal()" class="w-full bg-[#2046B5] text-white py-2 rounded-lg text-sm font-medium hover:bg-[#1a3a95] transition-colors">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部悬浮按钮栏 -->
+    <div id="ipcBottomToolbar" class="fixed bottom-3 left-4 right-4 bg-white/90 backdrop-blur-lg border border-gray-200/50 px-4 py-3 shadow-lg shadow-blue-900/5 rounded-2xl z-40 max-w-lg mx-auto">
+        <div class="flex space-x-2">
+            <button id="dictionaryBtn" class="flex-1 bg-white text-gray-600 border border-gray-200 py-2.5 px-1.5 rounded-xl font-medium text-[10px] whitespace-nowrap transition-all duration-200 ease-out hover:bg-[#2046B5] hover:text-white hover:border-[#2046B5] hover:shadow-md hover:shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 relative overflow-hidden group">
+                <span class="relative z-10 flex items-center justify-center">
+                    <i class="fa fa-book mr-1 text-[10px] group-hover:animate-pulse"></i>分类号词典
+                </span>
+                <div class="absolute inset-0 bg-gradient-to-r from-[#2046B5] to-[#3572E5] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+            
+            <button id="protectionBtn" class="flex-1 bg-white text-gray-600 border border-gray-200 py-2.5 px-1.5 rounded-xl font-medium text-[10px] whitespace-nowrap transition-all duration-200 ease-out hover:bg-[#2046B5] hover:text-white hover:border-[#2046B5] hover:shadow-md hover:shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 relative overflow-hidden group">
+                <span class="relative z-10 flex items-center justify-center">
+                    <i class="fa fa-shield mr-1 text-[10px] group-hover:animate-pulse"></i>保护中心
+                </span>
+                <div class="absolute inset-0 bg-gradient-to-r from-[#2046B5] to-[#3572E5] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+            
+            <button id="clearBtn" class="flex-1 bg-white text-green-600 border border-green-200 py-2.5 px-1.5 rounded-xl font-medium text-[10px] whitespace-nowrap transition-all duration-200 ease-out hover:bg-green-600 hover:text-white hover:border-green-600 hover:shadow-md hover:shadow-green-500/20 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 relative overflow-hidden group">
+                <span class="relative z-10 flex items-center justify-center">
+                    <i class="fa fa-trash-o mr-1 text-[10px] group-hover:animate-pulse"></i>清屏
+                </span>
+                <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+        </div>
+    </div>
+
+    
+
+
+<script src="js/tailwindcss.local.js"></script><script src="tailwind-config.js"></script><script src="query-core.js"></script><script src="app.js"></script><script src="platform.js"></script><script src="help-guide.js"></script><script src="surface-adaptation.js"></script></body></html>

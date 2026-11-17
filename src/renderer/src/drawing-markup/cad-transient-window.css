@@ -1,0 +1,349 @@
+/* Canvas-local palette, independent of the draggable function rail and camera. */
+.cad-transient-host {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  container: cad-settings-space / inline-size;
+}
+.cad-transient-window {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  width: max-content;
+  max-width: var(--cad-settings-room, calc(100% - 32px));
+  max-height: min(150px, 45%, calc(100% - 24px));
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: auto;
+  color: var(--drawing-text, #202124);
+  background: var(--rail-surface, #fdfdfe);
+  border: 1px solid var(--drawing-border, #e2e5eb);
+  border-radius: 14px;
+  box-shadow:
+    0 12px 32px #20354d16,
+    0 2px 6px #20354d0b;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 400ms ease-in-out,
+    transform 400ms ease-in-out;
+}
+.cad-transient-window__header {
+  display: contents;
+}
+.cad-transient-window__header h3 {
+  margin: 0;
+  justify-self: start;
+  flex: 0 1 auto;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #275d9b;
+  background: #eaf1fb;
+  font-size: 12px;
+  font-weight: 650;
+}
+.drawing-stage .cad-transient-window svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+}
+.cad-transient-window__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  align-items: center;
+  align-content: flex-start;
+  gap: 6px 10px;
+  padding: 8px 36px 8px 10px;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scroll-padding-block: 6px 38px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.cad-transient-window :is(.cad-tool-settings, .cad-pattern-panel) {
+  display: contents;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  animation: none;
+  transform: none;
+  transition: none;
+}
+.cad-transient-window
+  :is(.cad-tool-settings > header, .cad-detail-controls > h3, .cad-pattern-panel > legend) {
+  display: none;
+}
+.cad-transient-window label,
+.cad-transient-window .cad-tool-parameter,
+.cad-transient-window .cad-detail-controls > label {
+  display: grid;
+  grid-template-columns: auto minmax(48px, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  color: #4e5b6d;
+  font-size: 12px;
+}
+.cad-transient-window :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  box-sizing: border-box;
+  width: 10ch;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  margin: 0;
+  padding: 4px 7px;
+  border: 1px solid #dce2eb;
+  border-radius: 8px;
+  background: #f6f8fb;
+  color: var(--drawing-text, #202124);
+  font: inherit;
+  font-size: 12px;
+  user-select: text;
+}
+.cad-transient-window :is(input, select, textarea):focus {
+  outline: 2px solid #0071e328;
+  outline-offset: 1px;
+  border-color: #6b9edc;
+  background: #fff;
+}
+.cad-transient-window .cad-tool-parameter select {
+  width: max-content;
+  white-space: nowrap;
+}
+.cad-transient-window button,
+.cad-transient-window .drawing-detail-stepper button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid #e0e5ed;
+  border-radius: 8px;
+  color: #354355;
+  background: #f5f7fa;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+.cad-transient-window button:hover:not(:disabled) {
+  background: #eaf1fb;
+  border-color: #bdd0e9;
+}
+.cad-transient-window button:focus-visible {
+  outline: 2px solid #478cdb;
+  outline-offset: 2px;
+}
+.cad-transient-window :is(button, input, select):disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cad-transient-window .cad-transient-window__header button {
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  z-index: 3;
+  min-height: 28px;
+  width: 28px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+}
+.cad-transient-window .cad-snap-toggle {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-height: 28px;
+}
+.cad-transient-window input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #0071e3;
+}
+.cad-transient-window :is(small, .cad-tool-settings > p) {
+  flex: 1 1 auto;
+  margin: 0;
+  color: #6c788a;
+  font-size: 12px;
+}
+.cad-transient-window
+  :is(.cad-tool-settings__actions, .cad-pattern-actions, .drawing-detail-actions) {
+  flex: 0 1 auto;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.cad-transient-window
+  :is(.cad-tool-settings__actions, .cad-pattern-actions, .drawing-detail-actions)
+  button {
+  flex: 0 1 auto;
+  min-width: 60px;
+}
+.cad-transient-window :is(.cad-tool-settings__actions, .cad-pattern-actions:last-child) {
+  position: sticky;
+  bottom: -8px;
+  z-index: 1;
+  margin-left: auto;
+  padding: 2px 0;
+  background: var(--rail-surface, #fdfdfe);
+}
+.cad-transient-window :is(.primary, .cad-tool-settings__actions button:last-child) {
+  background: #0071e3;
+  color: #fff;
+  border-color: transparent;
+}
+.cad-transient-window
+  :is(.primary, .cad-tool-settings__actions button:last-child):hover:not(:disabled) {
+  background: #0067d0;
+}
+.cad-transient-window .cad-pattern-fields {
+  display: contents;
+}
+.cad-transient-window:has(.cad-hatch-swatches) .cad-transient-window__body {
+  grid-template-columns: repeat(4, minmax(0, max-content)) auto;
+}
+.cad-transient-window:has(.cad-hatch-swatches) .cad-pattern-actions:last-child {
+  grid-column: 5;
+  grid-row: 1 / 3;
+  align-self: stretch;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: static;
+}
+.cad-transient-window .cad-hatch-swatches {
+  grid-column: 1 / 5;
+  grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+  gap: 5px;
+  height: 91px;
+  max-height: 91px;
+  min-width: 0;
+  margin: 0;
+  padding: 2px;
+}
+.cad-transient-window .cad-hatch-swatches legend {
+  display: none;
+}
+.cad-transient-window .cad-hatch-swatches button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 24px 12px;
+  gap: 2px;
+  padding: 0 0 3px;
+  min-height: 42px;
+  overflow: hidden;
+  color: #354355;
+  background: #fff;
+}
+.drawing-stage .cad-transient-window .cad-hatch-swatches svg {
+  width: 100%;
+  height: 24px;
+}
+.cad-transient-window .cad-hatch-swatches span {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cad-transient-window .cad-hatch-swatches button[aria-pressed="true"] {
+  border-color: #3885e8;
+  background: #eaf3ff;
+  color: #1263c4;
+  box-shadow: 0 0 0 1px #3885e833;
+}
+.cad-transient-window .cad-hatch-regions {
+  grid-column: 1 / -1;
+}
+.cad-transient-window .drawing-detail-scale {
+  flex: 0 1 auto;
+}
+.cad-transient-window .drawing-detail-settings {
+  flex: 0 1 auto;
+}
+.cad-transient-window__body > .spatial-collapse {
+  grid-column: 2 / -1;
+  min-width: 0;
+}
+.cad-transient-window .cad-detail-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.cad-transient-window .drawing-style-popover {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+.cad-transient-window .cad-detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cad-transient-host .motion-presence[data-motion-state="closing"] .cad-transient-window {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+@starting-style {
+  .cad-transient-window {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@container cad-settings-space (max-width: 620px) {
+  .cad-transient-window {
+    left: 10px;
+    top: 10px;
+  }
+}
+.cad-transient-window[data-compact="true"] .cad-transient-window__body {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+}
+.cad-transient-window[data-compact="true"] .cad-hatch-swatches,
+.cad-transient-window[data-compact="true"] .cad-pattern-actions:last-child {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+.cad-transient-window[data-compact="true"] .cad-pattern-actions:last-child {
+  flex-direction: row;
+  position: sticky;
+}
+.cad-transient-window[data-compact="true"] .cad-tool-parameter {
+  grid-template-columns: minmax(0, 1fr);
+}
+.cad-transient-window[data-compact="true"] .drawing-style-popover {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cad-transient-window {
+    transition: none;
+    transform: none;
+  }
+}
