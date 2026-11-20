@@ -298,7 +298,7 @@ function createHarness(
         ((patentType) => ({
           kind: "system",
           templateId: null,
-          templates: structuredClone(DEFAULT_PATENT_TEMPLATE_SETTINGS[patentType]),
+          templates: structuredClone(DEFAULT_PATENT_TEMPLATE_SETTINGS[patentType === "design" ? "invention" : patentType]),
           assetIds: [],
         })),
     } as unknown as NonNullable<
@@ -344,7 +344,7 @@ test("routes patent aggregate IPC operations through the patent service", async 
     resolvePatentTemplates: (patentType) => ({
       kind: "system",
       templateId: null,
-      templates: templates[patentType],
+      templates: templates[patentType === "design" ? "invention" : patentType],
       assetIds: [],
     }),
   });
@@ -530,7 +530,7 @@ test("resolves the selected catalog template for each newly created patent", asy
     resolvePatentTemplates: (patentType) => ({
       kind: "custom",
       templateId: "00000000-0000-4000-8000-000000000903",
-      templates: savedTemplates[patentType],
+      templates: savedTemplates[patentType === "design" ? "invention" : patentType],
       assetIds: [],
     }),
   });
@@ -630,7 +630,7 @@ test("waits for template initialization before resolving a new patent source", a
     (patentType: PatentType): ResolvedPatentTemplateSource => ({
       kind: "system",
       templateId: null,
-      templates: structuredClone(DEFAULT_PATENT_TEMPLATE_SETTINGS[patentType]),
+      templates: structuredClone(DEFAULT_PATENT_TEMPLATE_SETTINGS[patentType === "design" ? "invention" : patentType]),
       assetIds: [],
     }),
   );

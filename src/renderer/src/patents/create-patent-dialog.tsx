@@ -39,7 +39,7 @@ export function CreatePatentDialog({ busy, onCreate, onCancel }: CreatePatentDia
     <StandardDialog
       open
       title="新建专利"
-      subtitle="创建后会自动生成权利要求书、说明书、说明书附图、摘要和摘要附图。"
+      subtitle="发明和实用新型进入五书编辑，外观设计进入图片和简要说明工作台。"
       size="m"
       onCancel={onCancel}
       closeDisabled={busy}
@@ -124,6 +124,19 @@ export function CreatePatentDialog({ busy, onCreate, onCancel }: CreatePatentDia
               }}
             />
             实用新型
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="patent-type"
+              disabled={busy}
+              checked={patentType === "design"}
+              onChange={() => {
+                setPatentType("design");
+                setTypeError(false);
+              }}
+            />
+            外观设计
           </label>
           {typeError ? <p className="field-error">请选择专利类型。</p> : null}
         </fieldset>

@@ -154,6 +154,7 @@ function recoveryDiagnosis(code: string | null): {
 const PATENT_TYPE_LABELS: Record<LibraryPatentSummary["patentType"], string> = {
   invention: "发明",
   "utility-model": "实用新型",
+  design: "外观设计",
 };
 
 type PatentCardMenuProps = {
@@ -1497,6 +1498,7 @@ export function DocumentLibrary({
                 ["all", "专利库"],
                 ["invention", "发明"],
                 ["utility-model", "实用新型"],
+                ["design", "外观设计"],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -1629,6 +1631,7 @@ export function DocumentLibrary({
                   <option value="all">全部类型</option>
                   <option value="invention">发明</option>
                   <option value="utility-model">实用新型</option>
+                  <option value="design">外观设计</option>
                 </select>
               </label>
               <label className="library-filter-select">

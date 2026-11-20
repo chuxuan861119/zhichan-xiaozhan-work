@@ -162,6 +162,7 @@ function patentMetadata(patent: PatentPatdocPayload["patent"]): unknown {
     auxiliaryDocuments: patent.auxiliaryDocuments,
     figures: patent.figures,
     abstractDrawingFigureId: patent.abstractDrawingFigureId,
+    designPatent: patent.designPatent,
     assets: patent.assets,
     flowchartProjects: patent.flowchartProjects,
     drawingProjects: patent.drawingProjects,

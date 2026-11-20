@@ -40,6 +40,7 @@ import {
   PatentResourceInspectionCancelSchema,
   PatentResourceInspectionRequestSchema,
   PatentSetDrawingBooksRequestSchema,
+  PatentUpdateDesignPatentRequestSchema,
   PatentUpdateSettingsRequestSchema,
   type SavedDocument,
   SessionIdSchema,
@@ -117,6 +118,7 @@ export type RegisterLibraryIpcOptions = {
     Partial<
       Pick<
         PatentService,
+        | "updateDesignPatent"
         | "getLibraryPreview"
         | "hasImportedBundle"
         | "importBundle"
@@ -320,6 +322,9 @@ function resolvedCreationTemplates(
   options: Pick<RegisterLibraryIpcOptions, "patentTemplates">,
   patentType: PatentType,
 ): { templates: PatentTemplateSettings; templateAssetIds: string[] } {
+  if (patentType === "design") {
+    return { templates: createFactoryPatentTemplates(() => crypto.randomUUID()), templateAssetIds: [] };
+  }
   const source = options.patentTemplates?.resolveCreationSource(patentType);
   if (!source) throw new Error("Patent template catalog is unavailable.");
   const templates = createFactoryPatentTemplates(() => crypto.randomUUID());
@@ -567,7 +572,22 @@ export async function importPatentPatdocPayload(
             abstractDrawingFigureId: remappedWithFlowcharts.abstractDrawingFigureId,
             assets: remappedWithFlowcharts.assets,
           });
-    const finalRevision = figures.revision;
+    let finalRevision = figures.revision;
+    if (remapped.designPatent !== null) {
+      if (!patents.updateDesignPatent) {
+        throw Object.assign(new Error("Design patent import is unavailable."), {
+          code: "INVALID_INPUT",
+        });
+      }
+      const design = await patents.updateDesignPatent({
+        patentId: shell.patentId,
+        sessionId: shell.sessionId,
+        expectedRevision: finalRevision,
+        designPatent: remapped.designPatent,
+        assets: remapped.assets,
+      });
+      finalRevision = design.revision;
+    }
     await patents.release(shell.sessionId);
     const opened = await patents.open(shell.patentId);
     if (opened.revision !== finalRevision) {
@@ -794,6 +814,20 @@ export function registerLibraryIpcHandlers(options: RegisterLibraryIpcOptions): 
         parseInput(PatentUpdateSettingsRequestSchema, input),
       ),
     }));
+    route(IPC_CHANNELS.patentsUpdateDesignPatent, async (input) => {
+      if (!options.patents?.updateDesignPatent) return appFailure("NOT_FOUND");
+      const request = parseInput(PatentUpdateDesignPatentRequestSchema, input);
+      const value = await options.patents.updateDesignPatent(request);
+      try {
+        await options.onPatentFigureEditCommitted?.(
+          request.sessionId,
+          request.assets.map((asset) => asset.assetId),
+        );
+      } catch {
+        await logWithoutBlocking(options.logger?.log("warn", { event: "design.asset_stage_release_deferred" }));
+      }
+      return { ok: true, value };
+    });
     route(IPC_CHANNELS.patentsSetDrawingBooksEnabled, async (input) => ({
       ok: true,
       value: await options.patents?.setDrawingBooksEnabled(

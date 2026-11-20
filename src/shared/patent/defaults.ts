@@ -1,6 +1,7 @@
 import { DEFAULT_PAGE_SETTINGS } from "../document/defaults.js";
 import { CANONICAL_DOCUMENT_FORMAT_VERSION } from "../document/model.js";
 import { randomUuid } from "../id.js";
+import { createBlankDesignPatent } from "./design-patent.js";
 import {
   CANONICAL_PATENT_FORMAT_VERSION,
   type CanonicalPatent,
@@ -45,7 +46,8 @@ export function createBlankPatent(
   if (issues.length > 0) {
     throw new Error(`专利模板无效：${issues.map((issue) => issue.message).join("；")}`);
   }
-  const templateGroup = templateSettings[patentType];
+  const templateGroup =
+    patentType === "design" ? templateSettings.invention : templateSettings[patentType];
 
   return {
     formatVersion: CANONICAL_PATENT_FORMAT_VERSION,
@@ -62,7 +64,7 @@ export function createBlankPatent(
       createBlankPatentBook(
         kind,
         templateGroup,
-        templateSettings.enabled,
+        templateSettings.enabled && patentType !== "design",
         normalizedName,
         patentType,
         timestamp,
@@ -79,6 +81,7 @@ export function createBlankPatent(
 
     referenceMarks: [],
     referenceMarkSettings: { synchronizedEditingEnabled: false },
+    designPatent: patentType === "design" ? createBlankDesignPatent() : null,
   };
 }
 

@@ -8,6 +8,7 @@ import { LibraryDatabase } from "./library-database.js";
 import { LibraryMigrationService } from "./library-migration-service.js";
 import { LibrarySafetyBackupService } from "./library-safety-backup.js";
 import { PatentTemplateService } from "./patent-template-service.js";
+import { CURRENT_SCHEMA_VERSION } from "./schema.js";
 
 const roots: string[] = [];
 
@@ -125,7 +126,7 @@ test("preserves the V10 custom template catalog in the SQLite safety copy", asyn
   prepared.database.close();
 
   using backupDatabase = LibraryDatabase.open(join(backup.directory, "library.sqlite3"));
-  expect(backupDatabase.schemaVersion()).toBe(15);
+  expect(backupDatabase.schemaVersion()).toBe(CURRENT_SCHEMA_VERSION);
   expect(
     backupDatabase.read((database) =>
       database

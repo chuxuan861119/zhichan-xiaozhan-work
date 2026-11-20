@@ -1113,6 +1113,76 @@ test("creates one patent aggregate with exactly five persisted books", async () 
   ).toEqual({ source: "initial" });
 });
 
+test("persists a design-patent image and brief state through the active session", async () => {
+  const now = { value: new Date("2026-08-01T09:00:00.000Z") };
+  const { assetDescriptors, database, service } = await openService(
+    now,
+    undefined,
+    async () => undefined,
+  );
+  const created = await service.create({
+    patentType: "design",
+    name: "折叠椅",
+    templates: DEFAULT_PATENT_TEMPLATE_SETTINGS,
+  });
+  const descriptor = asset(1);
+  database.transaction((raw) => {
+    raw
+      .prepare("INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(
+        descriptor.assetId,
+        descriptor.sha256,
+        `${descriptor.sha256}.asset`,
+        descriptor.mediaType,
+        descriptor.byteLength,
+        descriptor.widthPx,
+        descriptor.heightPx,
+        now.value.toISOString(),
+      );
+  });
+  assetDescriptors.set(descriptor.assetId, descriptor);
+  const designPatent = structuredClone(created.patent.designPatent);
+  if (!designPatent) throw new Error("fixture");
+  const viewId = testUuid(701);
+  designPatent.views = [
+    {
+      viewId,
+      kind: "front",
+      label: "主视图",
+      assetId: descriptor.assetId,
+      expression: "line-drawing",
+      subjectBounds: { leftPx: 0, topPx: 0, widthPx: 101, heightPx: 81 },
+      operations: [],
+      note: null,
+    },
+  ];
+  designPatent.representativeViewId = viewId;
+  designPatent.dimensionReferenceViewId = viewId;
+  designPatent.primaryExpression = "line-drawing";
+  designPatent.brief.productUse = "用于折叠收纳。";
+  designPatent.brief.designPoints = ["shape"];
+
+  const saved = await service.updateDesignPatent({
+    patentId: created.patentId,
+    sessionId: created.sessionId,
+    expectedRevision: 0,
+    designPatent,
+    assets: [descriptor],
+  });
+
+  expect(saved.revision).toBe(1);
+  expect((await service.open(created.patentId)).patent.designPatent).toEqual(designPatent);
+  await expect(
+    service.updateDesignPatent({
+      patentId: created.patentId,
+      sessionId: created.sessionId,
+      expectedRevision: 0,
+      designPatent,
+      assets: [descriptor],
+    }),
+  ).rejects.toMatchObject({ code: "REVISION_CONFLICT" });
+});
+
 test("reads disabled invention drawing books from the database and reports them unavailable", async () => {
   const now = { value: new Date("2026-08-01T09:00:00.000Z") };
   const { database, service } = await openService(now);

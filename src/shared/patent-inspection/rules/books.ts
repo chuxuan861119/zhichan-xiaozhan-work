@@ -158,7 +158,10 @@ const CHAPTER_LABELS: Record<DescriptionChapterKind, string> = {
   "detailed-embodiments": "具体实施方式",
 };
 
-function chapterLabel(kind: DescriptionChapterKind, patentType: "invention" | "utility-model") {
+function chapterLabel(
+  kind: DescriptionChapterKind,
+  patentType: "invention" | "utility-model" | "design",
+) {
   return kind === "invention-content" && patentType === "utility-model"
     ? "实用新型内容"
     : CHAPTER_LABELS[kind];

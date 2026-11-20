@@ -160,6 +160,7 @@ async function patentPayload(): Promise<PatentPatdocPayload> {
     previewSha256: hash(preview),
   };
   const patent: CanonicalPatent = {
+    designPatent: null,
     formatVersion: CANONICAL_PATENT_FORMAT_VERSION,
     patentId: uuid(500),
     name: "复杂专利",

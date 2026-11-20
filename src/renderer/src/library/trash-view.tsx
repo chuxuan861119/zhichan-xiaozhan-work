@@ -32,6 +32,7 @@ function purgeDate(item: { deletedAt: string | null }): string {
 const PATENT_TYPE_LABELS: Record<LibraryPatentSummary["patentType"], string> = {
   invention: "发明",
   "utility-model": "实用新型",
+  design: "外观设计",
 };
 
 export function TrashView({

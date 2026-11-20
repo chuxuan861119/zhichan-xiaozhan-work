@@ -30,6 +30,8 @@ import {
 const OPERATION_ID = "123e4567-e89b-42d3-a456-426614174000";
 const PACKAGE_ID = "223e4567-e89b-42d3-a456-426614174000";
 const createdRoots: string[] = [];
+// These fault-injection cases repeatedly use Windows' real no-replace PowerShell move and flush.
+const durableWindowsRoundTripTimeout = process.platform === "win32" ? 25_000 : 5_000;
 
 afterAll(async () => {
   const { rm } = await import("node:fs/promises");
@@ -152,78 +154,84 @@ describe.sequential("LibraryImportSwapCoordinator", () => {
         point,
       })),
     ),
-  )("resumes rollback safely at $root / $point", async ({ root: restoredRoot, point }) => {
-    const value = await fixture();
-    await writeFile(path.join(value.userDataRoot, "drafts", "old.txt"), "old-draft");
-    const journal = new DataImportJournal({
-      applicationDataRoot: value.options.applicationDataRoot,
-      libraryRoot: value.libraryRoot,
-      userDataRoot: value.userDataRoot,
-    });
-    await new LibraryImportSwapCoordinator({
-      ...value.options,
-      journal,
-    }).commit();
-    const targets = {
-      library: value.libraryRoot,
-      drafts: path.join(value.userDataRoot, "drafts"),
-      settings: path.join(value.userDataRoot, "settings.json"),
-    };
-    const recoveryOptions = {
-      journal,
-      libraryRoot: value.libraryRoot,
-      userDataRoot: value.userDataRoot,
-      applicationDataRoot: value.options.applicationDataRoot,
-    };
-    const interrupted = await new DataImportRecoveryService({
-      ...recoveryOptions,
-      validateInstalled: async () => false,
-      fileSystem: {
-        rename: async (source, target) => {
-          if (target === targets[restoredRoot] && point === "before-restore")
-            throw new Error("interrupted before restore");
-          await rename(source, target);
-          if (target === targets[restoredRoot]) throw new Error("interrupted after restore");
+  )(
+    "resumes rollback safely at $root / $point",
+    async ({ root: restoredRoot, point }) => {
+      const value = await fixture();
+      await writeFile(path.join(value.userDataRoot, "drafts", "old.txt"), "old-draft");
+      const journal = new DataImportJournal({
+        applicationDataRoot: value.options.applicationDataRoot,
+        libraryRoot: value.libraryRoot,
+        userDataRoot: value.userDataRoot,
+      });
+      await new LibraryImportSwapCoordinator({
+        ...value.options,
+        journal,
+      }).commit();
+      const targets = {
+        library: value.libraryRoot,
+        drafts: path.join(value.userDataRoot, "drafts"),
+        settings: path.join(value.userDataRoot, "settings.json"),
+      };
+      const recoveryOptions = {
+        journal,
+        libraryRoot: value.libraryRoot,
+        userDataRoot: value.userDataRoot,
+        applicationDataRoot: value.options.applicationDataRoot,
+      };
+      const interrupted = await new DataImportRecoveryService({
+        ...recoveryOptions,
+        validateInstalled: async () => false,
+        fileSystem: {
+          rename: async (source, target) => {
+            if (target === targets[restoredRoot] && point === "before-restore")
+              throw new Error("interrupted before restore");
+            await rename(source, target);
+            if (target === targets[restoredRoot]) throw new Error("interrupted after restore");
+          },
         },
-      },
-    }).recover();
-    expect(interrupted.status).toBe("manual-safe-recovery");
-    expect((await journal.read())?.phase).toBe("restart-validation-pending");
-    if (point === "unknown-replacement") {
-      const target = targets[restoredRoot];
-      await rename(target, `${target}.preserved`);
-      if (restoredRoot === "settings") await writeFile(target, "unknown");
-      else {
-        await mkdir(target);
-        await writeFile(path.join(target, "unknown.txt"), "unknown");
-      }
-    }
-    const validateInstalled = vi.fn(async () => true);
-    const recovered = await new DataImportRecoveryService({
-      ...recoveryOptions,
-      validateInstalled,
-    }).recover();
-    if (point === "unknown-replacement") {
-      expect(recovered.status).toBe("manual-safe-recovery");
-      expect(validateInstalled).not.toHaveBeenCalled();
-      expect(
-        await readFile(
-          restoredRoot === "settings"
-            ? targets.settings
-            : path.join(targets[restoredRoot], "unknown.txt"),
-          "utf8",
-        ),
-      ).toBe("unknown");
+      }).recover();
+      expect(interrupted.status).toBe("manual-safe-recovery");
       expect((await journal.read())?.phase).toBe("restart-validation-pending");
-      return;
-    }
-    expect(recovered.status).toBe("rolled-back");
-    expect(validateInstalled).not.toHaveBeenCalled();
-    expect(await readFile(path.join(value.libraryRoot, "library", "old.txt"), "utf8")).toBe("old");
-    expect(await readFile(path.join(targets.drafts, "old.txt"), "utf8")).toBe("old-draft");
-    expect(await readFile(targets.settings, "utf8")).toBe('{"current":true}\n');
-    expect(await journal.read()).toBeUndefined();
-  });
+      if (point === "unknown-replacement") {
+        const target = targets[restoredRoot];
+        await rename(target, `${target}.preserved`);
+        if (restoredRoot === "settings") await writeFile(target, "unknown");
+        else {
+          await mkdir(target);
+          await writeFile(path.join(target, "unknown.txt"), "unknown");
+        }
+      }
+      const validateInstalled = vi.fn(async () => true);
+      const recovered = await new DataImportRecoveryService({
+        ...recoveryOptions,
+        validateInstalled,
+      }).recover();
+      if (point === "unknown-replacement") {
+        expect(recovered.status).toBe("manual-safe-recovery");
+        expect(validateInstalled).not.toHaveBeenCalled();
+        expect(
+          await readFile(
+            restoredRoot === "settings"
+              ? targets.settings
+              : path.join(targets[restoredRoot], "unknown.txt"),
+            "utf8",
+          ),
+        ).toBe("unknown");
+        expect((await journal.read())?.phase).toBe("restart-validation-pending");
+        return;
+      }
+      expect(recovered.status).toBe("rolled-back");
+      expect(validateInstalled).not.toHaveBeenCalled();
+      expect(await readFile(path.join(value.libraryRoot, "library", "old.txt"), "utf8")).toBe(
+        "old",
+      );
+      expect(await readFile(path.join(targets.drafts, "old.txt"), "utf8")).toBe("old-draft");
+      expect(await readFile(targets.settings, "utf8")).toBe('{"current":true}\n');
+      expect(await journal.read()).toBeUndefined();
+    },
+    durableWindowsRoundTripTimeout,
+  );
   test.sequential.each([
     undefined,
     "after-old-polish-history-move",
@@ -287,6 +295,7 @@ describe.sequential("LibraryImportSwapCoordinator", () => {
       expect(await readFile(path.join(live, "old.txt"), "utf8")).toBe("old-history");
       await expect(readFile(path.join(live, "new.txt"))).rejects.toMatchObject({ code: "ENOENT" });
     },
+    durableWindowsRoundTripTimeout,
   );
   test.sequential("finishes live empty-library inspection before closing its database runtime", async () => {
     const value = await fixture();

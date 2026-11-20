@@ -295,6 +295,7 @@ export function migrateCanonicalPatent(input: unknown): AppResult<CanonicalPaten
   delete legacyRecord.scientificChartProjects;
   delete legacyRecord.auxiliaryDocuments;
   delete legacyRecord.docxImportReport;
+  delete legacyRecord.designPatent;
   const legacy = CanonicalPatentV3Schema.safeParse(legacyRecord);
   if (!legacy.success) return invalidVersion("专利结构无效或包含不支持的内容。");
   const books = [] as CanonicalPatent["books"];
@@ -316,6 +317,7 @@ export function migrateCanonicalPatent(input: unknown): AppResult<CanonicalPaten
     // 解析必须基于保留标记段的原始输入（legacyRecord 未清理）。
     referenceMarks: migrateReferenceMarks(legacyRecord),
     referenceMarkSettings: { synchronizedEditingEnabled: false },
+    designPatent: null,
   });
   return migrated.success
     ? { ok: true, value: normalizeLegacyReferenceMarkColors(migrated.data) }

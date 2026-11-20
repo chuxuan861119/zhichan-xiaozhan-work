@@ -3,7 +3,10 @@ import type { DatabaseSync } from "node:sqlite";
 import { remapAssetIds } from "../../shared/document/asset-references.js";
 import { DEFAULT_PAGE_SETTINGS } from "../../shared/document/defaults.js";
 import { type ParagraphNode, ParagraphNodeSchema } from "../../shared/document/model.js";
-import type { CanonicalPatent, PatentType } from "../../shared/patent/model.js";
+import type {
+  CanonicalPatent,
+  PatentType as LibraryPatentType,
+} from "../../shared/patent/model.js";
 import {
   captureThreeBookTemplate,
   makeTemplateTypeDynamic,
@@ -44,6 +47,7 @@ export const LEGACY_MIGRATION_KEY = "patent-template-catalog-migrated-v1";
 export const UNDERLINED_SPACE_MIGRATION_KEY = "patent-template-auxiliary-underlined-spaces-v2";
 const TEMPLATE_VALIDATION_ID = "00000000-0000-4000-8000-000000000000";
 const PATENT_TYPES = ["invention", "utility-model"] as const;
+type PatentType = Exclude<LibraryPatentType, "design">;
 
 type TemplateSlotRow = {
   template_id: string;
@@ -448,7 +452,7 @@ export class PatentTemplateService {
     this.#sessions.delete(input.sessionId);
   }
 
-  resolveCreationSource(patentType: PatentType): ResolvedPatentTemplateSource {
+  resolveCreationSource(patentType: Exclude<PatentType, "design">): ResolvedPatentTemplateSource {
     const catalog = this.#readCatalog();
     const sourceType = catalog.separatePatentTypes === false ? "invention" : patentType;
     const auxiliary = this.#readAuxiliary()[patentType];

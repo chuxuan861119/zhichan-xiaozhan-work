@@ -12,12 +12,14 @@ import type {
   PatentEditAck,
   PatentFlushRequest,
   PatentFlushResult,
+  PatentUpdateDesignPatentRequest,
   PatentUpdateSettingsRequest,
 } from "../../../shared/ipc/contract";
 import type { JsonObject } from "../../../shared/ipc/primitives";
 import type { AppError, AppResult } from "../../../shared/ipc/result";
 import type { LibrarySaveState } from "../../../shared/library/model";
 import { normalizeDrawingBooks } from "../../../shared/patent/drawing-content";
+import type { DesignPatent } from "../../../shared/patent/design-patent";
 import {
   type CanonicalPatent,
   PATENT_BOOK_ORDER,
@@ -59,6 +61,9 @@ type PatentSaveCoordinatorOptions = QueueCallbacks & {
   ): Promise<AppResult<PatentEditAck>>;
   applyFigureEdit(request: PatentApplyFigureEditRequest): Promise<AppResult<PatentEditAck>>;
   updateSettings(request: PatentUpdateSettingsRequest): Promise<AppResult<PatentEditAck>>;
+  updateDesignPatent?: (
+    request: PatentUpdateDesignPatentRequest,
+  ) => Promise<AppResult<PatentEditAck>>;
   flush(request: PatentFlushRequest): Promise<AppResult<PatentFlushResult>>;
   saveFlowchart?(request: FlowchartSaveRequest): Promise<AppResult<FlowchartOpenedProject>>;
 };
@@ -109,6 +114,13 @@ type PendingSettingsEdit = {
   localRevision: number;
 };
 
+type PendingDesignPatentEdit = {
+  type: "design-patent";
+  designPatent: DesignPatent;
+  assets: CanonicalPatent["assets"];
+  localRevision: number;
+};
+
 type PendingFlowchartEdit = {
   type: "flowchart-source";
   projectId: string;
@@ -135,6 +147,7 @@ type PendingEdit =
   | PendingFigureEdit
   | PendingSettingsEdit
   | PendingFlowchartEdit
+  | PendingDesignPatentEdit
   | PendingPersistedMutation;
 
 type DrainWaiter = {
@@ -227,6 +240,7 @@ export class PatentSaveCoordinator {
   readonly #applyAuxiliaryDocumentEdit: PatentSaveCoordinatorOptions["applyAuxiliaryDocumentEdit"];
   readonly #applyFigureEdit: PatentSaveCoordinatorOptions["applyFigureEdit"];
   readonly #updateSettings: PatentSaveCoordinatorOptions["updateSettings"];
+  readonly #updateDesignPatent: PatentSaveCoordinatorOptions["updateDesignPatent"];
   readonly #flush: PatentSaveCoordinatorOptions["flush"];
   readonly #saveFlowchart: PatentSaveCoordinatorOptions["saveFlowchart"];
   readonly #callbacks: QueueCallbacks;
@@ -252,6 +266,7 @@ export class PatentSaveCoordinator {
     this.#applyAuxiliaryDocumentEdit = options.applyAuxiliaryDocumentEdit;
     this.#applyFigureEdit = options.applyFigureEdit;
     this.#updateSettings = options.updateSettings;
+    this.#updateDesignPatent = options.updateDesignPatent;
     this.#flush = options.flush;
     this.#saveFlowchart = options.saveFlowchart;
     const callbacks: QueueCallbacks = {};
@@ -658,6 +673,31 @@ export class PatentSaveCoordinator {
     return this.snapshot();
   }
 
+  enqueueDesignPatent(
+    designPatent: DesignPatent,
+    assets: readonly AssetDescriptor[],
+  ): PatentSaveCoordinatorSnapshot {
+    if (this.#patent.patentType !== "design") throw new Error("Patent is not a design patent.");
+    this.#localRevision += 1;
+    const localRevision = this.#localRevision;
+    this.#patent = {
+      ...this.#patent,
+      revision: localRevision,
+      designPatent: structuredClone(designPatent),
+      assets: Array.from(assets, (asset) => structuredClone(asset)),
+    };
+    this.#pending.push({
+      type: "design-patent",
+      designPatent: structuredClone(designPatent),
+      assets: Array.from(assets, (asset) => structuredClone(asset)),
+      localRevision,
+    });
+    this.#aggregateSaveState = this.#saveError ? "failed" : "saving";
+    this.#emit("onQueued");
+    this.#startPump();
+    return this.snapshot();
+  }
+
   enqueueReferenceMarkTransaction(input: {
     referenceMarks: CanonicalPatent["referenceMarks"];
     referenceMarkSettings: CanonicalPatent["referenceMarkSettings"];
@@ -975,6 +1015,16 @@ export class PatentSaveCoordinator {
           flowchartProject: result.value.project,
         },
       };
+    }
+    if (item.type === "design-patent") {
+      if (!this.#updateDesignPatent) throw new Error("Design patent save service is unavailable.");
+      return this.#updateDesignPatent({
+        patentId: this.patentId,
+        sessionId: this.sessionId,
+        expectedRevision: this.#persistedRevision,
+        designPatent: item.designPatent,
+        assets: item.assets,
+      });
     }
     return this.#updateSettings({
       patentId: this.patentId,

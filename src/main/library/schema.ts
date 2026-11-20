@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { DatabaseSync as SQLiteDatabase } from "node:sqlite";
 
-export const CURRENT_SCHEMA_VERSION = 15;
+export const CURRENT_SCHEMA_VERSION = 16;
 
 export const V2_SCHEMA_STATEMENTS = [
   `CREATE TABLE patents(
@@ -681,6 +681,37 @@ export const V15_MIGRATION_STATEMENTS = [
 export const V15_UPGRADE_FROM_V14_STATEMENTS = [
   ...V15_AUTOMATION_STATEMENTS,
   "UPDATE schema_migrations SET version = 15, applied_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE version = 14",
+];
+
+const V16_PATENTS_TABLE = V4_PATENTS_TABLE_STATEMENT.replace(
+  "('invention','utility-model')",
+  "('invention','utility-model','design')",
+);
+const V16_PATENT_INDEXES = V15_SCHEMA_STATEMENTS.filter((sql) =>
+  /^CREATE INDEX patents_/.test(sql),
+);
+export const V16_SCHEMA_STATEMENTS = V15_SCHEMA_STATEMENTS.map((sql) =>
+  /^CREATE TABLE patents\(/.test(sql) ? V16_PATENTS_TABLE : sql,
+);
+export const V16_MIGRATION_STATEMENTS = [
+  ...V16_SCHEMA_STATEMENTS,
+  ...V10_PATENT_TEMPLATE_SEED_STATEMENTS,
+  ...V12_EXTRA_TEMPLATE_SEEDS,
+  "INSERT INTO schema_migrations(version, applied_at) VALUES (16, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+];
+/** Run with foreign keys disabled on the exclusive migration connection, then verify them before committing. */
+export const V16_UPGRADE_FROM_V15_STATEMENTS = [
+  "PRAGMA legacy_alter_table = ON",
+  "ALTER TABLE patents RENAME TO patents_v15",
+  V16_PATENTS_TABLE,
+  `INSERT INTO patents(patent_id, name, customer, patent_type, drawing_books_enabled, revision,
+      created_at, modified_at, deleted_at, recovery_state, recovery_error_code)
+    SELECT patent_id, name, customer, patent_type, drawing_books_enabled, revision,
+      created_at, modified_at, deleted_at, recovery_state, recovery_error_code FROM patents_v15`,
+  "DROP TABLE patents_v15",
+  ...V16_PATENT_INDEXES,
+  "PRAGMA legacy_alter_table = OFF",
+  "UPDATE schema_migrations SET version = 16, applied_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE version = 15",
 ];
 
 export const V1_SCHEMA_STATEMENTS = [
@@ -1784,10 +1815,22 @@ export function validateSchemaV14(database: DatabaseSync): { ok: true } | { ok: 
 }
 
 let expectedV15SqlFingerprint: SqlFingerprint | undefined;
+let expectedV16SqlFingerprint: SqlFingerprint | undefined;
+export function validateSchemaV15(database: DatabaseSync): { ok: true } | { ok: false } {
+  expectedV15SqlFingerprint ??= expectedSchemaSqlFingerprint(V15_SCHEMA_STATEMENTS);
+  return validateFinalLibrarySchema(database, expectedV15SqlFingerprint, 15);
+}
 export function validateCurrentSchema(database: DatabaseSync): { ok: true } | { ok: false } {
+  expectedV16SqlFingerprint ??= expectedSchemaSqlFingerprint(V16_SCHEMA_STATEMENTS);
+  return validateFinalLibrarySchema(database, expectedV16SqlFingerprint, CURRENT_SCHEMA_VERSION);
+}
+function validateFinalLibrarySchema(
+  database: DatabaseSync,
+  fingerprint: SqlFingerprint,
+  expectedVersion: number,
+): { ok: true } | { ok: false } {
   try {
-    expectedV15SqlFingerprint ??= expectedSchemaSqlFingerprint(V15_SCHEMA_STATEMENTS);
-    if (!hasExactSchemaSqlFingerprint(database, expectedV15SqlFingerprint)) return { ok: false };
+    if (!hasExactSchemaSqlFingerprint(database, fingerprint)) return { ok: false };
     const version = database.prepare("SELECT version FROM schema_migrations").get();
     const slots = database.prepare("SELECT COUNT(*) AS count FROM patent_template_slots").get();
     const prefs = database
@@ -1796,7 +1839,7 @@ export function validateCurrentSchema(database: DatabaseSync): { ok: true } | { 
     const aux = database.prepare("SELECT COUNT(*) AS count FROM patent_template_auxiliary").get();
     return {
       ok:
-        version?.version === CURRENT_SCHEMA_VERSION &&
+        version?.version === expectedVersion &&
         slots?.count === 10 &&
         prefs?.count === 2 &&
         aux?.count === 2,

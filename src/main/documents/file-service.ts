@@ -59,7 +59,7 @@ export function toDocumentPatdocPayload(
       ...activeBook.document,
       documentId: payload.patent.patentId,
       title: payload.patent.name ?? activeBook.document.title,
-      patentType: payload.patent.patentType,
+      patentType: payload.patent.patentType === "design" ? null : payload.patent.patentType,
       createdAt: payload.patent.createdAt,
       modifiedAt: payload.patent.modifiedAt,
       assets: payload.patent.assets,

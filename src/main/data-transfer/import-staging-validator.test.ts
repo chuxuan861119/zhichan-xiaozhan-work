@@ -27,11 +27,13 @@ import {
   CURRENT_SCHEMA_VERSION,
   V6_SCIENTIFIC_CHART_STATEMENTS,
   V10_PATENT_TEMPLATE_STATEMENTS,
+  V15_SCHEMA_STATEMENTS,
   validateSchemaV10,
   validateSchemaV11,
   validateSchemaV12,
   validateSchemaV13,
   validateSchemaV14,
+  validateSchemaV15,
 } from "../library/schema.js";
 import { ImportStagingValidator } from "./import-staging-validator.js";
 
@@ -135,6 +137,7 @@ async function fixture(
   unownedAsset = false,
   includeCad = false,
   linkedFlowchart = false,
+  withDesign = false,
 ): Promise<{
   stagingRoot: string;
   key: Buffer;
@@ -413,6 +416,21 @@ async function fixture(
         .prepare("DELETE FROM document_assets WHERE asset_id = ?")
         .run(documentAsset().descriptor.assetId);
     });
+  if (withDesign) {
+    const design = await runtime.patents.create({
+      name: "外观备份案例",
+      patentType: "design",
+      templates: DEFAULT_PATENT_TEMPLATE_SETTINGS,
+    });
+    await runtime.patents.updateDesignPatent({
+      patentId: design.patentId,
+      sessionId: design.sessionId,
+      expectedRevision: design.revision,
+      designPatent: design.patent.designPatent!,
+      assets: [],
+    });
+    await runtime.patents.release(design.sessionId);
+  }
   await runtime.close();
 
   await mkdir(join(stagingRoot, "verification"), { recursive: true });
@@ -463,7 +481,7 @@ async function fixture(
       exportedAt: "2026-08-16T00:00:00.000Z",
       cutoffAt: "2026-08-16T00:00:00.000Z",
       summary: {
-        activePatents: 2,
+        activePatents: withDesign ? 3 : 2,
         trashedPatents: 1,
         documents: 2,
         legacyDrafts: 1,
@@ -510,11 +528,14 @@ async function refreshManifestEntry(
 async function mutateFixtureDatabase(
   input: Awaited<ReturnType<typeof fixture>>,
   mutate: (database: import("node:sqlite").DatabaseSync) => void,
+  rebuildParentTable = false,
 ): Promise<void> {
   const { LibraryDatabase } = await import("../library/library-database.js");
   {
     using database = LibraryDatabase.open(input.databasePath);
+    if (rebuildParentTable) database.read((raw) => raw.exec("PRAGMA foreign_keys = OFF"));
     database.transaction(mutate);
+    if (rebuildParentTable) expect(database.foreignKeyCheck().ok).toBe(true);
     database.checkpoint();
   }
   await refreshManifestEntry(input, "library/library.sqlite3");
@@ -757,71 +778,96 @@ describe("ImportStagingValidator", () => {
     input.key.fill(0);
   });
 
-  test.each([10, 11, 12, 13, 14, CURRENT_SCHEMA_VERSION])(
+  test("validates an exterior design with no ordinary patent snapshots", async () => {
+    const input = await fixture(false, false, false, true);
+    await expect(validateFixture(input)).resolves.toMatchObject({ activePatents: 3, snapshots: 6 });
+  });
+
+  test.each([10, 11, 12, 13, 14, 15, CURRENT_SCHEMA_VERSION])(
     "revalidates installed layout after upgrading a version %s backup",
     async (version) => {
       const input = await fixture();
       if (version !== CURRENT_SCHEMA_VERSION) {
-        await mutateFixtureDatabase(input, (database) => {
-          database.exec("DROP TABLE automation_operations");
-          if (version < 14) for (const sql of V6_SCIENTIFIC_CHART_STATEMENTS) database.exec(sql);
-          if (version === 10 || version === 11) {
-            for (const table of [
-              "patent_template_slots",
-              "patent_template_preferences",
-              "template_assets",
-            ]) {
-              database.exec(
-                `CREATE TEMP TABLE saved_${table} AS SELECT * FROM ${table}${table === "patent_template_slots" ? " WHERE slot_index <= 3" : ""}`,
-              );
+        await mutateFixtureDatabase(
+          input,
+          (database) => {
+            database.exec(
+              "PRAGMA legacy_alter_table = ON; ALTER TABLE patents RENAME TO patents_test_v16",
+            );
+            database.exec(
+              V15_SCHEMA_STATEMENTS.find((sql) => sql.startsWith("CREATE TABLE patents("))!,
+            );
+            database.exec(
+              "INSERT INTO patents SELECT * FROM patents_test_v16; DROP TABLE patents_test_v16",
+            );
+            for (const sql of V15_SCHEMA_STATEMENTS.filter((sql) =>
+              /^CREATE INDEX patents_/.test(sql),
+            ))
+              database.exec(sql);
+            database.exec("PRAGMA legacy_alter_table = OFF");
+            if (version < 15) database.exec("DROP TABLE automation_operations");
+            if (version < 14) for (const sql of V6_SCIENTIFIC_CHART_STATEMENTS) database.exec(sql);
+            if (version === 10 || version === 11) {
+              for (const table of [
+                "patent_template_slots",
+                "patent_template_preferences",
+                "template_assets",
+              ]) {
+                database.exec(
+                  `CREATE TEMP TABLE saved_${table} AS SELECT * FROM ${table}${table === "patent_template_slots" ? " WHERE slot_index <= 3" : ""}`,
+                );
+              }
+              for (const table of [
+                "template_assets",
+                "patent_template_preferences",
+                "patent_template_slots",
+              ])
+                database.exec(`DROP TABLE ${table}`);
+              for (const sql of V10_PATENT_TEMPLATE_STATEMENTS) {
+                if (!sql.startsWith("CREATE TABLE patent_template_auxiliary")) database.exec(sql);
+              }
+              for (const table of [
+                "patent_template_slots",
+                "patent_template_preferences",
+                "template_assets",
+              ])
+                database.exec(`INSERT INTO ${table} SELECT * FROM saved_${table}`);
             }
-            for (const table of [
-              "template_assets",
-              "patent_template_preferences",
-              "patent_template_slots",
-            ])
-              database.exec(`DROP TABLE ${table}`);
-            for (const sql of V10_PATENT_TEMPLATE_STATEMENTS) {
-              if (!sql.startsWith("CREATE TABLE patent_template_auxiliary")) database.exec(sql);
+            if (version === 10 || version === 12) {
+              database.exec("DROP TABLE patent_import_reports");
+              database.exec("DROP TABLE patent_auxiliary_documents");
             }
-            for (const table of [
-              "patent_template_slots",
-              "patent_template_preferences",
-              "template_assets",
-            ])
-              database.exec(`INSERT INTO ${table} SELECT * FROM saved_${table}`);
-          }
-          if (version === 10 || version === 12) {
-            database.exec("DROP TABLE patent_import_reports");
-            database.exec("DROP TABLE patent_auxiliary_documents");
-          }
-          database.exec(
-            `UPDATE schema_migrations SET version = ${version} WHERE version = ${CURRENT_SCHEMA_VERSION}`,
-          );
-          const validateSchema =
-            version === 10
-              ? validateSchemaV10
-              : version === 11
-                ? validateSchemaV11
-                : version === 12
-                  ? validateSchemaV12
-                  : version === 13
-                    ? validateSchemaV13
-                    : validateSchemaV14;
-          expect(validateSchema(database)).toEqual({ ok: true });
-          const rows = database
-            .prepare(
-              "SELECT type, name, tbl_name AS tableName, sql FROM sqlite_master WHERE type IN ('table', 'index') AND name NOT LIKE 'sqlite_%' ORDER BY type, name",
-            )
-            .all();
-          input.manifest = {
-            ...input.manifest,
-            databaseSchemaVersion: version,
-            databaseSchemaFingerprint: createHash("sha256")
-              .update(JSON.stringify(rows))
-              .digest("hex"),
-          };
-        });
+            database.exec(
+              `UPDATE schema_migrations SET version = ${version} WHERE version = ${CURRENT_SCHEMA_VERSION}`,
+            );
+            const validateSchema =
+              version === 10
+                ? validateSchemaV10
+                : version === 11
+                  ? validateSchemaV11
+                  : version === 12
+                    ? validateSchemaV12
+                    : version === 13
+                      ? validateSchemaV13
+                      : version === 14
+                        ? validateSchemaV14
+                        : validateSchemaV15;
+            expect(validateSchema(database)).toEqual({ ok: true });
+            const rows = database
+              .prepare(
+                "SELECT type, name, tbl_name AS tableName, sql FROM sqlite_master WHERE type IN ('table', 'index') AND name NOT LIKE 'sqlite_%' ORDER BY type, name",
+              )
+              .all();
+            input.manifest = {
+              ...input.manifest,
+              databaseSchemaVersion: version,
+              databaseSchemaFingerprint: createHash("sha256")
+                .update(JSON.stringify(rows))
+                .digest("hex"),
+            };
+          },
+          true,
+        );
         await expect(
           new ImportStagingValidator().validate(input.stagingRoot, input.manifest),
         ).resolves.toMatchObject({ activePatents: 2 });

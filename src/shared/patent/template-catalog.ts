@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { AssetDescriptorSchema, ParagraphNodeSchema } from "../document/model.js";
-import { PatentTypeSchema } from "./model.js";
+import { PatentTypeSchema as AllPatentTypesSchema } from "./model.js";
+
+const PatentTypeSchema = AllPatentTypesSchema.exclude(["design"]);
 import { PatentBookTemplateSchema } from "./templates.js";
 
 export const PATENT_TEMPLATE_NAME_MAX_LENGTH = 30;

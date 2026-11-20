@@ -243,6 +243,14 @@ describe("canonical patent aggregate", () => {
     expect(CanonicalPatentSchema.parse({ ...patent, name: null }).name).toBeNull();
   });
 
+  test("creates a design patent with its own aggregate and no five-book workflow", () => {
+    const patent = createBlankPatent({ patentType: "design", name: "折叠椅" });
+
+    expect(patent.designPatent).not.toBeNull();
+    expect(availablePatentBookKinds(patent)).toEqual([]);
+    expect(CanonicalPatentSchema.safeParse(patent).success).toBe(true);
+  });
+
   test.each([
     ["missing", ["claims", "description", "description-drawings", "abstract"]],
     ["duplicate", ["claims", "description", "description-drawings", "abstract", "abstract"]],

@@ -5,16 +5,17 @@ import { DatabaseSync } from "node:sqlite";
 import { expect, test } from "vitest";
 import { LibraryMigrationService } from "./library-migration-service.js";
 import {
+  CURRENT_SCHEMA_VERSION,
   V13_MIGRATION_STATEMENTS,
   V14_MIGRATION_STATEMENTS,
-  V15_MIGRATION_STATEMENTS,
+  V16_MIGRATION_STATEMENTS,
   validateCurrentSchema,
   validateSchemaV14,
 } from "./schema.js";
 
 test("fresh ledger is strict, indexed by client/command/request, and survives patent deletion", () => {
   using db = new DatabaseSync(":memory:");
-  for (const sql of V15_MIGRATION_STATEMENTS) db.exec(sql);
+  for (const sql of V16_MIGRATION_STATEMENTS) db.exec(sql);
   expect(validateCurrentSchema(db)).toEqual({ ok: true });
   expect(
     db.prepare("SELECT strict FROM pragma_table_list WHERE name = 'automation_operations'").get(),
@@ -47,7 +48,7 @@ test("fresh ledger is strict, indexed by client/command/request, and survives pa
 });
 
 test.each([13, 14])(
-  "upgrades V%s to V15 with backup and recognizable old schema",
+  "upgrades V%s to the current schema with backup and recognizable old schema",
   async (version) => {
     const root = await mkdtemp(join(tmpdir(), "automation-schema-"));
     try {
@@ -64,7 +65,7 @@ test.each([13, 14])(
       if (preparation.status !== "ready") throw new Error("migration failed");
       try {
         expect(preparation.backupCreated).toBe(true);
-        expect(preparation.database.schemaVersion()).toBe(15);
+        expect(preparation.database.schemaVersion()).toBe(CURRENT_SCHEMA_VERSION);
         expect(preparation.database.read(validateCurrentSchema).ok).toBe(true);
         expect(
           preparation.database.read((db) =>

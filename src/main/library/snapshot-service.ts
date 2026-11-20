@@ -182,7 +182,9 @@ export class SnapshotService {
     if (this.prepared.get(patentId)?.token === token) return;
     const revision = this.database.read((db) =>
       db
-        .prepare("SELECT revision FROM patents WHERE patent_id = ? AND deleted_at IS NULL")
+        .prepare(
+          "SELECT revision FROM patents WHERE patent_id = ? AND deleted_at IS NULL AND patent_type <> 'design'",
+        )
         .get(patentId),
     ) as { revision: number } | undefined;
     if (!revision) {
@@ -262,10 +264,17 @@ export class SnapshotService {
     this.prepared.delete(patentId);
     const current = this.database.read((db) =>
       db
-        .prepare("SELECT revision FROM patents WHERE patent_id = ? AND deleted_at IS NULL")
+        .prepare(
+          "SELECT revision, patent_type FROM patents WHERE patent_id = ? AND deleted_at IS NULL",
+        )
         .get(patentId),
-    ) as { revision: number } | undefined;
+    ) as { revision: number; patent_type: PatentType } | undefined;
     if (!current) throw new LibraryServiceError("NOT_FOUND", "Patent not found.");
+    if (current.patent_type === "design")
+      throw new LibraryServiceError(
+        "INVALID_INPUT",
+        "Exterior designs do not use patent snapshots.",
+      );
     const existing = this.#creationResultForRevision(patentId, current.revision, "already-exists");
     if (existing) {
       await this.#validateSnapshot(patentId, existing.revision);

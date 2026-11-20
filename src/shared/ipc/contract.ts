@@ -126,6 +126,7 @@ import {
 } from "../library/model.js";
 import { ClaimsRichParagraphsSchema } from "../patent/claims-rich-text.js";
 import { PatdocWorkspaceSchema } from "../patent/continuation.js";
+import { DesignPatentImageOperationSchema, DesignPatentSchema } from "../patent/design-patent.js";
 import { UnlinkedDrawingExplanationSchema } from "../patent/drawing-explanations.js";
 import {
   AuxiliaryDocumentSchema,
@@ -258,6 +259,7 @@ export const IPC_CHANNELS = {
   assetsCopyImages: "assets:copy-images",
   assetsSaveImage: "assets:save-image",
   assetsSaveImages: "assets:save-images",
+  assetsProcessDesignImage: "assets:process-design-image",
   draftsList: "drafts:list",
   draftsSave: "drafts:save",
   draftsOpen: "drafts:open",
@@ -269,6 +271,7 @@ export const IPC_CHANNELS = {
   patentsOpenPath: "patents:open-path",
   patentsRecover: "patents:recover",
   patentsUpdateSettings: "patents:update-settings",
+  patentsUpdateDesignPatent: "patents:update-design-patent",
   patentsSetDrawingBooksEnabled: "patents:set-drawing-books-enabled",
   patentsApplyBookEdit: "patents:apply-book-edit",
   patentsCreateAuxiliaryDocument: "patents:create-auxiliary-document",
@@ -356,6 +359,7 @@ export const IPC_CHANNELS = {
   exportsPatentPdf: "exports:patent-pdf",
   exportsAuxiliaryDocx: "exports:auxiliary-docx",
   exportsAuxiliaryPdf: "exports:auxiliary-pdf",
+  exportsDesignPatent: "exports:design-patent",
   exportsPdf: "exports:pdf",
   exportsPreview: "exports:preview",
   exportsSavePreviewPdf: "exports:save-preview-pdf",
@@ -476,6 +480,7 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.assetsCopyImages,
   IPC_CHANNELS.assetsSaveImage,
   IPC_CHANNELS.assetsSaveImages,
+  IPC_CHANNELS.assetsProcessDesignImage,
   IPC_CHANNELS.draftsList,
   IPC_CHANNELS.draftsSave,
   IPC_CHANNELS.draftsOpen,
@@ -488,6 +493,7 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.patentsOpenPath,
   IPC_CHANNELS.patentsRecover,
   IPC_CHANNELS.patentsUpdateSettings,
+  IPC_CHANNELS.patentsUpdateDesignPatent,
   IPC_CHANNELS.patentsSetDrawingBooksEnabled,
   IPC_CHANNELS.patentsApplyBookEdit,
   IPC_CHANNELS.patentsCreateAuxiliaryDocument,
@@ -572,6 +578,7 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.exportsPatentPdf,
   IPC_CHANNELS.exportsAuxiliaryDocx,
   IPC_CHANNELS.exportsAuxiliaryPdf,
+  IPC_CHANNELS.exportsDesignPatent,
   IPC_CHANNELS.exportsPdf,
   IPC_CHANNELS.exportsPreview,
   IPC_CHANNELS.exportsSavePreviewPdf,
@@ -1292,6 +1299,17 @@ export const PatentUpdateSettingsRequestSchema = z
   });
 export type PatentUpdateSettingsRequest = z.infer<typeof PatentUpdateSettingsRequestSchema>;
 
+export const PatentUpdateDesignPatentRequestSchema = z
+  .object({
+    patentId: LibraryPatentIdSchema,
+    sessionId: SessionIdSchema,
+    expectedRevision: LibraryRevisionSchema,
+    designPatent: DesignPatentSchema,
+    assets: z.array(AssetDescriptorSchema).max(100_000),
+  })
+  .strict();
+export type PatentUpdateDesignPatentRequest = z.infer<typeof PatentUpdateDesignPatentRequestSchema>;
+
 export const PatentSetDrawingBooksRequestSchema = z
   .object({
     patentId: LibraryPatentIdSchema,
@@ -1729,6 +1747,30 @@ export const AuxiliaryDocumentExportRequestSchema = z
   .strict();
 export type AuxiliaryDocumentExportRequest = z.infer<typeof AuxiliaryDocumentExportRequestSchema>;
 
+export const DesignPatentExportRequestSchema = z
+  .object({
+    sessionId: SessionIdSchema,
+    patentId: LibraryPatentIdSchema,
+    expectedRevision: LibraryRevisionSchema,
+    format: z.enum(["docx", "pdf"]),
+    confirmWarnings: z.boolean(),
+    zip: z.boolean(),
+  })
+  .strict();
+export type DesignPatentExportRequest = z.infer<typeof DesignPatentExportRequestSchema>;
+
+export const DesignPatentExportReportSchema = z
+  .object({
+    outputDirectory: LocalPathSchema,
+    documentPath: LocalPathSchema,
+    imagePaths: z.array(LocalPathSchema),
+    zipPath: LocalPathSchema.nullable(),
+    patent: CanonicalPatentSchema,
+    savedAt: z.string().datetime(),
+  })
+  .strict();
+export type DesignPatentExportReport = z.infer<typeof DesignPatentExportReportSchema>;
+
 export const PreviewIdSchema = z.string().uuid();
 export const PrintPreviewSchema = z
   .object({
@@ -1844,6 +1886,34 @@ export const FlowchartRenderPreviewResultSchema = appResultSchema(FlowchartRende
 export const FlowchartCommitPreviewResultResultSchema = appResultSchema(
   FlowchartCommitPreviewResultSchema,
 );
+export const DesignImageProcessRequestSchema = z
+  .object({
+    sessionId: SessionIdSchema,
+    assetId: StableIdSchema,
+    operations: z.array(DesignPatentImageOperationSchema).max(100),
+  })
+  .strict();
+export type DesignImageProcessRequest = z.infer<typeof DesignImageProcessRequestSchema>;
+
+export const DesignImageSubjectBoundsSchema = z
+  .object({
+    leftPx: z.number().int().nonnegative(),
+    topPx: z.number().int().nonnegative(),
+    widthPx: z.number().int().positive(),
+    heightPx: z.number().int().positive(),
+  })
+  .strict();
+export const DesignImageProcessResultSchema = z
+  .object({
+    bytes: z.instanceof(Uint8Array),
+    widthPx: z.number().int().positive(),
+    heightPx: z.number().int().positive(),
+    subjectBounds: DesignImageSubjectBoundsSchema.nullable(),
+  })
+  .strict();
+export type DesignImageProcessResult = z.infer<typeof DesignImageProcessResultSchema>;
+
+export const DesignImageProcessAppResultSchema = appResultSchema(DesignImageProcessResultSchema);
 export const PrintPreviewResultSchema = appResultSchema(PrintPreviewSchema);
 export const PrinterDescriptorsResultSchema = appResultSchema(z.array(PrinterDescriptorSchema));
 export const DraftListResultSchema = appResultSchema(z.array(DraftSummarySchema));
@@ -1905,6 +1975,9 @@ export const TextPolishConversationSnapshotResultSchema = appResultSchema(
 export const TextPolishWorkspaceResultSchema = appResultSchema(TextPolishWorkspaceSchema);
 export const AiModelDiscoveryResultResultSchema = appResultSchema(AiModelDiscoveryResultSchema);
 export const NullableExportReportResultSchema = appResultSchema(ExportReportSchema.nullable());
+export const NullableDesignPatentExportReportResultSchema = appResultSchema(
+  DesignPatentExportReportSchema.nullable(),
+);
 export const NullableSavedDocumentLibraryResultSchema = appResultSchema(
   SavedDocumentSchema.nullable(),
 );
@@ -2065,6 +2138,9 @@ export interface PatentApi {
     copyImages(request: CopyImagesRequest): Promise<AppResult<void>>;
     saveImage(request: SaveImageRequest): Promise<AppResult<string | null>>;
     saveImages(request: SaveImagesRequest): Promise<AppResult<string[] | null>>;
+    processDesignImage(
+      request: DesignImageProcessRequest,
+    ): Promise<AppResult<DesignImageProcessResult>>;
   };
   drafts: {
     list(): Promise<AppResult<DraftSummary[]>>;
@@ -2083,6 +2159,9 @@ export interface PatentApi {
     openPath(path: string): Promise<AppResult<OpenedPatent>>;
     recover(patentId: string): Promise<AppResult<PatentRecoveryResult>>;
     updateSettings(request: PatentUpdateSettingsRequest): Promise<AppResult<PatentEditAck>>;
+    updateDesignPatent?(
+      request: PatentUpdateDesignPatentRequest,
+    ): Promise<AppResult<PatentEditAck>>;
     setDrawingBooksEnabled(
       request: PatentSetDrawingBooksRequest,
     ): Promise<AppResult<PatentAggregateEditResult>>;
@@ -2224,6 +2303,9 @@ export interface PatentApi {
     patentPdf(request: PatentDocxExportRequest): Promise<AppResult<ExportReport | null>>;
     auxiliaryDocx(request: AuxiliaryDocumentExportRequest): Promise<AppResult<ExportReport | null>>;
     auxiliaryPdf(request: AuxiliaryDocumentExportRequest): Promise<AppResult<ExportReport | null>>;
+    designPatent(
+      request: DesignPatentExportRequest,
+    ): Promise<AppResult<DesignPatentExportReport | null>>;
     pdf(request: ExportRequest): Promise<AppResult<ExportReport | null>>;
     preview(request: PrintPreviewRequest): Promise<AppResult<PrintPreview>>;
     savePreviewPdf(request: SavePreviewPdfRequest): Promise<AppResult<ExportReport | null>>;

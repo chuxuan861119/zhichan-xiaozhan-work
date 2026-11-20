@@ -916,7 +916,7 @@ test("opens authorized current patent paths and imports duplicate paths separate
   const patents = {
     list: vi.fn(async () => []),
     create: vi.fn(
-      async (request: { patentType: "invention" | "utility-model"; name: string | null }) => {
+      async (request: { patentType: "invention" | "utility-model" | "design"; name: string | null }) => {
         const created = createBlankPatent({
           ...request,
           templates: DEFAULT_PATENT_TEMPLATE_SETTINGS,

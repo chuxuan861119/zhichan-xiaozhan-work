@@ -21,8 +21,9 @@ import {
   V13_UPGRADE_FROM_V11_STATEMENTS,
   V13_UPGRADE_FROM_V12_STATEMENTS,
   V14_UPGRADE_FROM_V13_STATEMENTS,
-  V15_MIGRATION_STATEMENTS,
   V15_UPGRADE_FROM_V14_STATEMENTS,
+  V16_MIGRATION_STATEMENTS,
+  V16_UPGRADE_FROM_V15_STATEMENTS,
   validateCurrentSchema,
   validateSchemaV9,
   validateSchemaV10,
@@ -30,6 +31,7 @@ import {
   validateSchemaV12,
   validateSchemaV13,
   validateSchemaV14,
+  validateSchemaV15,
   validateSchemaVersionV10,
 } from "./schema.js";
 
@@ -167,7 +169,7 @@ export class LibraryMigrationService {
   ) {
     this.now = dependencies.now ?? (() => new Date());
     this.onEvent = dependencies.onEvent ?? (() => undefined);
-    this.migrationStatements = dependencies.migrationStatements ?? V15_MIGRATION_STATEMENTS;
+    this.migrationStatements = dependencies.migrationStatements ?? V16_MIGRATION_STATEMENTS;
     this.upgradeFromV9Statements =
       dependencies.upgradeFromV9Statements ?? V10_UPGRADE_FROM_V9_STATEMENTS;
     this.upgradeFromV10Statements =
@@ -280,7 +282,10 @@ export class LibraryMigrationService {
     let exclusiveTransactionOpen = false;
     let failureReason: "backup-failed" | "migration-failed" = "migration-failed";
     try {
-      database.read((rawDatabase) => rawDatabase.exec("BEGIN EXCLUSIVE"));
+      database.read((rawDatabase) => {
+        if (version !== null && version < 16) rawDatabase.exec("PRAGMA foreign_keys = OFF");
+        rawDatabase.exec("BEGIN EXCLUSIVE");
+      });
       exclusiveTransactionOpen = true;
       this.onEvent("exclusive-lock");
 
@@ -306,20 +311,31 @@ export class LibraryMigrationService {
           statements.push(...V13_UPGRADE_FROM_V11_STATEMENTS);
         } else if (version === 12) {
           statements.push(...V13_UPGRADE_FROM_V12_STATEMENTS);
-        } else if (version !== 13 && version !== 14 && version !== CURRENT_SCHEMA_VERSION) {
+        } else if (
+          version !== 13 &&
+          version !== 14 &&
+          version !== 15 &&
+          version !== CURRENT_SCHEMA_VERSION
+        ) {
           throw new Error("Unsupported schema migration path");
         }
         if (version !== null && version >= 9 && version <= 13)
           statements.push(...V14_UPGRADE_FROM_V13_STATEMENTS);
         if (version !== null && version >= 9 && version <= 14)
           statements.push(...V15_UPGRADE_FROM_V14_STATEMENTS);
+        if (version !== null && version >= 9 && version <= 15)
+          statements.push(...V16_UPGRADE_FROM_V15_STATEMENTS);
         for (const statement of statements) rawDatabase.exec(statement);
-        if (!validateCurrentSchema(rawDatabase).ok) {
+        if (
+          !validateCurrentSchema(rawDatabase).ok ||
+          rawDatabase.prepare("PRAGMA foreign_key_check").get()
+        ) {
           throw new Error("Schema version validation failed");
         }
         rawDatabase.exec("COMMIT");
       });
       exclusiveTransactionOpen = false;
+      database.read((rawDatabase) => rawDatabase.exec("PRAGMA foreign_keys = ON"));
       return { status: "ready", database, backupCreated };
     } catch {
       if (exclusiveTransactionOpen) {
@@ -501,6 +517,11 @@ export class LibraryMigrationService {
       if (version === 14) {
         return validateSchemaV14(database).ok
           ? { status: "supported", version: 14, needsDocumentSchema: false }
+          : { status: "invalid" };
+      }
+      if (version === 15) {
+        return validateSchemaV15(database).ok
+          ? { status: "supported", version: 15, needsDocumentSchema: false }
           : { status: "invalid" };
       }
       if (version !== CURRENT_SCHEMA_VERSION) return { status: "unsupported" };

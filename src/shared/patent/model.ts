@@ -14,10 +14,10 @@ import {
   FlowchartProjectDescriptorSchema,
 } from "../flowcharts/model.js";
 import { JsonObjectSchema } from "../ipc/primitives.js";
-
+import { DesignPatentSchema } from "./design-patent.js";
 import { PatentReferenceMarkSchema, PatentReferenceMarkSettingsSchema } from "./reference-marks.js";
 
-export const PatentTypeSchema = z.enum(["invention", "utility-model"]);
+export const PatentTypeSchema = z.enum(["invention", "utility-model", "design"]);
 export type PatentType = z.infer<typeof PatentTypeSchema>;
 
 export const PatentBookKindSchema = z.enum([
@@ -43,9 +43,10 @@ export const DRAWING_BOOK_KINDS = [
 ] as const satisfies readonly PatentBookKind[];
 
 export function isPatentBookAvailable(
-  patent: Pick<CanonicalPatent, "drawingBooksEnabled">,
+  patent: Pick<CanonicalPatent, "drawingBooksEnabled" | "patentType">,
   kind: PatentBookKind,
 ): boolean {
+  if (patent.patentType === "design") return false;
   return (
     patent.drawingBooksEnabled ||
     !DRAWING_BOOK_KINDS.includes(kind as (typeof DRAWING_BOOK_KINDS)[number])
@@ -53,7 +54,7 @@ export function isPatentBookAvailable(
 }
 
 export function availablePatentBookKinds(
-  patent: Pick<CanonicalPatent, "drawingBooksEnabled">,
+  patent: Pick<CanonicalPatent, "drawingBooksEnabled" | "patentType">,
 ): PatentBookKind[] {
   return PATENT_BOOK_ORDER.filter((kind) => isPatentBookAvailable(patent, kind));
 }
@@ -206,6 +207,7 @@ const CanonicalPatentObjectSchema = z
 
     referenceMarks: z.array(PatentReferenceMarkSchema).max(100_000),
     referenceMarkSettings: PatentReferenceMarkSettingsSchema,
+    designPatent: DesignPatentSchema.nullable().default(null),
   })
   .strict();
 
@@ -251,11 +253,18 @@ function refinePatent(
       path: ["drawingBooksEnabled"],
     });
   }
-  if (!isPatentBookAvailable(patent, patent.activeBookKind)) {
+  if (patent.patentType !== "design" && !isPatentBookAvailable(patent, patent.activeBookKind)) {
     ctx.addIssue({
       code: "custom",
       message: "当前书册不可用",
       path: ["activeBookKind"],
+    });
+  }
+  if ((patent.patentType === "design") !== (patent.designPatent !== null)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "专利类型与外观设计工作台数据不一致",
+      path: ["designPatent"],
     });
   }
   patent.books.forEach((book, index) => {
@@ -362,6 +371,16 @@ function refinePatent(
     }
   });
 
+  patent.designPatent?.views.forEach((view, index) => {
+    const path = ["designPatent", "views", index];
+    const source = assetsById.get(view.assetId);
+    if (!source || (source.mediaType !== "image/jpeg" && source.mediaType !== "image/png"))
+      ctx.addIssue({
+        code: "custom",
+        message: "外观设计视图资源不存在",
+        path: [...path, "assetId"],
+      });
+  });
   if (
     patent.abstractDrawingFigureId !== null &&
     !patent.figures.some((figure) => figure.figureId === patent.abstractDrawingFigureId)
@@ -626,7 +645,11 @@ function validateBodyImage(
   const asset = assetsById.get(assetId);
   if (!asset) {
     ctx.addIssue({ code: "custom", message: "正文图片资源不存在", path: [...path, "assetId"] });
-  } else if (["flowchart-preview", "drawing-source", "drawing-tiles"].includes(asset.kind ?? "")) {
+  } else if (
+    ["flowchart-preview", "drawing-source", "drawing-tiles", "design-editor-project"].includes(
+      asset.kind ?? "",
+    )
+  ) {
     ctx.addIssue({
       code: "custom",
       message: "五书正文不能直接引用工程预览或原始图纸资源",

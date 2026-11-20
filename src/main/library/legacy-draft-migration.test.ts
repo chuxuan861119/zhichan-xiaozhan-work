@@ -173,7 +173,7 @@ describe("legacy draft migration", () => {
       ...activeBook.document,
       documentId: patentPayload.patent.patentId,
       title: patentPayload.patent.name ?? activeBook.document.title,
-      patentType: patentPayload.patent.patentType,
+      patentType: "invention",
       createdAt: patentPayload.patent.createdAt,
       modifiedAt: patentPayload.patent.modifiedAt,
       assets: patentPayload.patent.assets,

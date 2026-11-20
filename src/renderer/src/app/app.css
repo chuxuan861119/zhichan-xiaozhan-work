@@ -16124,3 +16124,135 @@ button.patent-global-function-rail__header-action.dialog-close-control[aria-pres
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* Exterior-design workbench */
+.design-patent-workbench {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  overflow: auto;
+}
+.design-patent-workbench__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.design-patent-workbench__header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+.design-patent-workbench__header p {
+  margin: 6px 0 0;
+  color: var(--text-secondary, #667085);
+}
+.design-patent-workbench__tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color, #d0d5dd);
+}
+.design-patent-workbench__tabs button {
+  border: 0;
+  background: transparent;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.design-patent-workbench__tabs button[aria-selected="true"] {
+  border-bottom: 2px solid var(--accent-color, #2563eb);
+  color: var(--accent-color, #2563eb);
+}
+.design-patent-workbench__view-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 12px;
+}
+.design-patent-workbench__view-slot {
+  display: grid;
+  gap: 8px;
+  min-height: 100px;
+  padding: 14px;
+  border: 1px dashed var(--border-color, #98a2b3);
+  border-radius: 8px;
+  background: var(--surface-muted, #f8fafc);
+}
+.design-patent-workbench__view-slot span,
+.design-patent-workbench__hint {
+  color: var(--text-secondary, #667085);
+}
+.design-patent-workbench
+  .design-patent-workbench__view-grid
+  .design-patent-workbench__view-slot
+  img {
+  width: 100%;
+  height: 220px;
+  border: 1px solid var(--border-color, #d0d5dd);
+  border-radius: 6px;
+  background: white;
+  object-fit: contain;
+}
+.design-patent-workbench__operations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.design-patent-workbench__supplemental {
+  display: grid;
+  gap: 12px;
+}
+.design-patent-workbench__hint {
+  padding: 12px;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+.design-patent-workbench__brief {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+}
+.design-patent-workbench__brief label {
+  display: grid;
+  gap: 6px;
+}
+.design-patent-workbench__brief textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.design-patent-workbench__brief > section[aria-label="简要说明实时预览"] {
+  padding: 18px;
+  border: 1px solid var(--border-color, #d0d5dd);
+  border-radius: 8px;
+  background: white;
+}
+.design-patent-workbench__brief > section[aria-label="简要说明实时预览"] h2 {
+  margin-top: 0;
+}
+.design-patent-workbench__checks {
+  position: fixed;
+  right: 24px;
+  top: 112px;
+  width: min(360px, calc(100vw - 48px));
+  max-height: calc(100vh - 136px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--border-color, #d0d5dd);
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 12px 32px rgb(15 23 42 / 18%);
+  z-index: 40;
+}
+@media (max-width: 900px) {
+  .design-patent-workbench__view-grid {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .design-patent-workbench {
+    padding: 16px;
+  }
+  .design-patent-workbench__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .design-patent-workbench__view-grid {
+    grid-template-columns: 1fr;
+  }
+}

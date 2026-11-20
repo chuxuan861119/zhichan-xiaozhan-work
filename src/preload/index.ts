@@ -45,6 +45,9 @@ import {
   DataTransferLibraryInspectionResultSchema,
   DataTransferOperationIdSchema,
   DataTransferProgressSchema,
+  DesignImageProcessAppResultSchema,
+  DesignImageProcessRequestSchema,
+  DesignPatentExportRequestSchema,
   DirectPrintRequestSchema,
   DiscardImportedAssetsRequestSchema,
   DocxImportCancelRequestSchema,
@@ -106,6 +109,7 @@ import {
   LibraryScopeSchema,
   MenuCommandSchema,
   NullableDocxImportPreviewResultSchema,
+  NullableDesignPatentExportReportResultSchema,
   NullableExportReportResultSchema,
   NullableFlowchartOpenedProjectResultSchema,
   NullableImportedAssetResultSchema,
@@ -153,6 +157,7 @@ import {
   PatentTemplateEditorSaveRequestSchema,
   PatentTemplateEditorSnapshotResultSchema,
   PatentTemplateLauncherSummaryResultSchema,
+  PatentUpdateDesignPatentRequestSchema,
   PatentUpdateSettingsRequestSchema,
   PreparedRecoveryResultSchema,
   PreviewBytesResultSchema,
@@ -706,6 +711,13 @@ const api: PatentApi = {
         NullableLocalPathListResultSchema,
         request,
       ),
+    processDesignImage: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.assetsProcessDesignImage,
+        DesignImageProcessRequestSchema,
+        DesignImageProcessAppResultSchema,
+        request,
+      ),
   },
   drafts: {
     list: () => invokeWithoutInput(IPC_CHANNELS.draftsList, DraftListResultSchema),
@@ -763,6 +775,13 @@ const api: PatentApi = {
       invokeWithInput(
         IPC_CHANNELS.patentsUpdateSettings,
         PatentUpdateSettingsRequestSchema,
+        PatentEditAckResultSchema,
+        request,
+      ),
+    updateDesignPatent: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.patentsUpdateDesignPatent,
+        PatentUpdateDesignPatentRequestSchema,
         PatentEditAckResultSchema,
         request,
       ),
@@ -1317,6 +1336,13 @@ const api: PatentApi = {
         IPC_CHANNELS.exportsAuxiliaryPdf,
         AuxiliaryDocumentExportRequestSchema,
         NullableExportReportResultSchema,
+        request,
+      ),
+    designPatent: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.exportsDesignPatent,
+        DesignPatentExportRequestSchema,
+        NullableDesignPatentExportReportResultSchema,
         request,
       ),
     pdf: (request) =>

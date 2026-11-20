@@ -108,6 +108,10 @@ const CurrentPatentMetadataSchema = z
     docxImportReport: DocxImportReportSchema.nullable().optional(),
     figures: z.array(PatentFigureSchema).max(100_000),
     abstractDrawingFigureId: z.string().uuid().nullable(),
+    // Design state changes independently from the archive envelope. Keep the
+    // transport field opaque until migrateCanonicalPatent applies the versioned
+    // canonical validation below.
+    designPatent: z.unknown().nullable().optional(),
     assets: z.array(AssetDescriptorSchema).max(100_000),
     flowchartProjects: z.array(FlowchartProjectDescriptorSchema).max(100_000).optional(),
     drawingProjects: DrawingProjectsSchema.optional(),

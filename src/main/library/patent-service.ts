@@ -34,6 +34,10 @@ import {
 } from "../../shared/patent/auxiliary-management.js";
 import { createBlankPatent } from "../../shared/patent/defaults.js";
 import {
+  type DesignPatent,
+  DesignPatentSchema,
+} from "../../shared/patent/design-patent.js";
+import {
   planDisableDrawingBooks,
   planEnableDrawingBooks,
 } from "../../shared/patent/drawing-books.js";
@@ -449,13 +453,20 @@ export class PatentService {
             referenceMarks: validated.referenceMarks,
             referenceMarkSettings: validated.referenceMarkSettings,
           });
-          const snapshotPayload = storedJson(
-            `patent-snapshot:${validated.patentId}:0:2`,
-            validated,
+          this.#saveDesignPatentState(
+            database,
+            validated.patentId,
+            createdAt,
+            validated.designPatent,
           );
-          database
-            .prepare(
-              `INSERT INTO snapshots(
+          if (validated.patentType !== "design") {
+            const snapshotPayload = storedJson(
+              `patent-snapshot:${validated.patentId}:0:2`,
+              validated,
+            );
+            database
+              .prepare(
+                `INSERT INTO snapshots(
               patent_id,
               revision,
               model_version,
@@ -464,14 +475,15 @@ export class PatentService {
               created_at,
               source
             ) VALUES (?, 0, 2, ?, ?, ?, 'initial')`,
-            )
-            .run(validated.patentId, snapshotPayload, hashJson(validated), createdAt);
-          for (const asset of validated.assets)
-            database
-              .prepare(
-                "INSERT INTO snapshot_assets(patent_id, revision, asset_id) VALUES (?, 0, ?)",
               )
-              .run(validated.patentId, asset.assetId);
+              .run(validated.patentId, snapshotPayload, hashJson(validated), createdAt);
+            for (const asset of validated.assets)
+              database
+                .prepare(
+                  "INSERT INTO snapshot_assets(patent_id, revision, asset_id) VALUES (?, 0, ?)",
+                )
+                .run(validated.patentId, asset.assetId);
+          }
           inTransaction?.(database, structuredClone(validated));
         });
 
@@ -639,18 +651,26 @@ export class PatentService {
       referenceMarks: validated.referenceMarks,
       referenceMarkSettings: validated.referenceMarkSettings,
     });
-    const snapshot = encodePatentDocumentSnapshot(validated);
-    database
-      .prepare(
-        `INSERT INTO snapshots(
+    this.#saveDesignPatentState(
+      database,
+      validated.patentId,
+      validated.modifiedAt,
+      validated.designPatent,
+    );
+    if (validated.patentType !== "design") {
+      const snapshot = encodePatentDocumentSnapshot(validated);
+      database
+        .prepare(
+          `INSERT INTO snapshots(
           patent_id, revision, model_version, payload, content_hash, created_at, source
         ) VALUES (?, 0, 3, ?, ?, ?, 'initial')`,
-      )
-      .run(validated.patentId, snapshot.payload, snapshot.contentHash, validated.createdAt);
-    for (const asset of patentDocumentSnapshot(validated).assets)
-      database
-        .prepare("INSERT INTO snapshot_assets(patent_id, revision, asset_id) VALUES (?, 0, ?)")
-        .run(validated.patentId, asset.assetId);
+        )
+        .run(validated.patentId, snapshot.payload, snapshot.contentHash, validated.createdAt);
+      for (const asset of patentDocumentSnapshot(validated).assets)
+        database
+          .prepare("INSERT INTO snapshot_assets(patent_id, revision, asset_id) VALUES (?, 0, ?)")
+          .run(validated.patentId, asset.assetId);
+    }
     database
       .prepare("INSERT INTO library_state(key, value, updated_at) VALUES (?, ?, ?)")
       .run(operationKey, storedJson(operationKey, validated.patentId), validated.createdAt);
@@ -2235,6 +2255,72 @@ export class PatentService {
     return acknowledgement;
   }
 
+  async updateDesignPatent(input: {
+    patentId: string;
+    sessionId: string;
+    expectedRevision: number;
+    designPatent: DesignPatent;
+    assets: AssetDescriptor[];
+  }): Promise<PatentEditAck> {
+    const acknowledgement = await this.#enqueueWrite(async () => {
+      if (this.leases.get(input.sessionId) !== input.patentId) {
+        throw new LibraryServiceError("LIBRARY_LOCKED", "Patent session is not active.");
+      }
+      const row = ensureActivePatent(this.#patentRow(input.patentId));
+      if (row.revision !== input.expectedRevision) {
+        throw new LibraryServiceError("REVISION_CONFLICT", "Revision conflict.");
+      }
+      const currentPatent = this.#loadPatent(input.patentId);
+      if (currentPatent.patentType !== "design") {
+        throw new LibraryServiceError("INVALID_INPUT", "Patent is not a design patent.");
+      }
+      const savedAt = this.now().toISOString();
+      const revision = row.revision + 1;
+      const assets = await this.#authoritativeBookAssets(input.patentId, input.assets);
+      const validated = CanonicalPatentSchema.parse({
+        ...currentPatent,
+        revision,
+        modifiedAt: savedAt,
+        assets,
+        designPatent: structuredClone(input.designPatent),
+      });
+      const operationId = this.randomUUID();
+      this.database.transaction((database) => {
+        this.#insertEditLog(database, {
+          operationId,
+          patentId: input.patentId,
+          baseRevision: row.revision,
+          targetRevision: revision,
+          savedAt,
+          payload: {
+            type: "design-patent-edit",
+            patentId: input.patentId,
+            baseRevision: row.revision,
+            targetRevision: revision,
+            designPatent: validated.designPatent,
+            assets: validated.assets,
+          },
+        });
+        database.prepare("DELETE FROM patent_assets WHERE patent_id = ?").run(input.patentId);
+        const insertAsset = database.prepare(
+          "INSERT OR IGNORE INTO patent_assets(patent_id, asset_id) VALUES (?, ?)",
+        );
+        for (const asset of validated.assets) insertAsset.run(input.patentId, asset.assetId);
+        this.#saveFigureState(database, input.patentId, savedAt, {
+          assets: validated.assets,
+          abstractDrawingFigureId: null,
+        });
+        this.#saveDesignPatentState(database, input.patentId, savedAt, validated.designPatent);
+        database
+          .prepare("UPDATE patents SET revision = ?, modified_at = ? WHERE patent_id = ?")
+          .run(revision, savedAt, input.patentId);
+      });
+      return { patentId: input.patentId, revision, savedAt };
+    });
+    await this.#collectUnusedAssetsAfterCommit(acknowledgement.patentId);
+    return acknowledgement;
+  }
+
   flush(
     patentId: string,
     expectedRevision: number,
@@ -2326,9 +2412,10 @@ export class PatentService {
         try {
           this.deleteWithHistory(row.patent_id, () =>
             this.database.transaction((database) => {
-              database
+              const deleted = database
                 .prepare("DELETE FROM patents WHERE patent_id = ? AND deleted_at IS NOT NULL")
                 .run(row.patent_id);
+              if (deleted.changes) this.#deleteDesignPatentState(database, row.patent_id);
             }),
           );
         } finally {
@@ -2362,6 +2449,7 @@ export class PatentService {
         this.deleteWithHistory(patentId, () =>
           this.database.transaction((database) => {
             database.prepare("DELETE FROM patents WHERE patent_id = ?").run(patentId);
+            this.#deleteDesignPatentState(database, patentId);
             context.inTransaction?.(database);
           }),
         );
@@ -2497,6 +2585,7 @@ export class PatentService {
       }
     }
     const figureState = this.#loadFigureState(patentId);
+    const designPatent = this.#loadDesignPatentState(patentId, row.patent_type);
     const auxiliaryDocuments = this.database.read((database) =>
       database
         .prepare(
@@ -2657,6 +2746,7 @@ export class PatentService {
 
       referenceMarks: referenceMarkState.referenceMarks,
       referenceMarkSettings: referenceMarkState.referenceMarkSettings,
+      designPatent,
     };
     const patent = retainCurrentPatentAssets(
       cached
@@ -2680,6 +2770,41 @@ export class PatentService {
           : undefined;
     }
     return patent;
+  }
+
+  #deleteDesignPatentState(database: DatabaseSync, patentId: string): void {
+    database
+      .prepare("DELETE FROM library_state WHERE key = ?")
+      .run(`patent:${patentId}:design-patent-state`);
+  }
+
+  #loadDesignPatentState(patentId: string, patentType: PatentType): DesignPatent | null {
+    if (patentType !== "design") return null;
+    const row = this.database.read((database) =>
+      database
+        .prepare("SELECT value FROM library_state WHERE key = ?")
+        .get(`patent:${patentId}:design-patent-state`),
+    ) as { value: Uint8Array } | undefined;
+    if (!row) throw new LibraryServiceError("CORRUPT_FILE", "Design patent state is missing.");
+    return DesignPatentSchema.parse(
+      parsedJson(`patent-design-state:${patentId}`, row.value),
+    );
+  }
+
+  #saveDesignPatentState(
+    database: DatabaseSync,
+    patentId: string,
+    savedAt: string,
+    state: DesignPatent | null,
+  ): void {
+    if (state === null) return;
+    database
+      .prepare(`INSERT OR REPLACE INTO library_state(key, value, updated_at) VALUES (?, ?, ?)`)
+      .run(
+        `patent:${patentId}:design-patent-state`,
+        storedJson(`patent-design-state:${patentId}`, state),
+        savedAt,
+      );
   }
 
   #loadReferenceMarkState(

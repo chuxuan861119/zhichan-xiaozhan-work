@@ -5,6 +5,7 @@ import type { CanonicalPatent } from "./model.js";
 /** Current content only. Undo leases and snapshot indexes own historical resources separately. */
 export function retainCurrentPatentAssets<T extends CanonicalPatent>(patent: T): T {
   const used = new Set(patent.figures.map((figure) => figure.assetId));
+  for (const view of patent.designPatent?.views ?? []) used.add(view.assetId);
   for (const book of [...patent.books, ...patent.auxiliaryDocuments]) {
     for (const assetId of referencedDocumentAssetIds(book.document)) used.add(assetId);
   }

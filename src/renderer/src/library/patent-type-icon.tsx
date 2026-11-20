@@ -1,6 +1,11 @@
-import { Lightbulb } from "lucide-react";
+import { Box, Lightbulb } from "lucide-react";
 
-export function PatentTypeIcon({ type }: { type: "invention" | "utility-model" }) {
+export function PatentTypeIcon({ type }: { type: "invention" | "utility-model" | "design" }) {
+  if (type === "design") {
+    return (
+      <Box className="library-patent-type-icon" size={21} strokeWidth={1.7} aria-hidden="true" />
+    );
+  }
   if (type === "invention") {
     return (
       <Lightbulb

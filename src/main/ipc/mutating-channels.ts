@@ -24,6 +24,8 @@ export const MUTATING_IPC_CHANNELS: ReadonlySet<IpcChannel> = new Set([
   IPC_CHANNELS.patentsOpenPath,
   IPC_CHANNELS.patentsRecover,
   IPC_CHANNELS.patentsUpdateSettings,
+  IPC_CHANNELS.patentsUpdateDesignPatent,
+  IPC_CHANNELS.exportsDesignPatent,
   IPC_CHANNELS.patentsSetDrawingBooksEnabled,
   IPC_CHANNELS.patentsApplyBookEdit,
   IPC_CHANNELS.patentsCreateAuxiliaryDocument,

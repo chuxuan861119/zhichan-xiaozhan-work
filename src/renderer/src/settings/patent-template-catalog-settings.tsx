@@ -1,7 +1,9 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AssetDescriptor } from "../../../shared/document/model";
-import type { PatentType } from "../../../shared/patent/model";
+import type { PatentType as AllPatentTypes } from "../../../shared/patent/model";
+
+type PatentType = Exclude<AllPatentTypes, "design">;
 import {
   isFilledPatentTemplateSlot,
   PATENT_TEMPLATE_NAME_MAX_LENGTH,

@@ -69,6 +69,7 @@ export function insertMissingDescriptionChapters(
   templates: PatentTemplateSettings,
 ): PatentBookDocument {
   const missing = new Set(missingDescriptionChapters(document, patentType));
+  if (patentType === "design") return document;
   if (missing.size === 0) return document;
   const templateDocument = instantiateBookTemplate({
     template: templates[patentType].description,

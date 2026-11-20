@@ -16,7 +16,7 @@ export function auxiliaryExportDocument(
   return {
     ...structuredClone(auxiliary.document),
     title: auxiliary.title,
-    patentType: patent.patentType,
+    patentType: patent.patentType === "design" ? null : patent.patentType,
     assets: structuredClone(patent.assets),
   };
 }

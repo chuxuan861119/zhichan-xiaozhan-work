@@ -30,6 +30,7 @@ import { moveAuxiliaryDocument as reorderAuxiliaryDocuments } from "../../../sha
 import type { PatdocWorkspace } from "../../../shared/patent/continuation";
 import { descriptionInventionTitle } from "../../../shared/patent/description";
 import { fitInsertedFigures } from "../../../shared/patent/figure-insertion-size";
+import type { DesignPatent } from "../../../shared/patent/design-patent";
 import type {
   AuxiliaryDocument,
   CanonicalPatent,
@@ -152,6 +153,9 @@ type PatentContextValue = {
     importedAssets: AssetDescriptor[],
     historyLabel: "导入附图" | "粘贴附图",
   ): void;
+  updateDesignPatent(patentId: string, designPatent: DesignPatent, assets: AssetDescriptor[]): void;
+  prepareDesignPatentExport(patentId: string): Promise<number | null>;
+  adoptDesignPatentExport(patentId: string, patent: CanonicalPatent, savedAt: string): boolean;
   updatePatentSettings(
     patentId: string,
     request: {
@@ -366,6 +370,12 @@ export function PatentProvider({
         },
         applyFigureEdit: (request) => window.patentApi.patents.applyFigureEdit(request),
         updateSettings: (request) => window.patentApi.patents.updateSettings(request),
+        updateDesignPatent: (request) =>
+          window.patentApi.patents.updateDesignPatent?.(request) ??
+          Promise.resolve({
+            ok: false,
+            error: { code: "NOT_FOUND", message: "外观设计保存服务不可用。" },
+          }),
         flush: (request) => window.patentApi.patents.flush(request),
         saveFlowchart: (request) => window.patentApi.flowcharts.save(request),
         onQueued: syncQueuedModel,
@@ -1075,6 +1085,53 @@ export function PatentProvider({
       });
     },
     [ensureQueue],
+  );
+
+  const updateDesignPatent = useCallback(
+    (patentId: string, designPatent: DesignPatent, assets: AssetDescriptor[]) => {
+      const session = stateRef.current.sessions.find(
+        (candidate) => candidate.patentId === patentId,
+      );
+      if (session?.patent.patentType !== "design") return;
+      ensureQueue(session).enqueueDesignPatent(designPatent, assets);
+    },
+    [ensureQueue],
+  );
+
+  const prepareDesignPatentExport = useCallback(
+    async (patentId: string) => {
+      const session = stateRef.current.sessions.find(
+        (candidate) => candidate.patentId === patentId,
+      );
+      if (!session) return null;
+      const queue = ensureQueue(session);
+      try {
+        await queue.flush();
+        return queue.snapshot().persistedRevision;
+      } catch (error) {
+        showApplicationError(appError(error));
+        return null;
+      }
+    },
+    [ensureQueue],
+  );
+
+  const adoptDesignPatentExport = useCallback(
+    (patentId: string, patent: CanonicalPatent, savedAt: string) => {
+      const queue = queues.current.get(patentId);
+      if (!queue) return false;
+      try {
+        const snapshot = queue.adoptPersistedPatent(patent, savedAt);
+        const action = { type: "SESSION_PERSISTED_PATENT_ADOPTED", snapshot } as const;
+        stateRef.current = patentReducer(stateRef.current, action);
+        dispatch(action);
+        return true;
+      } catch (error) {
+        showApplicationError(appError(error));
+        return false;
+      }
+    },
+    [],
   );
 
   const updatePatentFigures = useCallback(
@@ -2088,6 +2145,9 @@ export function PatentProvider({
       updateBookDocument,
       updatePatentFigures,
       appendImportedPatentFigures,
+      updateDesignPatent,
+      prepareDesignPatentExport,
+      adoptDesignPatentExport,
       updatePatentSettings,
       setDrawingBooksEnabled,
       applyReferenceMarkPlan,
@@ -2136,6 +2196,9 @@ export function PatentProvider({
       updateBookDocument,
       updatePatentFigures,
       appendImportedPatentFigures,
+      updateDesignPatent,
+      prepareDesignPatentExport,
+      adoptDesignPatentExport,
       updatePatentSettings,
       setDrawingBooksEnabled,
       applyReferenceMarkPlan,

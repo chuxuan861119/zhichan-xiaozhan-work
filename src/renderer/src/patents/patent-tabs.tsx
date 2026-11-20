@@ -39,7 +39,7 @@ function PatentTabStateBadge({ session }: { session: PatentSession }) {
         <SaveStateBadge state={state} lastSavedAt={session.lastSavedAt} />
       ) : (
         <span className={`patent-type-badge patent-type-badge--${session.patent.patentType}`}>
-          {session.patent.patentType === "invention" ? "发明" : "实用新型"}
+          {{ invention: "发明", "utility-model": "实用新型", design: "外观设计" }[session.patent.patentType]}
         </span>
       )}
     </span>

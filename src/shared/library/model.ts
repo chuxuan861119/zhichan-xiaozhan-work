@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PatentTypeSchema } from "../patent/model.js";
 
 export const LibraryDocumentIdSchema = z.string().uuid();
 export type LibraryDocumentId = z.infer<typeof LibraryDocumentIdSchema>;
@@ -65,7 +66,7 @@ export const LibraryPatentSummarySchema = z
     patentId: LibraryPatentIdSchema,
     name: z.string().trim().min(1).max(500).nullable(),
     customer: z.string().trim().max(200).nullable(),
-    patentType: z.enum(["invention", "utility-model"]),
+    patentType: PatentTypeSchema,
     revision: LibraryRevisionSchema,
     bookStatuses: z
       .object({

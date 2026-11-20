@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PatentTypeSchema } from "../patent/model.js";
 
 export const ContentSearchRequestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("status") }).strict(),
@@ -20,7 +21,7 @@ export const ContentSearchRequestSchema = z.discriminatedUnion("action", [
       searchId: z.string().min(1).max(100).optional(),
       after: z.string().max(200).optional(),
       indexVersion: z.string().max(100).optional(),
-      patentType: z.enum(["invention", "utility-model"]).optional(),
+      patentType: PatentTypeSchema.optional(),
       offset: z.number().int().min(0).max(100000).optional(),
     })
     .strict(),

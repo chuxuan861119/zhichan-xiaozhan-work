@@ -33,7 +33,7 @@ export function createPatentPrintSnapshot(patent: CanonicalPatent, currentKind: 
       return {
         ...structuredClone(book.document),
         title: PATENT_BOOK_LABELS[kind],
-        patentType: patent.patentType,
+        patentType: patent.patentType === "design" ? null : patent.patentType,
         assets: structuredClone(patent.assets),
         content: [
           ...structuredClone(drawingBookContent(patent, book)),

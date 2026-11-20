@@ -493,11 +493,11 @@ async function validateManifestFiles(
     childRootForLogicalPath(layout, "library/library.sqlite3") ?? libraryDataRoot(layout),
     childCapabilityForLogicalPath(layout, "library/library.sqlite3"),
   );
-  // A verified V10–V13 package is upgraded in staging. Its installed database
+  // A verified older package is upgraded in staging. Its installed database
   // must still match the post-recovery digest above and the full current schema.
   const upgradedInstalledSchema =
     layout.installed &&
-    [10, 11, 12, 13, 14].includes(manifest.databaseSchemaVersion) &&
+    [10, 11, 12, 13, 14, 15].includes(manifest.databaseSchemaVersion) &&
     frozenDatabase.currentSchemaValid;
   if (
     !upgradedInstalledSchema &&
@@ -549,6 +549,13 @@ function coreValidator(): DataTransferDomainValidator {
           normalize("patent", error);
         }
 
+        // Design cases are recovered and validated from their independent durable state.
+        // Their full-state edits do not depend on an ordinary patent snapshot anchor.
+        const designPatentIds = new Set(
+          [...active, ...trash]
+            .filter((patent) => patent.patentType === "design")
+            .map((patent) => patent.patentId),
+        );
         const patentSnapshots = runtime.database.read(
           (database) =>
             database
@@ -634,6 +641,8 @@ function coreValidator(): DataTransferDomainValidator {
             }
             seenOperations.add(edit.operation_id);
             targets.add(edit.target_revision);
+            if (designPatentIds.has(edit.patent_id)) continue;
+            if (payload.type === "design-patent-edit") fail("patent");
             const previous = replayed.get(edit.patent_id);
             const base =
               previous?.revision === edit.base_revision
@@ -656,6 +665,7 @@ function coreValidator(): DataTransferDomainValidator {
             replayed.set(edit.patent_id, next);
           }
           for (const [patentId, storedRevision] of patentRevisions) {
+            if (designPatentIds.has(patentId)) continue;
             const replayedRevision = replayed.get(patentId)?.revision;
             if (replayedRevision !== undefined && replayedRevision !== storedRevision) {
               fail("patent");

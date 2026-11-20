@@ -82,6 +82,7 @@ import {
 } from "../../../shared/settings/custom-dual-view";
 import { DEFAULT_APP_SETTINGS } from "../../../shared/settings/model";
 import type { PageMargins } from "../../../shared/settings/page-margins";
+import { DesignPatentWorkbench } from "../design-patent/design-patent-workbench";
 import { DocumentProvider, useDocuments } from "../documents/document-context";
 import { CloseDecisionDialog, DocumentTabs } from "../documents/document-tabs";
 import { EditorWorkspace } from "../documents/editor-workspace";
@@ -431,7 +432,7 @@ function clampZoom(value: number, rounded = true): number {
 }
 
 function patentTarget(session: PatentSession | null): PatentDocumentTarget | null {
-  if (!session) return null;
+  if (!session || session.patent.patentType === "design") return null;
   return { patentId: session.patentId, kind: "book", bookKind: session.activeBookKind };
 }
 
@@ -899,7 +900,7 @@ function WorkbenchWindow() {
   }> | null>(null);
   const windowLayout = useWindowLayout();
   const activeWorkspaceTarget =
-    workspaceLayout.mode === "dual"
+    workspaceLayout.mode === "dual" && patents.activeSession?.patent.patentType !== "design"
       ? targetForPane(workspaceLayout, workspaceLayout.activePane)
       : patentTarget(patents.activeSession);
   const activePatentSession = activeWorkspaceTarget
@@ -2706,6 +2707,7 @@ function WorkbenchWindow() {
   const activeExportRequest = (): ExportRequest | null => {
     if (patentsAvailable && activePatentSession) {
       const session = activePatentSession;
+      if (session.patent.patentType === "design") return null;
       const patentName = session.patent.name ?? "未命名专利";
       if (activeWorkspaceTarget?.kind === "auxiliary") {
         const auxiliary = session.patent.auxiliaryDocuments.find(
@@ -5175,7 +5177,7 @@ function WorkbenchWindow() {
           }
         : {})}
     >
-      {patentsAvailable && library.view === "editor" && activePatentSession ? (
+      {patentsAvailable && library.view === "editor" && activePatentSession && activePatentSession.patent.patentType !== "design" ? (
         <PatentBookTabs
           session={activePatentSession}
           inactive={embeddedEditorActive}
@@ -5327,7 +5329,7 @@ function WorkbenchWindow() {
           />
         )}
         {patentsAvailable && library.view === "library" ? null : applicationMenu}
-        {(!embeddedEditorActive || workspaceLayout.mode === "dual") && library.view === "editor" ? (
+        {activePatentSession?.patent.patentType !== "design" && (!embeddedEditorActive || workspaceLayout.mode === "dual") && library.view === "editor" ? (
           <ToolBar
             tutorialMode={isToolTutorial}
             showNewDocumentButton={!patentsAvailable}
@@ -5644,7 +5646,20 @@ function WorkbenchWindow() {
             >
             {patentsAvailable ? (
               <PatentBookViewportProvider store={patentBookViewportStore}>
-                {patents.activeSession && workspaceLayout.mode === "dual" ? (
+                {activePatentSession?.patent.patentType === "design" ? (
+                <DesignPatentWorkbench
+                  session={activePatentSession}
+                  onUpdate={(designPatent, assets) =>
+                    patents.updateDesignPatent(activePatentSession.patentId, designPatent, assets)
+                  }
+                  onPrepareExport={() =>
+                    patents.prepareDesignPatentExport(activePatentSession.patentId)
+                  }
+                  onExportCommitted={(patent, savedAt) =>
+                    patents.adoptDesignPatentExport(activePatentSession.patentId, patent, savedAt)
+                  }
+                />
+              ) : patents.activeSession && workspaceLayout.mode === "dual" ? (
                   <DualDocumentWorkspace
                     left={paneView("left")}
                     right={paneView("right")}

@@ -106,6 +106,17 @@ describe("create patent dialog", () => {
     });
   });
 
+  test("offers the exterior-design workbench as a patent type", async () => {
+    const user = userEvent.setup();
+    const onCreate = vi.fn();
+    render(<CreatePatentDialog busy={false} onCreate={onCreate} onCancel={vi.fn()} />);
+
+    await user.click(screen.getByRole("radio", { name: "外观设计" }));
+    await user.click(screen.getByRole("button", { name: "创建专利" }));
+
+    expect(onCreate).toHaveBeenCalledWith({ patentType: "design", name: null, customer: null });
+  });
+
   test("trims patent names without forcing a default name into stored metadata", async () => {
     const user = userEvent.setup();
     const onCreate = vi.fn();

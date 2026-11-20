@@ -6,6 +6,7 @@ import {
   readdir,
   readFile,
   realpath,
+  rm,
   stat,
   writeFile,
 } from "node:fs/promises";
@@ -53,6 +54,8 @@ import {
   ChemicalStructureSourceResultSchema,
   ClipboardTextWriteRequestSchema,
   CopyImagesRequestSchema,
+  DesignImageProcessRequestSchema,
+  DesignPatentExportRequestSchema,
   DirectPrintRequestSchema,
   DiscardImportedAssetsRequestSchema,
   DrawingCancelImportSchema,
@@ -113,6 +116,7 @@ import {
   isNetworkAiAvailable,
 } from "../../shared/platform.js";
 import { RecoverySourceSchema } from "../../shared/recovery/self-service-recovery.js";
+import { inspectDesignPatent } from "../../shared/patent/design-patent.js";
 import type { StartupRecoveryReport } from "../../shared/recovery/startup-recovery.js";
 import { DEFAULT_SNAPSHOT_SETTINGS } from "../../shared/snapshot/model.js";
 import { TutorialLessonIdSchema } from "../../shared/tutorial/model.js";
@@ -196,6 +200,12 @@ import {
   registerDataTransferIpc,
   TransferSelectionRegistry,
 } from "../data-transfer/register-data-transfer-ipc.js";
+import {
+  exportDesignPatentDocx,
+  exportDesignPatentPdf,
+  renderDesignPatentBriefHtml,
+} from "../design-patent/design-patent-exporter.js";
+import { processDesignImage } from "../design-patent/image-processor.js";
 import { DocumentRegistry, normalizeDocumentPath } from "../documents/document-registry.js";
 import { FileService } from "../documents/file-service.js";
 import type { PatdocPayload, PatentPatdocPayload } from "../documents/patdoc-format.js";
@@ -2932,6 +2942,26 @@ export function registerIpcHandlers(
       return ipcFailure(error, logger);
     }
   });
+  register(IPC_CHANNELS.assetsProcessDesignImage, async (_event, requestInput) => {
+    try {
+      const request = DesignImageProcessRequestSchema.parse(requestInput);
+      sessions.requireActive(request.sessionId);
+      const asset = await assetStore.getOrLoad(request.sessionId, request.assetId);
+      if (!asset) return appFailure("NOT_FOUND");
+      if (
+        asset.descriptor.mediaType !== "image/jpeg" &&
+        asset.descriptor.mediaType !== "image/png"
+      ) {
+        return appFailure("INVALID_INPUT", { message: "仅支持处理 JPG、JPEG 或 PNG 图片。" });
+      }
+      return {
+        ok: true,
+        value: await processDesignImage(asset.original, request.operations),
+      };
+    } catch (error) {
+      return ipcFailure(error, logger);
+    }
+  });
   register(IPC_CHANNELS.exportsDocx, async (event, requestInput) => {
     let outputPath: string | undefined;
     try {
@@ -3167,6 +3197,115 @@ export function registerIpcHandlers(
       });
     } catch (error) {
       return ipcFailure(error, logger, "export.failed", outputPath);
+    }
+  });
+  register(IPC_CHANNELS.exportsDesignPatent, async (_event, requestInput) => {
+    try {
+      const request = DesignPatentExportRequestSchema.parse(requestInput);
+      const patentService = libraryIpcOptions?.patents;
+      if (!patentService) return serviceNotConnected;
+      sessions.requireActive(request.sessionId, request.patentId);
+      return await operations.run(request.sessionId, "export-design-patent", async (operation) => {
+        const patent = await patentService.loadForExport({
+          patentId: request.patentId,
+          sessionId: request.sessionId,
+          expectedRevision: request.expectedRevision,
+        });
+        if (patent.patentType !== "design" || patent.designPatent === null) {
+          return appFailure("INVALID_INPUT", { message: "当前文件不是外观设计专利。" });
+        }
+        const warningCodes = inspectDesignPatent(patent.designPatent).map((issue) => issue.code);
+        if (!request.confirmWarnings && warningCodes.length > 0) {
+          return appFailure("INVALID_INPUT", { message: "请先确认导出前提示。" });
+        }
+        const selection = await dialog.showOpenDialog({
+          title: "选择外观设计导出位置",
+          properties: ["openDirectory", "createDirectory"],
+        });
+        if (selection.canceled || !selection.filePaths[0] || operation.signal.aborted) {
+          return { ok: true, value: null };
+        }
+        const assetBytes = async (assetId: string) => {
+          const asset = await assetStore.getOrLoad(request.sessionId, assetId);
+          if (!asset) throw new Error("外观设计图片资源不可用。");
+          return asset.original;
+        };
+        const value =
+          request.format === "docx"
+            ? await exportDesignPatentDocx({
+                patent,
+                outputRoot: selection.filePaths[0],
+                assetBytes,
+                zip: request.zip,
+                confirmWarnings: request.confirmWarnings,
+              })
+            : await exportDesignPatentPdf({
+                patent,
+                outputRoot: selection.filePaths[0],
+                assetBytes,
+                zip: request.zip,
+                confirmWarnings: request.confirmWarnings,
+                createPdf: async (_html, outputPath) => {
+                  await printService.saveHtmlPdf(
+                    outputPath,
+                    request.sessionId,
+                    renderDesignPatentBriefHtml(patent),
+                  );
+                },
+              });
+        if (!patentService.updateDesignPatent) {
+          await rm(value.outputDirectory, { recursive: true, force: true });
+          if (value.zipPath) await rm(value.zipPath, { force: true });
+          return appFailure("NOT_FOUND", { message: "外观设计保存服务不可用。" });
+        }
+        const updateDesignPatent = patentService.updateDesignPatent.bind(patentService);
+        const exportedAt = new Date().toISOString();
+        const designPatent = {
+          ...patent.designPatent,
+          exports: [
+            ...patent.designPatent.exports,
+            {
+              exportedAt,
+              format: request.format,
+              outputDirectory: value.outputDirectory,
+              documentPath: value.documentPath,
+              imagePaths: value.imagePaths,
+              zipped: value.zipPath !== null,
+              warningCodes,
+            },
+          ],
+        };
+        const acknowledgement = await (async () => {
+          try {
+            return await updateDesignPatent({
+              patentId: request.patentId,
+              sessionId: request.sessionId,
+              expectedRevision: request.expectedRevision,
+              designPatent,
+              assets: patent.assets,
+            });
+          } catch (error) {
+            await rm(value.outputDirectory, { recursive: true, force: true });
+            if (value.zipPath) await rm(value.zipPath, { force: true });
+            throw error;
+          }
+        })();
+        const persistedPatent = {
+          ...patent,
+          revision: acknowledgement.revision,
+          modifiedAt: acknowledgement.savedAt,
+          designPatent,
+        };
+        logWithoutBlocking(
+          logger?.log("info", { event: "export.completed", path: value.documentPath }),
+        );
+        return {
+          ok: true,
+          value: { ...value, patent: persistedPatent, savedAt: acknowledgement.savedAt },
+        };
+      });
+    } catch (error) {
+      return ipcFailure(error, logger, "export.failed");
     }
   });
   register(IPC_CHANNELS.exportsPreview, async (_event, requestInput) => {
@@ -4300,7 +4439,7 @@ function createBackupService(
             documentId: pat.patentId,
             displayName: pat.name ?? "未命名专利",
             createdAt: pat.createdAt,
-            patentType: pat.patentType,
+            ...(pat.patentType === "design" ? {} : { patentType: pat.patentType }),
             customer: pat.customer,
             modifiedAt: pat.modifiedAt,
             revision: pat.revision,

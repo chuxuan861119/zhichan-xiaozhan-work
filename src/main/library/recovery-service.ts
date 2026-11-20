@@ -13,10 +13,14 @@ import {
   type PatentRecoveryResult,
 } from "../../shared/ipc/contract.js";
 import { JsonObjectSchema } from "../../shared/ipc/primitives.js";
+import {
+  DesignPatentSchema,
+} from "../../shared/patent/design-patent.js";
 import { normalizeDrawingBooks } from "../../shared/patent/drawing-content.js";
 import { migratePatentBookDocument } from "../../shared/patent/migrations.js";
 import {
   AuxiliaryDocumentSchema,
+  CANONICAL_PATENT_FORMAT_VERSION,
   type CanonicalPatent,
   CanonicalPatentSchema,
   DocxImportReportSchema,
@@ -83,6 +87,7 @@ type EditLogRow = {
 
 type PatentRow = {
   patent_id: string;
+  patent_type: PatentType;
   revision: number;
   recovery_state: "healthy" | "quarantined";
 };
@@ -236,6 +241,17 @@ const PatentAutomationChangePayloadSchema = z
   })
   .strict();
 
+const PatentDesignEditPayloadSchema = z
+  .object({
+    type: z.literal("design-patent-edit"),
+    patentId: z.string().uuid(),
+    baseRevision: z.number().int().nonnegative(),
+    targetRevision: z.number().int().nonnegative(),
+    designPatent: DesignPatentSchema,
+    assets: z.array(AssetDescriptorSchema).max(100_000),
+  })
+  .strict();
+
 export const PatentEditPayloadSchema = z.discriminatedUnion("type", [
   PatentAutomationChangePayloadSchema,
   PatentSettingsEditPayloadSchema,
@@ -245,6 +261,7 @@ export const PatentEditPayloadSchema = z.discriminatedUnion("type", [
   PatentDrawingBooksEnabledPayloadSchema,
 
   PatentFlowchartEditPayloadSchema,
+  PatentDesignEditPayloadSchema,
 ]);
 export type PatentEditPayload = z.infer<typeof PatentEditPayloadSchema>;
 
@@ -412,7 +429,9 @@ export class LibraryRecoveryService {
     );
     const repairedPersistedState = this.#persistRecoveredPatent(recovered.patent);
     const replayedEditCount = repairedPersistedState
-      ? recovered.patent.revision - recovered.baseSnapshotRevision
+      ? recovered.patent.patentType === "design"
+        ? recovered.replayedEditCount
+        : recovered.patent.revision - recovered.baseSnapshotRevision
       : 0;
     this.#clearQuarantine(patentId);
     return {
@@ -494,9 +513,58 @@ export class LibraryRecoveryService {
 
   #recoverPatentInDatabase(database: DatabaseSync, patentId: string): RecoveredPatent {
     const patent = database
-      .prepare("SELECT patent_id, revision, recovery_state FROM patents WHERE patent_id = ?")
+      .prepare(
+        "SELECT patent_id, patent_type, revision, recovery_state FROM patents WHERE patent_id = ?",
+      )
       .get(patentId) as PatentRow | undefined;
     if (patent === undefined) throw new LibraryServiceError("NOT_FOUND", "Patent not found.");
+
+    if (patent.patent_type === "design") {
+      let current: CanonicalPatent;
+      let journalReplayed = false;
+      try {
+        current = this.#loadPersistedPatent(database, { patentId });
+      } catch (originalError) {
+        // Design saves are complete transactions. Recover their independent design state from
+        // the authenticated full-state journal, never from patent version snapshots.
+        const edits = database
+          .prepare(
+            "SELECT operation_id, base_revision, target_revision, payload, content_hash, created_at FROM edit_log WHERE patent_id = ? AND target_revision <= ? ORDER BY target_revision DESC",
+          )
+          .all(patentId, patent.revision) as EditLogRow[];
+        let restored: CanonicalPatent | undefined;
+        for (const edit of edits) {
+          const decoded = decodeJson<unknown>(decodeEnvelope(edit.payload));
+          if (hashJson(decoded) !== edit.content_hash)
+            throw new LibraryServiceError("CORRUPT_FILE", "Design journal hash mismatch.");
+          const payload = parsePatentEditPayload(decoded);
+          if (
+            payload.patentId !== patentId ||
+            payload.baseRevision !== edit.base_revision ||
+            payload.targetRevision !== edit.target_revision
+          )
+            throw new LibraryServiceError("CORRUPT_FILE", "Design journal identity mismatch.");
+          if (payload.type === "design-patent-edit") {
+            restored = this.#loadPersistedPatent(
+              database,
+              { patentId, assets: payload.assets },
+              payload.designPatent,
+            );
+            break;
+          }
+        }
+        if (!restored) throw originalError;
+        current = restored;
+        journalReplayed = true;
+      }
+      return {
+        baseSnapshotRevision: current.revision,
+        patent: current,
+        replayedEditCount: journalReplayed ? 1 : 0,
+        repairedPersistedState: false,
+        clearedQuarantine: patent.recovery_state === "quarantined",
+      };
+    }
 
     const snapshots = database
       .prepare(
@@ -708,7 +776,15 @@ export class LibraryRecoveryService {
           ),
           patent.modifiedAt,
         );
-
+      if (patent.designPatent !== null) {
+        database
+          .prepare("INSERT OR REPLACE INTO library_state(key, value, updated_at) VALUES (?, ?, ?)")
+          .run(
+            `patent:${patent.patentId}:design-patent-state`,
+            encodeEnvelope(encodeJson(patent.designPatent)),
+            patent.modifiedAt,
+          );
+      }
       database
         .prepare("INSERT OR REPLACE INTO library_state(key, value, updated_at) VALUES (?, ?, ?)")
         .run(
@@ -732,7 +808,12 @@ export class LibraryRecoveryService {
     return true;
   }
 
-  #loadPersistedPatent(database: DatabaseSync, expected: CanonicalPatent): CanonicalPatent {
+  #loadPersistedPatent(
+    database: DatabaseSync,
+    expected: Pick<CanonicalPatent, "patentId"> &
+      Partial<Pick<CanonicalPatent, "assets" | "formatVersion" | "activeBookKind">>,
+    designOverride?: CanonicalPatent["designPatent"],
+  ): CanonicalPatent {
     const row = database
       .prepare(
         `SELECT patent_id, name, customer, patent_type, drawing_books_enabled,
@@ -773,16 +854,20 @@ export class LibraryRecoveryService {
     const importReportRow = database
       .prepare("SELECT report_json FROM patent_import_reports WHERE patent_id = ?")
       .get(expected.patentId) as { report_json: Uint8Array } | undefined;
-    const figureState = this.#readStoredLibraryState<
-      Pick<CanonicalPatent, "assets" | "abstractDrawingFigureId"> & {
-        drawingProjects?: CanonicalPatent["drawingProjects"];
-        rotations?: Record<string, ImageRotation>;
-      }
-    >(
-      database,
-      `patent:${expected.patentId}:figure-state`,
-      `patent-figure-state:${expected.patentId}`,
-    );
+    type RecoveredFigureState = Pick<CanonicalPatent, "assets" | "abstractDrawingFigureId"> & {
+      drawingProjects?: CanonicalPatent["drawingProjects"];
+      rotations?: Record<string, ImageRotation>;
+    };
+    // The design edit journal records the full image asset manifest. Do not decode
+    // the damaged redundant figure metadata a second time when replaying that entry.
+    const figureState: RecoveredFigureState =
+      row.patent_type === "design" && designOverride && expected.assets
+        ? { assets: expected.assets, abstractDrawingFigureId: null }
+        : this.#readStoredLibraryState<RecoveredFigureState>(
+            database,
+            `patent:${expected.patentId}:figure-state`,
+            `patent-figure-state:${expected.patentId}`,
+          );
     const referenceMarkState = this.#readStoredLibraryState<
       Pick<CanonicalPatent, "referenceMarks" | "referenceMarkSettings">
     >(
@@ -790,18 +875,29 @@ export class LibraryRecoveryService {
       `patent:${expected.patentId}:reference-mark-state`,
       `patent-reference-mark-state:${expected.patentId}`,
     );
+    const designPatent =
+      row.patent_type === "design"
+        ? (designOverride ??
+          this.#readStoredLibraryState(
+            database,
+            `patent:${expected.patentId}:design-patent-state`,
+            `patent-design-state:${expected.patentId}`,
+          ))
+        : null;
     const ownedAssetIds = (
       database
         .prepare("SELECT asset_id FROM patent_assets WHERE patent_id = ? ORDER BY asset_id")
         .all(expected.patentId) as Array<{ asset_id: string }>
     ).map((owned) => owned.asset_id);
     const ownedAssetIdSet = new Set(ownedAssetIds);
-    if (expected.assets.some((asset) => !ownedAssetIdSet.has(asset.assetId))) {
+    if (
+      (expected.assets ?? figureState.assets).some((asset) => !ownedAssetIdSet.has(asset.assetId))
+    ) {
       throw new LibraryServiceError("CORRUPT_FILE", "Recovered patent asset ownership is invalid.");
     }
 
     return CanonicalPatentSchema.parse({
-      formatVersion: expected.formatVersion,
+      formatVersion: expected.formatVersion ?? CANONICAL_PATENT_FORMAT_VERSION,
       patentId: row.patent_id,
       name: row.name,
       customer: row.customer,
@@ -810,7 +906,7 @@ export class LibraryRecoveryService {
       revision: row.revision,
       createdAt: row.created_at,
       modifiedAt: row.modified_at,
-      activeBookKind: expected.activeBookKind,
+      activeBookKind: expected.activeBookKind ?? "description",
       books: books.map((book) => ({
         bookId: book.book_id,
         kind: book.kind,
@@ -849,6 +945,7 @@ export class LibraryRecoveryService {
       abstractDrawingFigureId: figureState.abstractDrawingFigureId,
       referenceMarks: referenceMarkState.referenceMarks,
       referenceMarkSettings: referenceMarkState.referenceMarkSettings,
+      designPatent,
     });
   }
 
@@ -941,6 +1038,11 @@ export function recoverPatentFromSnapshot(
 function migratePatentEditPayloadDocuments(input: unknown): unknown {
   if (typeof input !== "object" || input === null || Array.isArray(input)) return input;
   const payload = input as Record<string, unknown>;
+  if (payload.type === "design-patent-edit")
+    return {
+      ...payload,
+      designPatent: payload.designPatent,
+    };
   const migrateDocument = (value: unknown): unknown => {
     const migrated = migratePatentBookDocument(value);
     if (!migrated.ok) throw new LibraryServiceError("CORRUPT_FILE", migrated.error.message);
@@ -967,7 +1069,10 @@ function migratePatentEditPayloadDocuments(input: unknown): unknown {
       ...payload,
       bookEdits: payload.bookEdits.map((edit) =>
         typeof edit === "object" && edit !== null && !Array.isArray(edit)
-          ? { ...edit, document: migrateDocument((edit as Record<string, unknown>).document) }
+          ? {
+              ...edit,
+              document: migrateDocument((edit as Record<string, unknown>).document),
+            }
           : edit,
       ),
     };
@@ -1078,6 +1183,16 @@ export function replayPatentEdit(
       ...payload.patent,
       revision: payload.targetRevision,
       modifiedAt: savedAt,
+    });
+  }
+
+  if (payload.type === "design-patent-edit") {
+    return CanonicalPatentSchema.parse({
+      ...patent,
+      revision: payload.targetRevision,
+      modifiedAt: savedAt,
+      assets: payload.assets,
+      designPatent: payload.designPatent,
     });
   }
 

@@ -16,7 +16,7 @@ describe("plaintext library schema", () => {
     using database = new DatabaseSync(":memory:");
     for (const statement of V11_MIGRATION_STATEMENTS) database.exec(statement);
 
-    expect(CURRENT_SCHEMA_VERSION).toBe(15);
+    expect(CURRENT_SCHEMA_VERSION).toBe(16);
     expect(validateSchemaV11(database)).toEqual({ ok: true });
     const tables = database
       .prepare(
@@ -68,7 +68,7 @@ describe("plaintext library schema", () => {
     using database = new DatabaseSync(":memory:");
     for (const statement of V10_MIGRATION_STATEMENTS) database.exec(statement);
 
-    expect(CURRENT_SCHEMA_VERSION).toBe(15);
+    expect(CURRENT_SCHEMA_VERSION).toBe(16);
     expect(validateSchemaV10(database)).toEqual({ ok: true });
     const sql = database
       .prepare("SELECT sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY name")

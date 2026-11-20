@@ -310,7 +310,7 @@ describe("createLibraryRuntime", () => {
       startBackgroundSchedulers: true,
     });
 
-    expect(runtime.database.schemaVersion()).toBe(15);
+    expect(runtime.database.schemaVersion()).toBe(16);
     expect(runtime.recoveryReport.mode).toBe("read-write");
     expect(runtime.library).toBeDefined();
     expect(runtime.patents).toBeDefined();

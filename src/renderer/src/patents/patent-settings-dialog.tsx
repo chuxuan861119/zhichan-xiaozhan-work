@@ -26,6 +26,7 @@ type PatentSettingsDialogProps = {
 const TYPE_LABELS: Record<PatentType, string> = {
   invention: "发明",
   "utility-model": "实用新型",
+  design: "外观设计",
 };
 
 function terminologyPreview(from: PatentType, to: PatentType): string | null {
@@ -102,35 +103,39 @@ export function PatentSettingsDialog({
           onChange={(event) => setDraftCustomer(event.currentTarget.value)}
         />
       </label>
-      <fieldset className="dialog-fieldset">
-        <legend>专利类型</legend>
-        <label>
-          <input
-            type="radio"
-            name="patent-settings-type"
-            disabled={busy}
-            checked={draftType === "invention"}
-            onChange={() => {
-              setDraftType("invention");
-              setTerminologyReplacementRequested(false);
-            }}
-          />
-          发明
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="patent-settings-type"
-            disabled={busy}
-            checked={draftType === "utility-model"}
-            onChange={() => {
-              setDraftType("utility-model");
-              setTerminologyReplacementRequested(false);
-            }}
-          />
-          实用新型
-        </label>
-      </fieldset>
+      {patentType === "design" ? (
+        <p>专利类型：外观设计</p>
+      ) : (
+        <fieldset className="dialog-fieldset">
+          <legend>专利类型</legend>
+          <label>
+            <input
+              type="radio"
+              name="patent-settings-type"
+              disabled={busy}
+              checked={draftType === "invention"}
+              onChange={() => {
+                setDraftType("invention");
+                setTerminologyReplacementRequested(false);
+              }}
+            />
+            发明
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="patent-settings-type"
+              disabled={busy}
+              checked={draftType === "utility-model"}
+              onChange={() => {
+                setDraftType("utility-model");
+                setTerminologyReplacementRequested(false);
+              }}
+            />
+            实用新型
+          </label>
+        </fieldset>
+      )}
       <SpatialCollapse open={Boolean(preview)}>
         {preview ? (
           <section className="terminology-preview" aria-label="术语替换预览">

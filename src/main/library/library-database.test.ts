@@ -203,7 +203,8 @@ test("creates strict schema, constraints, cascading foreign keys and required in
   expect(() =>
     insertPatent.run("patent-negative", null, null, "invention", 1, -1, "c", "m"),
   ).toThrow();
-  expect(() => insertPatent.run("patent-type", null, null, "design", 1, 0, "c", "m")).toThrow();
+  insertPatent.run("patent-design", null, null, "design", 0, 0, "c", "m");
+  expect(() => insertPatent.run("patent-type", null, null, "unknown", 1, 0, "c", "m")).toThrow();
   expect(() =>
     insertPatent.run("patent-drawings", null, null, "invention", 2, 0, "c", "m"),
   ).toThrow();
