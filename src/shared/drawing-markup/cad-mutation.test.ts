@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { applyCadMutation, type CadMutation, expandPatentSelection } from "./cad-mutation.js";
+import { applyCadMutation, type CadMutation, expandPatentSelection, detailSourceInScope, scopeCadSelection } from "./cad-mutation.js";
 import { createDetailView } from "./detail-view.js";
 import type { DrawingProject } from "./model.js";
 
@@ -53,6 +53,40 @@ const edit = (
   ...extra,
 });
 describe("Unified CAD patent mutation", () => {
+  it("allows nested source markers but not their contents or remote markers inside a detail", () => {
+    const p = fixture();
+    p.detailViews = [
+      createDetailView(p, { x: 10, y: 10 }, 10, { x: 50, y: 50 }, "A", 2, 8, 1, "parent"),
+      createDetailView(p, { x: 55, y: 50 }, 4, { x: 90, y: 90 }, "B", 2, 8, 1, "child"),
+      createDetailView(p, { x: 95, y: 50 }, 4, { x: 90, y: 10 }, "C", 2, 8, 1, "remote"),
+    ];
+    p.cad!.objects = [
+      { id: "parent", kind: "detail", body: ["P"], frame: ["PF"], source: ["PS"] },
+      { id: "child", kind: "detail", body: ["C"], frame: ["CF"], source: ["CS", "CL"] },
+      { id: "remote", kind: "detail", body: ["R"], source: ["RS"] },
+    ];
+    expect(detailSourceInScope(p, "child", "parent")).toBe(true);
+    expect(detailSourceInScope(p, "remote", "parent")).toBe(false);
+    const selected = expandPatentSelection(p, scopeCadSelection(p, ["P", "PF", "C", "CS", "RS", "A"], "parent"), "parent");
+    expect(selected).toEqual(["P", "CS", "CL"]);
+    const next = applyCadMutation(p, edit("erase", { handles: ["CS", "CL"] }, {
+      inside: "parent", before: ["P", "PF", "PS", "C", "CF", "CS", "CL", "R", "RS"], after: ["P", "PF", "PS", "C", "CF", "R", "RS"],
+    }), () => "unused");
+    expect(next.detailViews).toHaveLength(3);
+    expect(next.detailViews!.find(d => d.id === "child")).toMatchObject({ markerHidden: true });
+    expect(next.cad!.objects!.find(o => o.id === "child")).toMatchObject({ body: ["C"], frame: ["CF"], source: [] });
+  });
+  it("attributes source-less clipped fills independently by their actual rendered geometry", () => {
+    const p = fixture();
+    p.detailViews = [createDetailView(p, { x: 10, y: 10 }, 10, { x: 50, y: 50 }, "A", 2, 8, 1, "d")];
+    p.cad!.objects = [{ id: "d", kind: "detail", body: ["D"], frame: ["F"] }];
+    const next = applyCadMutation(p, edit("hatch", { points: [[50, 50], [90, 90]], separate: true }, {
+      before: ["D", "F"], after: ["D", "F", "H1", "H2"], inside: "d",
+      result: { hatches: [{ handle: "H1", sources: [] }, { handle: "H2", sources: [] }] },
+      primitives: [{ handle: "H1", points: [[45, 50], [55, 50]] }, { handle: "H2", points: [[85, 90], [95, 90]] }],
+    }), () => "unused");
+    expect(next.cad!.objects![0]!.body).toEqual(["D", "H1"]);
+  });
   it("moves fully enclosed stretch labels in semantic coordinates without moving unrelated labels",()=>{
     const p=fixture();
     const next=applyCadMutation(p,edit("stretch",{handles:["1","A","B"],moveHandles:["A","B"],delta:[10,5]}),()=>"unused");

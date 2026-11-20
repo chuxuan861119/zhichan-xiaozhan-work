@@ -77,6 +77,7 @@ export function editCadTransaction(
               before: context.before,
               after,
               inside: context.inside,
+              primitives: edited.scene.primitives,
             },
             () => crypto.randomUUID(),
           );

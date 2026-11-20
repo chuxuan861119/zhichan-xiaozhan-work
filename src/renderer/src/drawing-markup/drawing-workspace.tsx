@@ -1,4 +1,5 @@
 import { hasVisibleElement } from "../shared/focusable-elements";
+import { detailSourceInScope } from "../../../shared/drawing-markup/cad-mutation";
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -40,6 +41,7 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import type { AssetDescriptor } from "../../../shared/document/model";
+import { insertedFigureWidthMm } from "../../../shared/patent/figure-insertion-size";
 import {
   type LabelArrangementBounds,
   alignSelectedAnnotations,
@@ -462,8 +464,13 @@ export function DrawingWorkspace({
   }, [activeId]);
   const [detailGesture, setDetailGesture] = useState<CadDetailGesture | null>(null);
   const publishingCadCandidate = useRef(false);
+  // A temporary detail transform belongs to the native scene it was compiled from.
+  // Never let it suppress selection or paint over a newer CAD checkpoint.
   const liveDetailGesture =
-    detailGesture?.before.projectId === current?.projectId ? detailGesture : null;
+    detailGesture?.before.projectId === current?.projectId &&
+    detailGesture?.before.cad?.assetId === current?.cad?.assetId
+      ? detailGesture
+      : null;
   function previewCadDetail(project: DrawingProject, detailId: string) {
     if (
       !project.cad?.unified ||
@@ -683,6 +690,7 @@ export function DrawingWorkspace({
     revision: number;
     regionId: string;
   } | null>(null);
+  const previewTarget = useRef<ReturnType<typeof liveRenderTarget> | null>(null);
   const [page, setPage] = useState(1),
     [pdfPages, setPdfPages] = useState(1);
   const fileRef = useRef<HTMLInputElement>(null),
@@ -1124,6 +1132,11 @@ export function DrawingWorkspace({
         const dx = (project.cad!.mapping.originX - next.cad!.mapping.originX) * next.cad!.mapping.scale;
         const dy = (next.cad!.mapping.originY - project.cad!.mapping.originY) * next.cad!.mapping.scale;
         if (dx || dy) rebaseProjectView(project.projectId, dx, dy);
+        // The staged native scene already includes the detail edit. Retire the
+        // old transform in the same render, even while disk persistence runs.
+        setDetailGesture((pending) =>
+          pending?.before.projectId === project.projectId ? null : pending,
+        );
         persist(state.current.projects.map(p => p.projectId === project.projectId ? next : p));
         setFailure(message => message.startsWith("图纸修改尚未保存，") ? "" : message);
       },
@@ -2246,7 +2259,9 @@ export function DrawingWorkspace({
       e.button === 0 &&
       tool === "select" &&
       !!semantic &&
-      !cadInside &&
+      (!cadInside || (!!current &&
+        (semantic?.dataset.detailPart === "source" || semantic?.dataset.detailPart === "marker") &&
+        detailSourceInScope(current, semantic.closest<SVGElement>("[data-detail]")?.dataset.detail ?? "", cadInside))) &&
       !!cadEditor.current?.canWindow() &&
       !cadEditor.current?.isCommandPicking();
     if (directSemantic && current?.cad && semantic && semantic.dataset.detailPart !== "title") {
@@ -3383,9 +3398,11 @@ export function DrawingWorkspace({
     commit({
       ...current,
       detailViews:
-        detailSelection?.part === "title"
+        detailSelection?.part === "title" || detailSelection?.part === "marker"
           ? current.detailViews?.map((d) =>
-              d.id === selectedDetail.id ? { ...d, titleHidden: true } : d,
+              d.id === selectedDetail.id
+                ? { ...d, ...(detailSelection.part === "title" ? { titleHidden: true } : { markerHidden: true }) }
+                : d,
             )
           : current.detailViews?.filter((d) => d.id !== selectedDetail.id),
     });
@@ -3585,13 +3602,33 @@ export function DrawingWorkspace({
       throw new Error("取图范围已发生变化，请重新选择后预览。");
     return { project: latest, region: fresh, sceneRevision: undefined };
   }
-  function verifyRenderTarget(target: ReturnType<typeof liveRenderTarget>) {
+  function verifyRenderTarget(target: ReturnType<typeof liveRenderTarget>, requireSelection = true) {
+    if (!requireSelection && target.region.cadHandles) {
+      const latest = state.current.current;
+      const scene = cadSelectionLatest.current?.scene;
+      if (!latest || latest.projectId !== target.project.projectId ||
+        latest.baseAssetId !== base?.assetId || latest.revision !== target.project.revision ||
+        latest.cad?.assetId !== target.project.cad?.assetId ||
+        (scene && scene.revision !== target.sceneRevision))
+        throw new Error("图纸已发生变化，请重新预览或插入。");
+      return;
+    }
     const latest = liveRenderTarget(target.project, target.region);
     if (latest.project.revision !== target.project.revision ||
       latest.project.cad?.assetId !== target.project.cad?.assetId ||
       latest.sceneRevision !== target.sceneRevision ||
       JSON.stringify(latest.region.points) !== JSON.stringify(target.region.points))
       throw new Error("图纸或选区已发生变化，请重新预览或插入。");
+  }
+  function clearOutputSelection(target: ReturnType<typeof liveRenderTarget>) {
+    if (!target.region.cadHandles || state.current.current?.projectId !== target.project.projectId) return;
+    cadEditor.current?.selectHandles([]);
+    setSelected("");
+    setBatchIds([]);
+    setDetailSelection(null);
+    setRangeSelection(false);
+    crossSelection.current = null;
+    rangePreview.clear();
   }
   async function makePreview() {
     if (!current || !region || !base || busy || !styleReady) return;
@@ -3625,6 +3662,7 @@ export function DrawingWorkspace({
         },
       );
       verifyRenderTarget(target);
+      previewTarget.current = target;
       setPreview({
         ...rendered,
         pageKey,
@@ -3633,6 +3671,7 @@ export function DrawingWorkspace({
         regionId: target.region.id,
       });
       setPreviewMode(true);
+      clearOutputSelection(target);
       setMessage("请检查取图范围和标号，再导出或插入。");
     } catch (e) {
       status(e);
@@ -3677,8 +3716,10 @@ export function DrawingWorkspace({
   }
   async function makeReplacementPreview(width: number): Promise<DrawingReplacementPreview> {
     const source = validateReplacementSource();
+    const drawingPage = state.current.session.patent.books.find((book) => book.kind === "description-drawings")!
+      .document.page;
     const ready = await preparedRenderSource(source.project, source.base, source.autoAdjustLabelSize, source.region);
-    return renderDrawing(
+    const rendered = await renderDrawing(
       ready.project,
       source.region,
       ready.bytes,
@@ -3692,8 +3733,14 @@ export function DrawingWorkspace({
         autoLabelScale: source.autoLabelScale,
         tiled: source.base.tiled,
         readCadDetail,
+        fitToPage: drawingPage,
       },
     );
+    return {
+      ...rendered,
+      widthMm: Math.min(rendered.widthMm, insertedFigureWidthMm(drawingPage,
+        { widthPx: rendered.width, heightPx: rendered.height })),
+    };
   }
   async function preparedRenderSource(
     project: DrawingProject,
@@ -3757,20 +3804,21 @@ export function DrawingWorkspace({
     direct = false,
     replacement?: { target: PatentFigure; preview: DrawingReplacementPreview },
   ) {
+    const outputRegion = direct ? region : previewTarget.current?.region;
     if (replacement) {
       validateReplacementSource();
       planDrawingReplacement(state.current.session.patent.figures, replacement.target, "preview");
     }
     if (
       !current ||
-      !region ||
+      !outputRegion ||
       !base ||
       busy ||
       !styleReady ||
       delivering.current ||
       (mode !== "save" && !session.patent.drawingBooksEnabled) ||
       (!direct &&
-        (!preview || preview.revision !== current.revision || preview.regionId !== region.id))
+        (!preview || preview.revision !== current.revision || preview.regionId !== outputRegion.id))
     ) {
       if (replacement) throw new Error("当前图纸尚未就绪，请关闭弹窗后重试。");
       return;
@@ -3782,7 +3830,9 @@ export function DrawingWorkspace({
     const operationId = uid();
     try {
       if (!(await guard())) return;
-      const target = liveRenderTarget(current, region);
+      const target = direct ? liveRenderTarget(current, outputRegion) : previewTarget.current!;
+      const verifyTarget = () => verifyRenderTarget(target, direct);
+      verifyTarget();
       if (!direct && (preview?.revision !== target.project.revision ||
         preview.regionId !== target.region.id))
         throw new Error("图纸已发生变化，请重新预览后插入。");
@@ -3824,7 +3874,7 @@ export function DrawingWorkspace({
         );
       }
       if (!rendered) return;
-      verifyRenderTarget(target);
+      verifyTarget();
       requireCurrentPage();
       const importedBatch = await window.patentApi.assets.importMany({
         sessionId: session.sessionId,
@@ -3841,7 +3891,7 @@ export function DrawingWorkspace({
       const imported = { ok: true as const, value: importedBatch.value[0]! };
       stagedId = imported.value.descriptor.assetId;
       if (mode === "save") {
-        verifyRenderTarget(target);
+        verifyTarget();
         const result = await window.patentApi.assets.saveImage({
           sessionId: session.sessionId,
           format: "jpg",
@@ -3854,7 +3904,7 @@ export function DrawingWorkspace({
         if (!result.ok) throw new Error(result.error.message);
         setMessage(result.value ? "图片已导出。" : "已取消导出。");
       } else {
-        verifyRenderTarget(target);
+        verifyTarget();
         const patent = state.current.session.patent;
         if (!patent.drawingBooksEnabled) throw new Error("请先启用说明书附图。");
         requireCurrentPage();
@@ -3863,7 +3913,10 @@ export function DrawingWorkspace({
           ? { ...replacement.target, assetId: stagedId }
           : { figureId: uid(), assetId: stagedId, widthMm: rendered.widthMm };
         const figures = replacement
-          ? planDrawingReplacement(patent.figures, replacement.target, stagedId)
+          ? planDrawingReplacement(patent.figures, replacement.target, stagedId).map((item) =>
+              item.figureId === replacement.target.figureId
+                ? { ...item, widthMm: Math.min(item.widthMm, rendered.widthMm) }
+                : item)
           : [...patent.figures, figure];
         const publishedRegion = {
           ...target.region,
@@ -3906,6 +3959,7 @@ export function DrawingWorkspace({
               ? "附图已替换到待保存内容，但保存失败，请重试保存。"
               : "附图已加入待保存内容，但保存失败，请重试保存。",
           );
+        clearOutputSelection(target);
         setPreviewMode(false);
         setMessage(replacement ? "已替换说明书附图。" : "已插入说明书附图。");
         setInsertFeedback({
@@ -4193,7 +4247,7 @@ export function DrawingWorkspace({
                 <button type="button" onClick={() => void refreshDetailFromSource()}>
                   从来源更新
                 </button>
-                {detailSelection?.part === "title" && (
+                {(detailSelection?.part === "title" || detailSelection?.part === "marker") && (
                   <button type="button" aria-label="删除局部放大标记" disabled={busy} onClick={deleteDetail}>
                     <Trash2 size={17} /> 删除标记
                   </button>
@@ -4550,7 +4604,8 @@ export function DrawingWorkspace({
                         ids.has(h),
                       ),
                   );
-                  if (!cadInside)
+                  if (!cadInside || (detail && ids.size > 0 &&
+                    [...ids].every(h => detail.source?.includes(h))))
                     setDetailSelection(
                       detail
                         ? {
@@ -4563,6 +4618,7 @@ export function DrawingWorkspace({
                           }
                         : null,
                     );
+                  else setDetailSelection(null);
                 }}
                 onInside={setCadInside}
                 onTextEditing={setCadTextEditing}
@@ -5897,12 +5953,12 @@ export function DrawingWorkspace({
                         key={d.id}
                         detail={d}
                         titleColor={
-                          detailSelection?.id === d.id
+                          detailSelection?.id === d.id && detailSelection.part !== "marker"
                             ? "#007AFF"
                             : annotationColor(`detail-title:${d.id}`)
                         }
                         markerColor={
-                          detailSelection?.id === d.id && detailSelection.part !== "title"
+                          detailSelection?.id === d.id && detailSelection.part === "marker"
                             ? "#007AFF"
                             : annotationColor(`detail-marker:${d.id}`)
                         }

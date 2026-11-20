@@ -62,6 +62,7 @@ import { planCadExplode } from "../../../shared/drawing-markup/cad-explode";
 import {
   applyCadMutation,
   expandPatentSelection,
+  scopeCadSelection,
 } from "../../../shared/drawing-markup/cad-mutation";
 import {
   type CadPatentObject,
@@ -118,6 +119,7 @@ import { cadSceneDelta, mergeCadScene } from "./cad-scene-delta";
 import { CadTextEditor } from "./cad-text-editor";
 
 type Mode = CadTool;
+type ArraySelection = { epoch: number; handles: string[] };
 export type CadEditingHandle = {
   contentBounds(): { x: number; y: number; width: number; height: number } | null;
   pointUp(point: DrawingPoint, aperture: number, dragged: boolean): boolean;
@@ -623,13 +625,14 @@ export function CadEditingPanel(props: Props) {
   const pipelineProject = useRef<DrawingProject | null>(null);
   const paintedDrawing = useRef(new Map<string, number>());
   const drawingPipeline = useRef<CadDrawingPipeline<
-    { command: string; params: object; inside?: string | undefined; textId?: number; clip?: NonNullable<typeof clipboard.current> },
+    { command: string; params: object; inside?: string | undefined; textId?: number; clip?: NonNullable<typeof clipboard.current>; arraySelection?: ArraySelection },
     {
       command: string;
       bytes: Uint8Array | CadCheckpoint;
       scene: CadScene;
       metadata?: DrawingProject | undefined;
       unchanged?: boolean;
+      arraySelection?: ArraySelection;
       hatchPreferences?: object;
       committed?: { bytes: Uint8Array | CadCheckpoint; objects: CadPatentObject[]; scene: CadScene;checkpointId?:string; native?: boolean };
     }
@@ -637,7 +640,7 @@ export function CadEditingPanel(props: Props) {
   function pipeline() {
     drawingPipeline.current ??= new CadDrawingPipeline({
       byteLength: (result) => result.bytes instanceof Uint8Array ? result.bytes.byteLength : result.bytes.source.byteLength + result.bytes.edits.reduce((n,e)=>n+(e.paste?.byteLength ?? 0)+JSON.stringify(e.params).length*2,0),
-      execute: async ({ command, params, inside: commandInside, textId, clip }, sequence) => {
+      execute: async ({ command, params, inside: commandInside, textId, clip, arraySelection }, sequence) => {
         const instance = await restoredClient();
         const before = new Set(scene.current?.entities.map((entity) => entity.handle));
         rejectedDrawing.current = null;
@@ -699,6 +702,7 @@ export function CadEditingPanel(props: Props) {
                   before: [...before],
                   after: result.scene.entities.map((e) => e.handle),
                   inside: commandInside,
+                  primitives: result.scene.primitives,
                 },
                 () => crypto.randomUUID(),
               )
@@ -759,6 +763,7 @@ export function CadEditingPanel(props: Props) {
           checkpointId: sceneCheckpoint.current,
         });
         return { ...result, command, metadata,
+          ...(arraySelection && result.result?.changed !== false ? {arraySelection} : {}),
           ...(["hatch", "hatchedit"].includes(command) ? {hatchPreferences: params} : {}),
         };
       },
@@ -815,12 +820,18 @@ export function CadEditingPanel(props: Props) {
           // Worker messages are FIFO: any point accepted during this load is
           // executed afterwards and must inherit these regenerated bindings.
           scene.current = loaded;
-          handlesRef.current = remapPatentHandles(
-            sceneBindings.current,
-            saved.objects,
-            handlesRef.current,
-            new Set(loaded.entities.map((entity) => entity.handle)),
-          );
+          // A completed array clears its selection, but must not erase a newer
+          // selection or a tool's targets chosen while the checkpoint saved.
+          handlesRef.current =
+            result.arraySelection?.epoch === selectionEpoch.current &&
+            result.arraySelection.handles === handlesRef.current
+              ? []
+              : remapPatentHandles(
+                  sceneBindings.current,
+                  saved.objects,
+                  handlesRef.current,
+                  new Set(loaded.entities.map((entity) => entity.handle)),
+                );
           sceneBindings.current = saved.objects;
           sceneCheckpoint.current = saved.checkpointId;
           setHandles(handlesRef.current);
@@ -1162,12 +1173,7 @@ export function CadEditingPanel(props: Props) {
   function setSelection(next: string[]) {
     const project = {...(pipelineProject.current ?? latest.current.project),
       cad:{...latest.current.project.cad!,objects:sceneBindings.current}};
-    if (insideRef.current) {
-      const body = new Set(
-        project.cad.objects.find((o) => o.id === insideRef.current)?.body,
-      );
-      next = next.filter((h) => body.has(h));
-    }
+    next = scopeCadSelection(project, next, insideRef.current);
     next = expandPatentSelection(project, next, insideRef.current);
     handlesRef.current = next;
     setHandles(next);
@@ -1326,7 +1332,14 @@ export function CadEditingPanel(props: Props) {
       modifyJob.current = null;
       const clip = command === "bridge.paste" ? pasteDraft.current : undefined;
       if (command === "bridge.paste" && !clip) return;
-      if (!pipeline().enqueue({command, params, inside: insideRef.current, ...(clip ? {clip} : {})})) return;
+      const arraySelection = isPatternTool(command) && command !== "hatch"
+        ? { epoch: selectionEpoch.current, handles: handlesRef.current }
+        : undefined;
+      if (!pipeline().enqueue({
+        command, params, inside: insideRef.current,
+        ...(clip ? { clip } : {}),
+        ...(arraySelection ? { arraySelection } : {}),
+      })) return;
       if (clip) {pasteDraft.current = null; anchor.current = null;}
       if (["move", "break", "rotate", "scale", "arrayrect", "arraypolar", "arraypath", "bridge.paste"].includes(command)) {
         modeRef.current = "select";
@@ -1383,6 +1396,7 @@ export function CadEditingPanel(props: Props) {
               before: beforeScene.entities.map((e) => e.handle),
               after: result.scene.entities.map((e) => e.handle),
               inside: insideRef.current,
+              primitives: result.scene.primitives,
             },
             () => crypto.randomUUID(),
           );

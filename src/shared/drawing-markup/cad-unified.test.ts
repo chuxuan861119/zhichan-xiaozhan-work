@@ -5,6 +5,7 @@ import init, { CadcraftSession } from "../../../resources/cadcraft/wasm/cadcraft
 import { alignSelectedAnnotations } from "./annotation-alignment.js";
 import { deleteBase } from "./base-fragments.js";
 import { pasteCadMetadata } from "./cad-clipboard.js";
+import { planCadExplode } from "./cad-explode.js";
 import { applyCadMutation } from "./cad-mutation.js";
 import { cadObjectGroup, remapPatentHandles } from "./cad-objects.js";
 import { synchronizeCad } from "./cad-unified.js";
@@ -54,6 +55,133 @@ const p = (): DrawingProject => ({
   },
 });
 describe("Unified CAD real kernel composition", () => {
+  it.each([{ exploded: false, inside: undefined }, { exploded: false, inside: "parent" }, { exploded: true, inside: undefined }])(
+    "keeps a cropped nested fill above its masks (exploded=$exploded, inside=$inside)", ({ exploded, inside }) => {
+    const kernel = new CadcraftSession(), blank = new CadcraftSession();
+    try {
+      const project = p(); project.annotations = [];
+      project.cad = { ...project.cad!, unified: 1, objects: [] };
+      kernel.execute("rectang", JSON.stringify({ p1: [47, 47], p2: [53, 53] }));
+      project.detailViews = [createDetailView(project, { x: 50, y: 50 }, 10, { x: 80, y: 20 }, "A", 2, 8, 1, "parent")];
+      const original = kernel.export_dxf();
+      const first = synchronizeCad(kernel, blank.export_dxf(), project, new Map([[project.cad!.assetId, original]]));
+      const firstId = "00000000-0000-4000-8000-000000000904";
+      const live: DrawingProject = { ...project, cad: { ...project.cad!, assetId: firstId, unified: 1, objects: first.objects } };
+      const nested = createDetailView(live, { x: 83, y: 20 }, 5, { x: 30, y: 80 }, "B", 3, 8, 1, "nested");
+      const candidate = { ...live, detailViews: [...live.detailViews!, nested] };
+      const composed = synchronizeCad(kernel, blank.export_dxf(), candidate,
+        new Map([[project.cad!.assetId, original], [firstId, first.bytes]]), live);
+      let current = { ...candidate, cad: { ...candidate.cad!, objects: composed.objects } };
+      const originalBody = new Set(current.cad.objects.find(o => o.id === "nested")!.body);
+      if (exploded) {
+        const object = current.cad.objects.find(o => o.id === "nested")!;
+        const params = planCadExplode(current, [...object.body!, ...object.frame!]);
+        const before = JSON.parse(kernel.scene());
+        const result = JSON.parse(kernel.execute("explode", JSON.stringify(params)));
+        const after = JSON.parse(kernel.scene());
+        current = applyCadMutation(current, { command: "explode", params, result,
+          before: before.entities.map((e: any) => e.handle), after: after.entities.map((e: any) => e.handle) }, () => "unused") as typeof current;
+      }
+      const before = JSON.parse(kernel.scene());
+      const originalBytes = kernel.export_dxf();
+      const params = { points: [[42, 20]], pattern: "ANSI31", scale: 0.5 };
+      const preview = JSON.parse(kernel.execute("bridge.preview_modify", JSON.stringify({ command: "hatch", params, compact: true })));
+      expect(preview.acceptedPointIndices).toEqual([0]);
+      expect(kernel.export_dxf()).toEqual(originalBytes);
+      const result = JSON.parse(kernel.execute("hatch", JSON.stringify(params)));
+      const after = JSON.parse(kernel.scene());
+      const editedBytes = kernel.export_dxf();
+      kernel.execute("undo", "{}"); expect(kernel.export_dxf()).toEqual(originalBytes);
+      kernel.execute("redo", "{}"); expect(kernel.export_dxf()).toEqual(editedBytes);
+      const metadata = applyCadMutation(current, { command: "hatch", params, result,
+        before: before.entities.map((e: any) => e.handle), after: after.entities.map((e: any) => e.handle), primitives: after.primitives, inside }, () => "unused");
+      if (!exploded) expect(metadata.cad!.objects!.find(o => o.id === "nested")!.body,
+        JSON.stringify({ hatches: result.hatches, frame: current.cad!.objects!.find(o => o.id === "nested")!.frame }))
+        .toContain(result.handle);
+      const saved = synchronizeCad(kernel, blank.export_dxf(), metadata,
+        new Map([[firstId, kernel.export_dxf()]]), current);
+      expect(saved.scene.primitives.findIndex(p => p.handle === result.handle)).toBeGreaterThan(
+        saved.scene.primitives.findLastIndex(p => originalBody.has(p.handle) && p.kind === "mask"));
+      kernel.load_dxf(saved.bytes);
+      const reopened = JSON.parse(kernel.scene());
+      expect(reopened.entities.find((e: any) => e.handle === result.handle).geometry)
+        .toMatchObject(after.entities.find((e: any) => e.handle === result.handle).geometry);
+      expect(reopened.primitives.findIndex((p: any) => p.handle === result.handle)).toBeGreaterThan(
+        reopened.primitives.findLastIndex((p: any) => originalBody.has(p.handle) && p.kind === "mask"));
+    } finally { kernel.free(); blank.free(); }
+  });
+  it.each([
+    { exploded: false, outsidePage: false },
+    { exploded: true, outsidePage: false },
+    { exploded: false, outsidePage: true },
+    { exploded: true, outsidePage: true },
+  ])("hatches the complete nested detail (exploded=$exploded, outsidePage=$outsidePage)", ({ exploded, outsidePage }) => {
+    const kernel = new CadcraftSession(),
+      blank = new CadcraftSession();
+    try {
+      const project = p();
+      project.annotations = [];
+      project.cad = { ...project.cad!, unified: 1, objects: [] };
+      const sourceX = outsidePage ? -50 : 50;
+      kernel.execute("rectang", JSON.stringify({ p1: [sourceX - 3, 47], p2: [sourceX + 3, 53] }));
+      project.detailViews = [
+        createDetailView(project, { x: sourceX, y: 50 }, 10, { x: 80, y: 20 }, "A", 2, 8, 1, "parent"),
+      ];
+      const original = kernel.export_dxf();
+      const first = synchronizeCad(kernel, blank.export_dxf(), project,
+        new Map([[project.cad!.assetId, original]]));
+      const firstId = "00000000-0000-4000-8000-000000000904";
+      const live: DrawingProject = {
+        ...project,
+        cad: { ...project.cad!, assetId: firstId, unified: 1, objects: first.objects },
+      };
+      const nested = createDetailView(live, { x: 80, y: 20 }, 9, { x: 30, y: 80 }, "B", 3, 8, 1, "nested");
+      let candidate = { ...live, detailViews: [...live.detailViews!, nested] };
+      const composed = synchronizeCad(kernel, blank.export_dxf(), candidate,
+        new Map([[project.cad!.assetId, original], [firstId, first.bytes]]), live);
+      candidate = { ...candidate, cad: { ...candidate.cad!, objects: composed.objects } };
+      const body = composed.objects.find((o) => o.id === "nested")!;
+      if (exploded) {
+        const plan = planCadExplode(candidate, [...body.body!, ...body.frame!]);
+        expect(plan.details).toHaveLength(1);
+        kernel.execute("explode", JSON.stringify(plan));
+      }
+      const before = kernel.export_dxf();
+      const params = { points: [[29, 19]], pattern: "ANSI31", scale: 1 };
+      const preview = JSON.parse(kernel.execute("bridge.preview_modify",
+        JSON.stringify({ command: "hatch", params, compact: true })));
+      expect(preview.acceptedPointIndices).toEqual([0]);
+      expect(kernel.export_dxf()).toEqual(before);
+      const result = JSON.parse(kernel.execute("hatch", JSON.stringify(params)));
+      const scene = JSON.parse(kernel.scene());
+      const hatch = scene.entities.find((e: any) => e.handle === result.handle);
+      const vertices = hatch.geometry.loops.find((l: any) => l.outer).vertices;
+      const points: [number, number][] = vertices.map((v: any) => {
+        const point = v.p ?? v;
+        return [point[0] ?? point.x, point[1] ?? point.y];
+      });
+      expect(Math.min(...points.map((v) => v[0]))).toBeCloseTo(12, 4);
+      expect(Math.max(...points.map((v) => v[0]))).toBeCloseTo(48, 4);
+      expect(Math.min(...points.map((v) => v[1]))).toBeCloseTo(2, 4);
+      expect(Math.max(...points.map((v) => v[1]))).toBeCloseTo(38, 4);
+      const area = points.reduce((sum, v, i) => {
+        const next = points[(i + 1) % points.length]!;
+        return sum + v[0] * next[1] - next[0] * v[1];
+      }, 0) / 2;
+      expect(Math.abs(area)).toBeCloseTo(36 * 36, 4);
+      const after = kernel.export_dxf();
+      kernel.execute("undo", "{}");
+      expect(kernel.export_dxf()).toEqual(before);
+      kernel.execute("redo", "{}");
+      expect(kernel.export_dxf()).toEqual(after);
+      kernel.load_dxf(after);
+      expect(JSON.parse(kernel.scene()).entities.find((e: any) => e.handle === result.handle).geometry)
+        .toMatchObject(hatch.geometry);
+    } finally {
+      kernel.free();
+      blank.free();
+    }
+  });
   it("uses physical leader weight instead of treating drawing units as pixels, preserving source and overrides", () => {
     const kernel = new CadcraftSession(),
       blank = new CadcraftSession();

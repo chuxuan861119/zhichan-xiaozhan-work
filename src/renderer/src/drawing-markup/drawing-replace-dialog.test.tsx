@@ -11,7 +11,7 @@ const onPreview = vi.fn();
 const onConfirm = vi.fn();
 const onCancel = vi.fn();
 const props = { open: true, sessionId: "session", figures, onPreview, onConfirm, onCancel };
-const rendered = { bytes: new Uint8Array([1]), width: 400, height: 300 };
+const rendered = { bytes: new Uint8Array([1]), width: 400, height: 300, widthMm: 60 };
 
 beforeEach(() => {
   vi.clearAllMocks();

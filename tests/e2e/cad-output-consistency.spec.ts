@@ -42,7 +42,7 @@ test("CAD output retains physical lettering after portrait fitting and reports n
     const page = await browser.newPage();
     await page.setContent("<body></body>");
     await page.addScriptTag({ content: compiled.outputFiles[0]!.text });
-    const run = (args: [boolean, number?, number?, boolean?, boolean?]) =>
+    const run = (args: [boolean, number?, number?, boolean?, boolean?, boolean?]) =>
       page.evaluate(
         (args) =>
           (
@@ -78,6 +78,15 @@ test("CAD output retains physical lettering after portrait fitting and reports n
     const cliCollision = await run([false, 1, 300, true, true]);
     expect(cliCollision.error).toMatch(/12.*13.*重叠/);
     expect(cliCollision.unchanged).toBe(true);
+    for (const dpi of [300, 600]) {
+      const narrow = await run([true, 1, dpi, false, false, true]);
+      expect.soft(narrow.error).toBeNull();
+      if (!narrow.error) {
+        expect(narrow.heightMm).toBeLessThanOrEqual(200.1);
+        expect(narrow.widthMm).toBeGreaterThanOrEqual(10);
+        expect(narrow.unchanged).toBe(true);
+      }
+    }
   } finally {
     await browser.close();
   }

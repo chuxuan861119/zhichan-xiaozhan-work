@@ -31,12 +31,14 @@ export function DrawingReplaceDialog({
       figures={figures}
       sourceLabel="当前选区"
       previewAlt="当前选区成图预览"
+      widthNote="保留原图宽度，新图方向以右侧预览为准；超出附图页面宽高限制时自动缩小。"
       onPreview={async (target) => {
         const value = await onPreview(target.widthMm);
         const url = imageUrl(value.bytes, "image/jpeg");
         return {
           url,
           value,
+          outputWidthMm: value.widthMm,
           note: `${value.width} × ${value.height} 像素`,
           dispose: () => URL.revokeObjectURL(url),
         };

@@ -10,6 +10,7 @@ async function probe(
   dpi = 300,
   overlap = false,
   automation = false,
+  narrow = false,
 ) {
   const patent = createBlankPatent({ patentType: "invention", name: "CAD尺寸回归" });
   const page = patent.books.find((book) => book.kind === "description-drawings")!.document.page;
@@ -32,6 +33,7 @@ async function probe(
       points: [],
     },
   ];
+  if (narrow) project.annotations = [];
   const region = {
     id: "all",
     name: "图1",
@@ -43,7 +45,7 @@ async function probe(
       { x: 0, y: project.height },
     ],
   };
-  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="${project.height}"><rect x="200" y="100" width="600" height="${project.height - 200}" fill="none" stroke="black" stroke-width="2"/></svg>`;
+  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="${project.height}"><rect x="200" y="100" width="${narrow ? 20 : 600}" height="${project.height - 200}" fill="none" stroke="black" stroke-width="2"/></svg>`;
   const bytes = new TextEncoder().encode(source);
   const before = JSON.stringify(project);
   let lastFontPixels = 0;
@@ -53,7 +55,7 @@ async function probe(
     return original.call(this, text, x, y);
   };
   try {
-    const options = { autoAdjustLabelSize: true, autoLabelScale: labelScale, fitToPage: page };
+    const options = { autoAdjustLabelSize: !narrow, autoLabelScale: labelScale, fitToPage: page };
     const rendered = automation
       ? await window.automationRender({
           kind: "drawing",

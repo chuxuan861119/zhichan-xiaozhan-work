@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createRef, useEffect, useImperativeHandle } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { cadSemanticKey } from "../../../shared/drawing-markup/cad-semantic-key";
@@ -152,7 +152,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
-async function open(withDetail = false) {
+async function open(withDetail = false, withFigure = false) {
   vi.clearAllMocks();
   vi.stubGlobal("PointerEvent", MouseEvent);
   vi.stubGlobal(
@@ -206,6 +206,9 @@ async function open(withDetail = false) {
       readDrawingSource: async () => ({ ok: true, value: new Uint8Array([1]) }),
       prepareCad: calls.prepare,
       importMany: async () => ({ ok: true, value: [{ descriptor: { assetId: id(9) } }] }),
+      getPreview: async () => ({ ok: true, value: new Uint8Array([1]) }),
+      saveImage: vi.fn(async () => ({ ok: true, value: true })),
+      discardImports: vi.fn(async () => ({ ok: true, value: undefined })),
     },
   } as unknown as PatentApi;
   calls.prepare.mockResolvedValue({
@@ -218,6 +221,7 @@ async function open(withDetail = false) {
     },
   });
   const patent = createBlankPatent({ patentType: "invention", name: "连续标号" });
+  if (withFigure) patent.figures = [{ figureId: id(20), assetId: id(1), widthMm: 90 }];
   patent.drawingProjects = [project];
   patent.assets = [
     {
@@ -294,6 +298,7 @@ test("preview renders selected CAD handles rather than the original full drawing
     ),
   ).toBe(true);
   expect(vi.mocked(renderDrawing).mock.calls[0]?.[1].cadHandles).toEqual(["100"]);
+  expect(screen.getByRole("button", { name: "预览成图" })).toHaveProperty("disabled", true);
 });
 test.each(["预览成图", "插入附图"])("%s rejects a CAD selection changed during rendering", async (action) => {
   await open();
@@ -341,6 +346,50 @@ test("inserting a CAD selection publishes a figure link without reusing an image
     figureId: calls.update.mock.lastCall?.[1][0].figureId,
     cadHandles: ["100"],
   });
+  await waitFor(() => expect(screen.getByRole("button", { name: "插入附图" })).toHaveProperty("disabled", true));
+});
+
+test.each(["插入说明书附图", "导出 JPG"])("preview snapshot remains usable for %s after deselection", async (action) => {
+  await open();
+  calls.request.mockResolvedValue('<svg viewBox="0 0 1000 800"></svg>');
+  vi.mocked(renderDrawing).mockResolvedValue({ bytes: new Uint8Array([1]), width: 100, height: 80, widthMm: 100 });
+  fireEvent.click(screen.getByText("选择线条"));
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "预览成图" })); });
+  const dialog = await screen.findByRole("dialog", { name: "成图预览" });
+  expect(screen.getByRole("button", { name: "预览成图" })).toHaveProperty("disabled", true);
+  await act(async () => { fireEvent.click(within(dialog).getByRole("button", { name: action })); });
+  await waitFor(() => action === "导出 JPG"
+    ? expect(window.patentApi.assets.saveImage).toHaveBeenCalledOnce()
+    : expect(calls.update).toHaveBeenCalledOnce());
+  expect(renderDrawing).toHaveBeenCalledOnce();
+});
+
+test("failed CAD preview retains the selection for retry", async () => {
+  await open();
+  calls.request.mockResolvedValue('<svg viewBox="0 0 1000 800"></svg>');
+  vi.mocked(renderDrawing).mockRejectedValue(new Error("测试成图失败"));
+  fireEvent.click(screen.getByText("选择线条"));
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "预览成图" })); });
+  expect(screen.getByRole("button", { name: "预览成图" })).toHaveProperty("disabled", false);
+  expect(calls.update).not.toHaveBeenCalled();
+});
+
+test.each([false, true])("CAD replacement clears selection only after success (cancel=%s)", async (cancel) => {
+  await open(false, true);
+  calls.request.mockResolvedValue('<svg viewBox="0 0 1000 800"></svg>');
+  vi.mocked(renderDrawing).mockResolvedValue({ bytes: new Uint8Array([1]), width: 100, height: 800, widthMm: 25 });
+  fireEvent.click(screen.getByText("选择线条"));
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "替换附图" })); });
+  const dialog = await screen.findByRole("dialog", { name: "替换说明书附图" });
+  fireEvent.load(await within(dialog).findByRole("img", { name: /现有图/ }));
+  fireEvent.load(await within(dialog).findByRole("img", { name: "当前选区成图预览" }));
+  const confirm = within(dialog).getByRole("button", { name: "替换图 1" });
+  await waitFor(() => expect(confirm).toHaveProperty("disabled", false));
+  await act(async () => { fireEvent.click(cancel ? within(dialog).getByRole("button", { name: "取消" }) : confirm); });
+  await waitFor(() => expect(screen.getByRole("button", { name: "预览成图" })).toHaveProperty("disabled", !cancel));
+  expect(calls.update).toHaveBeenCalledTimes(cancel ? 0 : 1);
+  if (!cancel) expect(calls.update.mock.lastCall?.[1][0].widthMm).toBe(25);
+  expect(vi.mocked(renderDrawing).mock.lastCall?.[6]).toHaveProperty("fitToPage");
 });
 test("circling CAD objects selects handles without creating an image crop or rebuilding CAD", async () => {
   const { canvas, ref } = await open();
@@ -425,6 +474,35 @@ test("toolbar cancel uses the same native cancellation as Escape", async () => {
   expect(calls.cancel).toHaveBeenCalledTimes(1);
   fireEvent.keyDown(canvas, {key: "Escape"});
   expect(calls.cancel).toHaveBeenCalledTimes(2);
+});
+
+test("publishing a detail scale edit retires the temporary scene so later geometry is displayed", async () => {
+  const { ref, container, project } = await open(true);
+  const original: CadScene = {
+    ...scene,
+    entityCount: 1,
+    entities: [{ handle: "B00", type: "Line", layer: "0" }],
+    primitives: [{ handle: "B00", kind: "line", points: [[690, 600], [710, 600]], color: [0, 0, 0], aci7: true, lineweight: 0.25 }],
+  };
+  const compiled: CadScene = {
+    ...original,
+    revision: 2,
+    primitives: [{ ...original.primitives[0]!, points: [[680, 600], [720, 600]] }],
+  };
+  let finish!: () => void;
+  calls.request.mockImplementation(() => new Promise(resolve => {
+    finish = () => resolve({ scene: compiled, objects: project.cad.objects, bytes: new Uint8Array([2]) });
+  }));
+  act(() => calls.select({ scene: original, handles: ["B00"], checkpointId: project.cad.assetId, objects: project.cad.objects }));
+  fireEvent.click(screen.getByRole("button", { name: "放大局部图" }));
+  const body = () => container.querySelector('[data-cad-detail-live-body="detail-fixture"]');
+  expect(body()?.querySelector("path")?.getAttribute("d")).toBe("M690 600L710 600");
+  await waitFor(() => expect(calls.request).toHaveBeenCalledOnce());
+  await act(async () => {
+    finish();
+    expect(await ref.current?.flush()).toBe(true);
+  });
+  expect(body()?.querySelector("path")?.getAttribute("d")).toBe("M680 600L720 600");
 });
 
 test.each(["Escape", "clear selection"])("%s removes a detail highlight while its live ratio preview remains pending", async (cancel) => {

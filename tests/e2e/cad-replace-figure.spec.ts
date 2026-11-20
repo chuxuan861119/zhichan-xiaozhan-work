@@ -172,7 +172,8 @@ test("CAD replacement compares real images, preserves figure identity and surviv
       rotationDeg: 0,
     });
     expect(replaced.assetId).not.toBe(original.assetId);
-    expect(after.assets.some((asset) => asset.assetId === original.assetId)).toBe(true);
+    // Saved snapshots contain reachable assets only; the old image is retained
+    // by undo history, verified by restoring it below rather than by this list.
     expect(after.assets.find((asset) => asset.assetId === replaced.assetId)?.sha256).toBe(
       createHash("sha256").update(Uint8Array.from(preview)).digest("hex").toUpperCase(),
     );

@@ -23,6 +23,15 @@ vi.mock("./fragmented-drawing-preview", () => ({
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
+test.each(["marker", "content"])("selecting detail %s does not highlight the other part", part => {
+  const detail = drawingProjectFixture("00000000-0000-4000-8000-000000000901").detailViews![0]!;
+  const { container } = render(<svg role="img" aria-label="局部放大标记测试"><DetailViewMarks detail={detail} selected part={part} unit={1} zoom={1}/></svg>);
+  expect(container.querySelector('[data-detail-part="marker"] circle:not([data-detail-source-hit])')?.getAttribute("stroke"))
+    .toBe(part === "marker" ? "#007AFF" : "black");
+  expect(container.querySelector('[data-detail-part="content"]')?.getAttribute("stroke"))
+    .toBe(part === "content" ? "#007AFF" : "black");
+});
+
 test("reuses the current detail source but loads its frozen asset after the drawing changes", () => {
   const project = drawingProjectFixture("00000000-0000-4000-8000-000000000901");
   const detail = {

@@ -90,7 +90,27 @@ export function createDetailView(
           holes: f.holes.map(transform),
         };
       })
-    : structuredClone(baseFragments(project));
+    : structuredClone(
+        project.cad?.unified && !project.cad.overlayAssetId && !project.baseFragments
+          ? [
+              {
+                id: "original",
+                offset: { x: 0, y: 0 },
+                holes: [],
+                // Native CAD is an infinite canvas. Only the requested source
+                // area clips a new detail, not the obsolete SVG page rectangle.
+                clips: [
+                  [
+                    { x: source.x - radius, y: source.y - radius },
+                    { x: source.x + radius, y: source.y - radius },
+                    { x: source.x + radius, y: source.y + radius },
+                    { x: source.x - radius, y: source.y + radius },
+                  ],
+                ],
+              },
+            ]
+          : baseFragments(project),
+      );
   return {
     ...(parent ? { sourceScale: (parent.sourceScale ?? 1) * parent.ratio } : {}),
     ...(parent?.cadSource && !project.cad?.unified

@@ -10,6 +10,8 @@ export type CadMutation = {
   before: string[];
   after: string[];
   inside?: string | undefined;
+  /** Transaction-local geometry, never persisted or rebuilt on the UI thread. */
+  primitives?: { handle?: string; points: [number, number][] }[];
 };
 const arr = (v: unknown) => v as [number, number];
 /** Mirror native transforms in patent business properties; never silently detach a smart object. */
@@ -213,20 +215,40 @@ export function applyCadMutation(
       } else p.detailViews = p.detailViews?.map((d) => (d.id === source.id ? next : d));
     }
   }
-  // Internal hatch picking has no selected handles. Keep a fill picked in an
-  // editable detail with that detail, just like a boundary-selected fill.
+  // Attribute each fill separately. Curved/clipped boundaries can legitimately
+  // lose native associativity, so use the accepted fill's geometry as evidence
+  // rather than the active edit mode or the first pick point in a batch.
   const hatchSources =
     edit.command === "hatch" && Array.isArray(edit.result?.hatches)
       ? (edit.result.hatches as { handle: string; sources: string[] }[])
       : undefined;
-  if (hatchSources && !edit.inside) {
+  if (hatchSources) {
+    const unlinked = new Set(hatchSources.filter(f => !f.sources.length && generated.includes(f.handle)).map(f => f.handle));
+    const points = new Map<string, [number, number][]>();
+    for (const primitive of edit.primitives ?? []) {
+      if (!primitive.handle || !unlinked.has(primitive.handle)) continue;
+      const list = points.get(primitive.handle) ?? [];
+      for (const point of primitive.points) list.push(point);
+      points.set(primitive.handle, list);
+    }
     for (const fill of hatchSources) {
-      const body = objects.find(
+      let body = objects.find(
         (o) =>
           o.kind === "detail" &&
           fill.sources.length > 0 &&
-          fill.sources.every((s) => o.body?.includes(s)),
+          fill.sources.every((s) => o.body?.includes(s) || o.frame?.includes(s)),
       );
+      if (!body && !fill.sources.length && points.get(fill.handle)?.length) {
+        const geometry = points.get(fill.handle)!;
+        const detail = p.detailViews?.slice().reverse().find(d => {
+          const radius = d.radius * d.ratio;
+          return objects.some(o => o.id === d.id && o.body !== undefined) && geometry.every(point => {
+            const page = cadToPage({ x: point[0], y: point[1] }, mapping);
+            return Math.hypot(page.x - d.center.x, page.y - d.center.y) <= radius + Math.max(1e-7, radius * 1e-6);
+          });
+        });
+        body = objects.find(o => o.id === detail?.id);
+      }
       if (body) body.body = [...new Set([...(body.body ?? []), fill.handle])];
     }
     p.cad = { ...p.cad!, objects };
@@ -258,6 +280,26 @@ export function applyCadMutation(
   }
   p.cad = { ...p.cad!, objects };
   return p;
+}
+
+/** A nested source marker remains an independently editable object in its host. */
+export function detailSourceInScope(project: DrawingProject, id: string, inside?: string) {
+  if (!inside) return true;
+  if (id === inside) return false;
+  const host = project.detailViews?.find(d => d.id === inside);
+  const child = project.detailViews?.find(d => d.id === id);
+  return !!host && !!child && !child.markerHidden &&
+    Math.hypot(child.source.x - host.center.x, child.source.y - host.center.y) <= host.radius * host.ratio;
+}
+
+export function scopeCadSelection(project: DrawingProject, handles: string[], inside?: string) {
+  if (!inside) return handles;
+  const allowed = new Set(project.cad?.objects?.find(o => o.id === inside)?.body);
+  for (const object of project.cad?.objects ?? []) {
+    if (object.kind === "detail" && detailSourceInScope(project, object.id, inside))
+      for (const handle of object.source ?? []) allowed.add(handle);
+  }
+  return handles.filter(handle => allowed.has(handle));
 }
 
 export function expandPatentSelection(project: DrawingProject, handles: string[], inside?: string) {

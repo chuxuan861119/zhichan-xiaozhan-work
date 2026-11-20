@@ -11,8 +11,12 @@ export function cadLabelFreeSvg(
 ): string {
   if (!project.cad) throw new Error("CAD 工作稿不存在。");
   kernel.load_dxf(bytes);
+  const original = JSON.parse(kernel.scene()) as {
+    entities: { handle: string }[];
+    groups?: { name: string; members: string[] }[];
+  };
   const present = new Set(
-    (JSON.parse(kernel.scene()) as { entities: { handle: string }[] }).entities.map(
+    original.entities.map(
       (entity) => entity.handle,
     ),
   );
@@ -27,6 +31,14 @@ export function cadLabelFreeSvg(
     ? [...present].filter((handle) => !selected.has(handle) || labelHandles.has(handle))
     : erase;
   if (removed.length) kernel.execute("erase", JSON.stringify({ handles: removed }));
+  if (selected) {
+    // Legacy patent SVGs hide semantic proxies for the image overlay to repaint.
+    // Selected native CAD output has no such overlay: retain exactly the chosen
+    // frame/title or source-marker entities, without pulling in their siblings.
+    for (const group of original.groups ?? [])
+      if (/^PW_DETAIL_.+_(?:FRAME|SOURCE)$/u.test(group.name) && group.members.some(h => selected.has(h)))
+        kernel.execute("ungroup", JSON.stringify({ name: group.name }));
+  }
   const scene = JSON.parse(kernel.scene()) as {
     svgFrame: { origin: [number, number]; width: number; height: number };
   };

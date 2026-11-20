@@ -21,6 +21,15 @@ test("uses the actual drawing page margins and leaves 25 mm vertically", () => {
   expect(insertedFigureWidthMm(page, { widthPx: 200, heightPx: 100 }, 90)).toBe(100);
 });
 
+test("height limits also apply to landscape content on short pages without rounding overflow", () => {
+  const shortPage = { ...page, heightMm: 140, marginTopMm: 20, marginBottomMm: 20 };
+  for (const [widthPx, heightPx] of [[200, 100], [100, 100], [100, 300]] as const) {
+    const width = insertedFigureWidthMm(shortPage, { widthPx, heightPx });
+    expect(width * heightPx / widthPx).toBeLessThanOrEqual(75);
+  }
+  expect(insertedFigureWidthMm(page, { widthPx: 100, heightPx: 300 }) * 3).toBeLessThanOrEqual(200);
+});
+
 test("fits new and replacement assets but preserves manual sizing and reordering", () => {
   const patent = createBlankPatent({ patentType: "invention", name: null });
   const a = { assetId: "a", widthPx: 200, heightPx: 100 } as AssetDescriptor;
@@ -77,6 +86,17 @@ test("explicit CAD replacement keeps existing widths without changing normal ins
   expect(
     fitInsertedFigures(patent, [{ ...replacement, figureId: "new" }], [image], true)[0]?.widthMm,
   ).toBe(146.6);
+});
+
+test("replacement keeps the requested width only while both page dimensions remain valid", () => {
+  const patent = createBlankPatent({ patentType: "invention", name: null });
+  patent.figures = [{ figureId: "original", assetId: "old", widthMm: 90 }];
+  const image = { assetId: "tall", kind: "image", widthPx: 300, heightPx: 1800 } as AssetDescriptor;
+  const replacement = { ...patent.figures[0]!, assetId: image.assetId };
+  const fitted = fitInsertedFigures(patent, [replacement], [image], true)[0]!;
+  expect(fitted.widthMm * image.heightPx / image.widthPx).toBeLessThanOrEqual(200);
+  expect(fitted.widthMm).toBeLessThanOrEqual(replacement.widthMm);
+  expect(fitInsertedFigures(patent, [{ ...replacement, rotationDeg: 90 }], [image], true)[0]!.widthMm).toBe(90);
 });
 
 test("keeps a small flowchart at its requested width and only shrinks oversized ones", () => {

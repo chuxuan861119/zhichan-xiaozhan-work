@@ -933,6 +933,8 @@ test.each([
     } else fireEvent.click(getTool(tool));
     if (command !== "arrayrect") await act(async () => ref.current?.click({ x: 60, y: 40 }, false, 1));
     await waitFor(() => expect(screen.getByRole("button", { name: "应用" })).toHaveProperty("disabled", false));
+    if (command !== "hatch")
+      expect(vi.mocked(props.onSelection).mock.lastCall?.[0]?.handles).toEqual(["A"]);
     const input = screen.getByRole("spinbutton", { name: label });
     expect(target.contains(input)).toBe(true);
     expect(view.container.contains(input)).toBe(false);
@@ -943,8 +945,51 @@ test.each([
     await act(async () => { await ref.current?.flush(); });
     expect(request.mock.calls.filter(([method]) => method === "execute")).toHaveLength(1);
     expect(props.onCommit).toHaveBeenCalledOnce();
+    if (command !== "hatch")
+      expect(vi.mocked(props.onSelection).mock.lastCall?.[0]?.handles).toEqual([]);
   } finally { view.unmount(); target.remove(); }
 });
+
+test.each(["cancel", "failed", "new selection"] as const)(
+  "an array leaves the current selection alone on %s",
+  async (outcome) => {
+    const drawing = { ...scene, entityCount: 2, entities: [...scene.entities, { handle: "B", type: "Line", layer: "0" }] };
+    request.mockImplementation(async (method: string) =>
+      method === "execute" ? { bytes, scene: drawing, result: {} } : method === "pick" ? "B" : drawing,
+    );
+    let release!: () => void;
+    const waiting = new Promise<void>(resolve => { release = resolve; });
+    const onCommit = vi.fn<ComponentProps<typeof CadEditingPanel>["onCommit"]>(async (_bytes, prepared) => {
+      await waiting;
+      if (outcome === "failed") throw new Error("测试提交失败");
+      prepared("array-saved");
+      return { bytes, scene: drawing, objects: [] };
+    });
+    const { ref, props } = await setup({ onCommit });
+    act(() => { ref.current?.cancel(); ref.current?.selectHandles(["A"]); });
+    fireEvent.click(getTool("线性阵列"));
+    const apply = screen.getByRole("button", { name: "应用" });
+    await waitFor(() => expect(apply).toHaveProperty("disabled", false));
+    if (outcome === "cancel") {
+      fireEvent.click(screen.getByRole("button", { name: "取消" }));
+      expect(onCommit).not.toHaveBeenCalled();
+    } else {
+      fireEvent.click(apply);
+      await waitFor(() => expect(onCommit).toHaveBeenCalled());
+      if (outcome === "new selection") {
+        await act(async () => ref.current?.click({ x: 60, y: 40 }, false, 1));
+        await waitFor(() => expect(vi.mocked(props.onSelection).mock.lastCall?.[0]?.handles).toEqual(["A", "B"]));
+      }
+      await act(async () => {
+        release();
+        expect(await ref.current?.flush()).toBe(outcome !== "failed");
+      });
+    }
+    expect(vi.mocked(props.onSelection).mock.lastCall?.[0]?.handles).toEqual(
+      outcome === "new selection" ? ["A", "B"] : ["A"],
+    );
+  },
+);
 
 test("portalled pattern Enter respects composing, modifiers, invalid drafts and disabled controls", async () => {
   request.mockImplementation(async (method: string) => method === "execute" ? { bytes, scene } : scene);

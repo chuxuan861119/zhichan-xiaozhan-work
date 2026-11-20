@@ -22,7 +22,8 @@ import {
   drawingLeaderWidth,
 } from "../../../shared/drawing-markup/output-settings";
 import { intersects } from "../../../shared/drawing-markup/tiles";
-import { insertedFigureWidthMm } from "../../../shared/patent/figure-insertion-size";
+import { insertedFigureMaximumHeightMm, insertedFigureWidthMm } from "../../../shared/patent/figure-insertion-size";
+import { MIN_PATENT_FIGURE_WIDTH_MM } from "../../../shared/patent/model";
 import { prepareCadExportStrokes } from "./cad-export-strokes";
 import { cadExportViewport } from "./cad-export-viewport";
 import { DrawingPixelScanner } from "./drawing-pixels";
@@ -420,6 +421,19 @@ async function renderDrawingPass(
   resources: ExportResources,
   contentBox?: { x: number; y: number; width: number; height: number },
 ): Promise<{ bytes: Uint8Array; width: number; height: number; widthMm: number }> {
+  // Narrow drawings need symmetric side margins to satisfy both the minimum
+  // document image width and maximum height, without distorting the drawing.
+  const pageBox = (box: { x: number; y: number; width: number; height: number }) => {
+    if (!options.fitToPage) return box;
+    const minimum = box.height * MIN_PATENT_FIGURE_WIDTH_MM /
+      insertedFigureMaximumHeightMm(options.fitToPage);
+    return minimum > box.width
+      ? { ...box, x: box.x - (minimum - box.width) / 2, width: minimum }
+      : box;
+  };
+  const initialContentBox = contentBox;
+  if (contentBox) contentBox = pageBox(contentBox);
+  const contentPadded = contentBox !== initialContentBox;
   const fittedWidth = (size: { width: number; height: number }) =>
     options.fitToPage
       ? Math.min(
@@ -521,12 +535,16 @@ async function renderDrawingPass(
         throw new Error("标号过长，无法自动适配，请缩短标号或关闭自动调整标号大小。");
     }
   }
-  const outputPoints = contentBox
+  const rawBox = contentBox ?? bounds(region.points);
+  const fittedBox = pageBox(rawBox);
+  const preservePagePadding = contentPadded || fittedBox.width > rawBox.width;
+  const outputBox = contentBox || fittedBox !== rawBox ? fittedBox : undefined;
+  const outputPoints = outputBox
     ? [
-        { x: contentBox.x, y: contentBox.y },
-        { x: contentBox.x + contentBox.width, y: contentBox.y },
-        { x: contentBox.x + contentBox.width, y: contentBox.y + contentBox.height },
-        { x: contentBox.x, y: contentBox.y + contentBox.height },
+        { x: outputBox.x, y: outputBox.y },
+        { x: outputBox.x + outputBox.width, y: outputBox.y },
+        { x: outputBox.x + outputBox.width, y: outputBox.y + outputBox.height },
+        { x: outputBox.x, y: outputBox.y + outputBox.height },
       ]
     : region.points;
   const actualWidthMm = fittedWidth(bounds(outputPoints));
@@ -822,7 +840,7 @@ async function renderDrawingPass(
     });
   }
   // Keep the final output scale: another crop here would enlarge the marks again.
-  if (options.autoAdjustLabelSize) content = { x: 0, y: 0, width, height };
+  if (options.autoAdjustLabelSize || preservePagePadding) content = { x: 0, y: 0, width, height };
   const trimmed = document.createElement("canvas");
   trimmed.width = content.width + 2;
   trimmed.height = content.height + 2;

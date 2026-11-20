@@ -167,7 +167,10 @@ export function DetailViewMarks({
   markerColor?: string;
   titleColor?: string;
 }) {
-  const color = selected ? "#007AFF" : "black";
+  const markerSelected = selected && part === "marker";
+  const contentSelected = selected && (part === "content" || part === "resize");
+  const markerStroke = markerSelected ? "#007AFF" : "black";
+  const color = contentSelected ? "#007AFF" : "black";
   const radius = d.radius * d.ratio;
   return (
     <g data-detail={d.id} opacity={ghost ? 0.5 : 1} pointerEvents={ghost ? "none" : undefined}>
@@ -200,17 +203,17 @@ export function DetailViewMarks({
             cy={d.source.y}
             r={d.radius}
             fill="none"
-            stroke={color}
-            strokeWidth={Math.max(d.lineWidth / zoom, (selected ? 1.5 : 1) * unit)}
+            stroke={markerStroke}
+            strokeWidth={Math.max(d.lineWidth / zoom, (markerSelected ? 1.5 : 1) * unit)}
           />
           <polyline
             points={detailLeader(d)
               .map((p) => `${p.x},${p.y}`)
               .join(" ")}
             fill="none"
-            stroke={markerColor ?? color}
+            stroke={markerColor ?? markerStroke}
             strokeWidth={
-              selected ? Math.max(drawingLeaderWidth(unit), 1.5 * unit) : drawingLeaderWidth(unit)
+              markerSelected ? Math.max(drawingLeaderWidth(unit), 1.5 * unit) : drawingLeaderWidth(unit)
             }
           />
           <text
@@ -220,7 +223,7 @@ export function DetailViewMarks({
             dominantBaseline="central"
             fontSize={d.fontSize}
             fontWeight={400}
-            fill={markerColor ?? color}
+            fill={markerColor ?? markerStroke}
           >
             {d.label}
           </text>
@@ -235,7 +238,7 @@ export function DetailViewMarks({
             r={radius}
             fill="transparent"
             stroke={color}
-            strokeWidth={Math.max(d.lineWidth / zoom, (selected ? 1.5 : 1) * unit)}
+            strokeWidth={Math.max(d.lineWidth / zoom, (contentSelected ? 1.5 : 1) * unit)}
           />
           {!d.titleHidden && (
             <g

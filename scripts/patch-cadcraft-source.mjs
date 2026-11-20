@@ -33,6 +33,42 @@ if (!source.includes(replacement)) {
   await writeFile(file, source.replace(original, replacement));
 }
 
+// A frozen detail may contain many triangulated background WIPEOUTs. Their
+// invisible seams are display masks, never geometry dividing a hatch region.
+const hatchSource = await readFile(file, "utf8");
+const oldCandidates = "EntityKind::Hatch(_) | EntityKind::Text(_) | EntityKind::MText(_) | EntityKind::Dimension(_)";
+const newCandidates = "EntityKind::Hatch(_) | EntityKind::Wipeout(_) | EntityKind::Text(_) | EntityKind::MText(_) | EntityKind::Dimension(_)";
+if (!hatchSource.includes(newCandidates)) {
+  if (hatchSource.split(oldCandidates).length !== 2)
+    throw new Error("Cadcraft hatch mask patch no longer matches the pinned source");
+  await writeFile(file, hatchSource.replace(oldCandidates, newCandidates));
+}
+
+// HPDRAWORDER's default is behind the boundary, not behind the whole drawing.
+// Sending a new fill behind every object also puts it under detail WIPEOUTs,
+// even after the detail has been exploded and no semantic owner remains.
+const orderSource = await readFile(file, "utf8");
+const oldOrder = `        let h = s.add_entity(st.hatch(loops))?;
+        // Hatches go under other objects (HPDRAWORDER = behind boundary).
+        let space = s.space();
+        if let Some(store) = s.doc_mut()?.space_mut(&space) {
+            store.send_to_back(h);
+        }`;
+const newOrder = `        // Patent Workbench: place behind real boundaries, never all display masks.
+        let boundary: std::collections::HashSet<Handle> = loops.iter().flat_map(|l| l.sources.iter().copied()).collect();
+        let h = s.add_entity(st.hatch(loops))?;
+        let space = s.space();
+        if let Some(store) = s.doc_mut()?.space_mut(&space) {
+            if let Some(reference) = store.handles().into_iter().find(|r| boundary.contains(r)) {
+                store.move_next_to(h, reference, false);
+            }
+        }`;
+if (!orderSource.includes(newOrder)) {
+  if (orderSource.split(oldOrder).length !== 2)
+    throw new Error("Cadcraft hatch draw order patch no longer matches the pinned source");
+  await writeFile(file, orderSource.replace(oldOrder, newOrder));
+}
+
 // AutoCAD TRIM: resolve ambiguous Crossing picks clockwise from the first corner,
 // not by Euclidean distance to that corner (which can trim the opposite branch).
 const trimFile = new URL("../out-cadcraft-archive/storytold-cadcraft-00c7613/crates/engine/src/cmd/trimextend.rs", import.meta.url);

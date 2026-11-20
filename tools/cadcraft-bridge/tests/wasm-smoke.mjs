@@ -11,6 +11,28 @@ const bridge = await import(
 );
 bridge.initSync({ module: await readFile(new URL("cadcraft_bg.wasm", generated)) });
 
+test("new hatches stay above backing masks but below their boundary, including DXF and history", () => {
+  const s = new bridge.CadcraftSession();
+  const run = (command, params) => JSON.parse(s.execute(command, JSON.stringify(params)));
+  try {
+    run("bridge.add_primitives", { primitives: [{ kind: "mask", points: [[0,0],[20,0],[20,20],[0,20]], color: [255,255,255], lineweight: 0 }] });
+    const boundary = run("rectang", { p1: [2,2], p2: [18,18] }).handle;
+    const before = s.export_dxf();
+    const fill = run("hatch", { points: [[10,10]], pattern: "SOLID" }).handle;
+    const after = s.export_dxf();
+    const check = () => {
+      const scene = JSON.parse(s.scene());
+      const at = scene.primitives.findIndex(p => p.handle === fill);
+      assert.ok(at > scene.primitives.findLastIndex(p => p.kind === "mask"));
+      assert.ok(at < scene.primitives.findIndex(p => p.handle === boundary));
+    };
+    check();
+    run("undo", {}); assert.deepEqual(s.export_dxf(), before);
+    run("redo", {}); assert.deepEqual(s.export_dxf(), after);
+    s.load_dxf(after); check();
+  } finally { s.free(); }
+});
+
 test("dense disjoint segments preserve closed regions and near-endpoint intersections", () => {
   const s = new bridge.CadcraftSession();
   const run = (command, params) => JSON.parse(s.execute(command, JSON.stringify(params)));
@@ -653,6 +675,42 @@ test("generated WASM pastes native snapshot geometry after erasing the source", 
   } finally {
     session.free();
   }
+});
+
+test("background masks cannot split a hatch or close an open region, while real islands remain", () => {
+  const session = new bridge.CadcraftSession();
+  const run = (command, params) => JSON.parse(session.execute(command, JSON.stringify(params)));
+  try {
+    run("wipeout", { frames: "off" });
+    const masks = run("bridge.add_primitives", { primitives: [
+      { kind: "mask", points: [[-1,-1],[11,-1],[11,11]], color: [255,255,255], lineweight: 0 },
+      { kind: "mask", points: [[-1,-1],[11,11],[-1,11]], color: [255,255,255], lineweight: 0 },
+    ] }).handles;
+    const params = { points: [[2,5]], pattern: "ANSI31", scale: 1 };
+    const empty = run("bridge.preview_modify", { compact: true, command: "hatch", params });
+    assert.deepEqual(empty.acceptedPointIndices, []);
+    assert.deepEqual(empty.rejectedPointIndices, [0]);
+    assert.throws(() => run("hatch", params), /boundary/i);
+    run("rectang", { p1: [0,0], p2: [10,10] });
+    run("circle", { center: [5,5], radius: 1 });
+    const before = session.export_dxf();
+    const preview = run("bridge.preview_modify", { compact: true, command: "hatch", params });
+    assert.deepEqual(preview.acceptedPointIndices, [0]);
+    assert.deepEqual(session.export_dxf(), before);
+    const result = run("hatch", params);
+    const scene = JSON.parse(session.scene());
+    const loops = scene.entities.find(e => e.handle === result.handle).geometry.loops;
+    assert.equal(loops.length, 2);
+    for (const loop of loops) for (const handle of loop.sources)
+      assert.ok(!masks.includes(handle.toString(16).toUpperCase()));
+    const points = loops.find(loop => loop.outer).vertices.map(v => v.p);
+    const area = Math.abs(points.reduce((sum,p,i) => {
+      const next = points[(i+1)%points.length];
+      return sum + p.x*next.y - next.x*p.y;
+    },0)/2);
+    assert.ok(Math.abs(area-100) < 1e-6);
+    assert.equal(scene.entities.filter(e => e.type === "Wipeout").length, masks.length);
+  } finally { session.free(); }
 });
 
 test("generated WASM keeps BODY mask frames off through DXF checkpoint reload", () => {
