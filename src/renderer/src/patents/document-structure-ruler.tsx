@@ -823,6 +823,11 @@ const RulerMarkers = memo(function RulerMarkers({
         key={marker.id}
         aria-label={grouped ? `查看此处 ${members.length} 项文档结构` : `定位到${marker.label}`}
         data-cluster-count={grouped ? members.length : undefined}
+        data-cluster-multiline={
+          grouped && rulerClusterLabel(members.map((id) => markersById.get(id)!)).includes("\n")
+            ? true
+            : undefined
+        }
         data-kind={marker.kind}
         data-warning={marker.warning}
         data-error={Boolean(marker.error) || Boolean(members?.some((id) => errorIds.has(id)))}

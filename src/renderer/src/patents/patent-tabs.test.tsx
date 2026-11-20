@@ -246,7 +246,8 @@ describe("patent tabs", () => {
   test("requests closure without waiting for the patent tab animation", async () => {
     const originalAnimate = HTMLElement.prototype.animate;
     const originalRect = HTMLElement.prototype.getBoundingClientRect;
-    const animate = vi.fn().mockReturnValue({ finished: new Promise(() => {}), cancel: vi.fn() });
+    const cancel = vi.fn();
+    const animate = vi.fn().mockReturnValue({ finished: new Promise(() => {}), cancel });
     HTMLElement.prototype.animate = animate;
     HTMLElement.prototype.getBoundingClientRect = () =>
       ({
@@ -261,7 +262,7 @@ describe("patent tabs", () => {
         toJSON: () => ({}),
       }) as DOMRect;
     const first = session(1, "夹具专利");
-    const onRequestClose = vi.fn();
+    const onRequestClose = vi.fn(async () => {});
 
     try {
       const user = userEvent.setup();
@@ -285,6 +286,8 @@ describe("patent tabs", () => {
         expect.objectContaining({ duration: 400, easing: "ease-in-out" }),
       );
       await vi.waitFor(() => expect(onRequestClose).toHaveBeenCalledWith(first.patentId));
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(screen.getByRole("tab", { name: /夹具专利/ })).toBeDefined();
     } finally {
       HTMLElement.prototype.animate = originalAnimate;
       HTMLElement.prototype.getBoundingClientRect = originalRect;

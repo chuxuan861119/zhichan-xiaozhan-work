@@ -19,7 +19,14 @@ test("summarizes errors, paragraph ranges and chapters meaningfully", () => {
       { label: "技术领域", kind: "description-chapter" },
       { label: "[0001]", kind: "description-paragraph" },
     ]),
-  ).toBe("技术领域");
+  ).toBe("技术领域\n[0001]");
+  expect(
+    rulerClusterLabel([
+      { label: "具体实施方式", kind: "description-chapter" },
+      { label: "[0009]", kind: "description-paragraph" },
+      { label: "[0010]", kind: "description-paragraph" },
+    ]),
+  ).toBe("实施方式\n[0009–0010]");
 });
 
 test("groups overlapping labels without moving their document targets", () => {

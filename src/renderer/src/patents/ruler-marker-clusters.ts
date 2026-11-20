@@ -7,7 +7,16 @@ export function rulerClusterLabel(
   const errors = markers.filter((marker) => marker.error || marker.warning).length;
   if (errors) return `${errors} 处问题`;
   const chapter = markers.find((marker) => marker.kind === "description-chapter");
-  if (chapter) return chapter.label;
+  if (chapter) {
+    const numbers = markers
+      .filter((marker) => marker.kind === "description-paragraph")
+      .map((marker) => marker.label.replace(/[[\]]/g, ""))
+      .filter((number) => /^\d+$/.test(number));
+    if (!numbers.length) return chapter.label;
+    const label = chapter.label.replace("具体实施方式", "实施方式");
+    const range = numbers.length === 1 ? String(numbers[0]) : `${numbers[0]}–${numbers.at(-1)}`;
+    return `${label}\n[${range}]`;
+  }
   if (markers.every((marker) => marker.kind === "description-paragraph"))
     return `${markers[0]!.label.replace(/[[\]]/g, "")}–${markers.at(-1)!.label.replace(/[[\]]/g, "")}`;
   return `${markers.length} 项`;

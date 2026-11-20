@@ -15,7 +15,15 @@ function runtimeFor(doc: Document, firstSlot: HTMLDivElement): Runtime {
   const existing = runtimes.get(doc);
   if (existing) return existing;
   const parking = doc.createElement("div");
-  parking.hidden = true;
+  const view = doc.defaultView ?? window;
+  Object.assign(parking.style, {
+    position: "fixed",
+    left: "-100000px",
+    top: "0px",
+    width: `${view.innerWidth}px`,
+    height: `${view.innerHeight}px`,
+    visibility: "hidden",
+  });
   doc.body.append(parking);
   const frame = doc.createElement("iframe");
   frame.src = "patent-diagram://editor/adapter.html";
@@ -27,12 +35,16 @@ function runtimeFor(doc: Document, firstSlot: HTMLDivElement): Runtime {
     runtime.owner?.ready();
   });
   // Never detach this frame while any patent still owns a flowchart session.
-  if (typeof firstSlot.moveBefore === "function") firstSlot.append(frame);
-  else {
-    parking.hidden = false;
-    frame.style.visibility = "hidden";
-    parking.append(frame);
+  frame.style.visibility = "hidden";
+  if (typeof firstSlot.moveBefore !== "function") {
+    Object.assign(frame.style, {
+      position: "fixed",
+      width: `${view.innerWidth}px`,
+      height: `${view.innerHeight}px`,
+      visibility: "hidden",
+    });
   }
+  parking.append(frame);
   runtimes.set(doc, runtime);
   return runtime;
 }
@@ -56,6 +68,7 @@ export function SharedDrawioFrame({
   const latest = useRef({ onReady, visible, interactive });
   latest.current = { onReady, visible, interactive };
   const runtimeRef = useRef<Runtime | null>(null);
+  const placeRef = useRef<(() => void) | null>(null);
   useLayoutEffect(() => {
     const target = slot.current;
     if (!target) return;
@@ -101,30 +114,40 @@ export function SharedDrawioFrame({
     const atomicMove = typeof target.moveBefore === "function";
     const place = () => {
       if (runtime.owner !== attachment) return;
+      const bounds = target.getBoundingClientRect();
+      const hasArea = bounds.width > 0 && bounds.height > 0;
+      if (hasArea) {
+        runtime.parking.style.width = `${bounds.width}px`;
+        runtime.parking.style.height = `${bounds.height}px`;
+      }
+      if (atomicMove) {
+        const parent = latest.current.visible && hasArea ? target : runtime.parking;
+        if (frame.parentElement !== parent) parent.moveBefore(frame, null);
+      }
       if (!atomicMove) {
         // Older webviews keep the iframe in its original DOM location. A fixed
         // surface tracks the slot rather than reparenting/reloading the editor.
-        const bounds = target.getBoundingClientRect();
-        Object.assign(frame.style, {
-          position: "fixed",
-          left: `${bounds.left}px`,
-          top: `${bounds.top}px`,
-          width: `${bounds.width}px`,
-          height: `${bounds.height}px`,
-          zIndex: "1",
-        });
+        // Parking/hidden slots can report 0x0 while a load is still fitting the graph.
+        // Retain the last real viewport rather than saving a near-zero camera scale.
+        if (hasArea)
+          Object.assign(frame.style, {
+            position: "fixed",
+            left: `${bounds.left}px`,
+            top: `${bounds.top}px`,
+            width: `${bounds.width}px`,
+            height: `${bounds.height}px`,
+            zIndex: "1",
+          });
       }
-      frame.style.visibility = latest.current.visible ? "visible" : "hidden";
-      frame.inert = !latest.current.interactive || !latest.current.visible;
+      frame.style.visibility = latest.current.visible && hasArea ? "visible" : "hidden";
+      frame.inert = !latest.current.interactive || !latest.current.visible || !hasArea;
     };
-    if (atomicMove) {
-      if (frame.parentElement !== target) target.moveBefore(frame, null);
-    } else {
-      runtime.parking.hidden = false;
-      if (typeof ResizeObserver !== "undefined") {
-        observer = new ResizeObserver(place);
-        observer.observe(target);
-      }
+    placeRef.current = place;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(place);
+      observer.observe(target);
+    }
+    if (!atomicMove) {
       window.addEventListener("resize", place);
       window.addEventListener("scroll", place, true);
     }
@@ -134,6 +157,7 @@ export function SharedDrawioFrame({
       observer?.disconnect();
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
+      placeRef.current = null;
       frameRef.current = null;
       if (runtime.owner !== attachment) return;
       runtime.owner = null;
@@ -143,11 +167,11 @@ export function SharedDrawioFrame({
       if (atomicMove && frame.isConnected) runtime.parking.moveBefore(frame, null);
     };
   }, [enabled, sessionId, frameRef]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: these changes re-place the retained iframe using the latest ref.
   useLayoutEffect(() => {
     const runtime = runtimeRef.current;
     if (!runtime || runtime.owner?.slot !== slot.current) return;
-    runtime.frame.style.visibility = visible ? "visible" : "hidden";
-    runtime.frame.inert = !interactive || !visible;
+    placeRef.current?.();
   }, [visible, interactive]);
   return <div ref={slot} className="flowchart-workspace__frame-slot" />;
 }

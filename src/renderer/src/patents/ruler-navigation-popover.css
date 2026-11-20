@@ -73,3 +73,13 @@
   transform: none;
   transition: none;
 }
+
+/* Keep the complete paragraph numbers within the grouped ruler label. */
+.document-structure-ruler__marker[data-cluster-multiline="true"]
+  .document-structure-ruler__label--wide {
+  display: block;
+  padding: 0 2px;
+  font-size: 10px;
+  line-height: 11px;
+  white-space: pre-line;
+}
