@@ -8,12 +8,17 @@ import {
   MAX_DESIGN_IMAGE_SOURCE_PIXELS,
   renderDesignPatentBriefLines,
 } from "../../../shared/patent/design-patent";
+import { resolveDesignViewImage } from "../../../shared/patent/design-view-image";
 import type { CanonicalPatent } from "../../../shared/patent/model";
 import type { PatentSession } from "../patents/patent-reducer";
 import { confirmAppAction } from "../shared/app-dialog";
+import { KlecksCorrectionWorkspace } from "./correction/klecks-correction-workspace";
+
+export type PreparedDesignExport = { previewRevision: number; revision: number };
 
 type Props = {
   session: PatentSession;
+  active?: boolean;
   onUpdate(designPatent: DesignPatent, assets: AssetDescriptor[]): void;
   onPrepareExport?(): Promise<number | null>;
   onExportCommitted?(patent: CanonicalPatent, savedAt: string): boolean;
@@ -52,11 +57,13 @@ function sameImageRecipe(
 
 export function DesignPatentWorkbench({
   session,
+  active = true,
   onUpdate,
   onPrepareExport,
   onExportCommitted,
 }: Props) {
-  const [tab, setTab] = useState<"images" | "brief">("images");
+  const [tab, setTab] = useState<"images" | "retouch" | "brief">("images");
+  const [retouchOpened, setRetouchOpened] = useState(false);
   const [showChecks, setShowChecks] = useState(false);
   const [exportFormat, setExportFormat] = useState<"docx" | "pdf">("docx");
   const [confirmWarnings, setConfirmWarnings] = useState(false);
@@ -82,9 +89,9 @@ export function DesignPatentWorkbench({
       const entries = await Promise.all(
         (views ?? []).map(async (view) => {
           const bytes =
-            view.operations.length === 0
+            (view.editor?.applied || view.operations.length === 0)
               ? await window.patentApi.assets
-                  .getPreview(session.sessionId, view.assetId)
+                  .getPreview(session.sessionId, resolveDesignViewImage(view).assetId)
                   .then((result) => (result.ok ? result.value : null))
               : await window.patentApi.assets
                   .processDesignImage({
@@ -536,12 +543,32 @@ export function DesignPatentWorkbench({
         <button
           type="button"
           role="tab"
+          aria-selected={tab === "retouch"}
+          onClick={() => {
+            setRetouchOpened(true);
+            setTab("retouch");
+          }}
+        >
+          小栈修图
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === "brief"}
           onClick={() => setTab("brief")}
         >
           简要说明
         </button>
       </div>
+      {retouchOpened ? (
+        <section hidden={tab !== "retouch"} aria-label="小栈修图">
+          <KlecksCorrectionWorkspace
+            session={session}
+            active={active && tab === "retouch"}
+            onAddImages={() => setTab("images")}
+          />
+        </section>
+      ) : null}
       {tab === "images" ? (
         <section className="design-patent-workbench__images" aria-label="图片或照片">
           <p>导入 JPG、JPEG 或 PNG 后，将图片分配到对应视图；局部设计请导入已完成标记的图片。</p>
@@ -655,7 +682,7 @@ export function DesignPatentWorkbench({
                       <button type="button" onClick={() => void removeView(view.viewId)}>
                         移除
                       </button>
-                      {renderImageOperations(view)}
+                      {view.editor?.applied ? null : renderImageOperations(view)}
                     </>
                   ) : (
                     <span>待分配图片</span>
@@ -734,7 +761,7 @@ export function DesignPatentWorkbench({
                     <button type="button" onClick={() => void removeView(view.viewId)}>
                       移除
                     </button>
-                    {renderImageOperations(view)}
+                    {view.editor?.applied ? null : renderImageOperations(view)}
                   </div>
                 ))}
             </section>
@@ -743,7 +770,7 @@ export function DesignPatentWorkbench({
             六视图检查以图片中产品主体的宽、高、深比例为依据；可先裁剪空白边、旋转/透视校正或进行尺寸校准，再由你确认应用。
           </aside>
         </section>
-      ) : (
+      ) : tab === "brief" ? (
         <section className="design-patent-workbench__brief" aria-label="简要说明">
           <label>
             产品名称
@@ -942,7 +969,7 @@ export function DesignPatentWorkbench({
             ))}
           </section>
         </section>
-      )}
+      ) : null}
       {showChecks ? (
         <aside className="design-patent-workbench__checks" role="dialog" aria-label="导出前检查">
           <h2>导出前检查</h2>

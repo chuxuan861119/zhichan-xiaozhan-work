@@ -37,6 +37,8 @@ import {
   ChemicalPreviewRequestSchema,
   ChemicalPreviewResultSchema,
   ChemicalStructureSourceResultSchema,
+  ClipboardImageResultSchema,
+  ClipboardImageSchema,
   ClipboardTextResultSchema,
   ClipboardTextWriteRequestSchema,
   CloseResultRequestSchema,
@@ -45,8 +47,15 @@ import {
   DataTransferLibraryInspectionResultSchema,
   DataTransferOperationIdSchema,
   DataTransferProgressSchema,
+  DesignEditorProjectDataResultSchema,
+  DesignEditorSourceResultSchema,
+  DesignEditorWorkspaceLeaseResultSchema,
+  DesignEditorWorkspaceReleaseSchema,
+  DesignEditorWorkspaceRequestSchema,
+  DesignFileSelectionResultSchema,
   DesignImageProcessAppResultSchema,
   DesignImageProcessRequestSchema,
+  DesignPatentExportDestinationResultSchema,
   DesignPatentExportRequestSchema,
   DirectPrintRequestSchema,
   DiscardImportedAssetsRequestSchema,
@@ -108,8 +117,8 @@ import {
   LibraryRenameRequestSchema,
   LibraryScopeSchema,
   MenuCommandSchema,
-  NullableDocxImportPreviewResultSchema,
   NullableDesignPatentExportReportResultSchema,
+  NullableDocxImportPreviewResultSchema,
   NullableExportReportResultSchema,
   NullableFlowchartOpenedProjectResultSchema,
   NullableImportedAssetResultSchema,
@@ -140,6 +149,7 @@ import {
   PatentExportPatdocRequestSchema,
   PatentFlushRequestSchema,
   PatentFlushResultResultSchema,
+  PatentFormattingResultSchema,
   PatentListResultSchema,
   PatentMoveAuxiliaryDocumentRequestSchema,
   PatentPurgeResultResultSchema,
@@ -188,6 +198,7 @@ import {
   SnapshotStatusResultSchema,
   StableIdSchema,
   StageAssetReferencesRequestSchema,
+  StageDesignEditorProjectRequestSchema,
   StartupRecoveryReportResultSchema,
   StorageFolderKindSchema,
   StorageOverviewResultSchema,
@@ -215,8 +226,21 @@ import {
   WindowLayoutStateSchema,
 } from "../shared/ipc/contract.js";
 import { PatentBundleExportSchema, PatentBundleResultSchema } from "../shared/ipc/patent-bundle.js";
-import { PatentFolderExportRequestSchema } from "../shared/patent/folder.js";
 import { appResultSchema } from "../shared/ipc/result.js";
+import {
+  TemporaryBatchBeginResultSchema,
+  TemporaryBatchBeginSchema,
+  TemporaryBatchPsdSchema,
+  TemporaryBatchRasterSchema,
+  TemporaryBatchTokenSchema,
+  TemporaryExportResultSchema,
+  TemporaryPsdDecodeSchema,
+  TemporaryPsdExportSchema,
+  TemporaryPsdResultSchema,
+  TemporaryRasterDecodeSchema,
+  TemporaryRasterExportSchema,
+  TemporaryRasterResultSchema,
+} from "../shared/ipc/temporary-images.js";
 import { IpcReportRequestSchema } from "../shared/ipc-data-center.js";
 import { AgreementAcceptSchema } from "../shared/legal/model.js";
 import { LegislationActionSchema } from "../shared/legislation.js";
@@ -225,6 +249,7 @@ import {
   ContentSearchStateSchema,
 } from "../shared/library/content-search.js";
 import { OfficialWebsiteIdSchema } from "../shared/official-websites.js";
+import { PatentFolderExportRequestSchema } from "../shared/patent/folder.js";
 import { BackgroundSaveResultSchema, StartupStateSchema } from "../shared/settings/startup.js";
 import {
   TutorialContextResultSchema,
@@ -506,6 +531,64 @@ const api: PatentApi = {
     },
   },
 
+  imageEditor: {
+    beginBatch: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorBeginBatch,
+        TemporaryBatchBeginSchema,
+        TemporaryBatchBeginResultSchema,
+        request,
+      ),
+    writeBatchRaster: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorWriteBatchRaster,
+        TemporaryBatchRasterSchema,
+        TemporaryExportResultSchema,
+        request,
+      ),
+    writeBatchPsd: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorWriteBatchPsd,
+        TemporaryBatchPsdSchema,
+        TemporaryExportResultSchema,
+        request,
+      ),
+    finishBatch: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorFinishBatch,
+        TemporaryBatchTokenSchema,
+        VoidResultSchema,
+        request,
+      ),
+    decodePsd: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorDecodePsd,
+        TemporaryPsdDecodeSchema,
+        TemporaryPsdResultSchema,
+        request,
+      ),
+    exportPsd: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorExportPsd,
+        TemporaryPsdExportSchema,
+        TemporaryExportResultSchema,
+        request,
+      ),
+    decodeRaster: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorDecodeRaster,
+        TemporaryRasterDecodeSchema,
+        TemporaryRasterResultSchema,
+        request,
+      ),
+    exportRaster: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.imageEditorExportRaster,
+        TemporaryRasterExportSchema,
+        TemporaryExportResultSchema,
+        request,
+      ),
+  },
   chemistry: {
     readStructureSource: (request) =>
       invokeWithInput(
@@ -542,6 +625,15 @@ const api: PatentApi = {
   },
   clipboard: {
     paste: () => invokeWithoutInput(IPC_CHANNELS.clipboardPaste, VoidResultSchema),
+    writeImage: (image) =>
+      invokeWithInput(
+        IPC_CHANNELS.clipboardWriteImage,
+        ClipboardImageSchema,
+        VoidResultSchema,
+        image,
+      ),
+    readImage: () =>
+      invokeWithoutInput(IPC_CHANNELS.clipboardReadImage, ClipboardImageResultSchema),
     readText: () => invokeWithoutInput(IPC_CHANNELS.clipboardReadText, ClipboardTextResultSchema),
     writeText: (text) =>
       invokeWithInput(
@@ -613,6 +705,41 @@ const api: PatentApi = {
         drawingImportProgressListeners.delete(listener);
       };
     },
+    acquireDesignEditorWorkspace: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.assetsAcquireDesignEditorWorkspace,
+        DesignEditorWorkspaceRequestSchema,
+        DesignEditorWorkspaceLeaseResultSchema,
+        request,
+      ),
+    releaseDesignEditorWorkspace: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.assetsReleaseDesignEditorWorkspace,
+        DesignEditorWorkspaceReleaseSchema,
+        VoidResultSchema,
+        request,
+      ),
+    readDesignEditorProject: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.assetsReadDesignEditorProject,
+        AssetReferenceRequestSchema,
+        DesignEditorProjectDataResultSchema,
+        request,
+      ),
+    stageDesignEditorProject: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.assetsStageDesignEditorProject,
+        StageDesignEditorProjectRequestSchema,
+        ImportedAssetResultSchema,
+        request,
+      ),
+    prepareDesignEditorSource: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.assetsPrepareDesignEditorSource,
+        DesignImageProcessRequestSchema,
+        DesignEditorSourceResultSchema,
+        request,
+      ),
     chooseAndImport: (sessionId) =>
       invokeWithInput(
         IPC_CHANNELS.assetsChooseAndImport,
@@ -625,6 +752,13 @@ const api: PatentApi = {
         IPC_CHANNELS.assetsChooseAndImportMany,
         SessionIdSchema,
         ImportedAssetListResultSchema,
+        sessionId,
+      ),
+    chooseDesignFiles: (sessionId) =>
+      invokeWithInput(
+        IPC_CHANNELS.assetsChooseDesignFiles,
+        SessionIdSchema,
+        DesignFileSelectionResultSchema,
         sessionId,
       ),
     importBytes: (request) =>
@@ -1643,5 +1777,7 @@ const api: PatentApi = {
   },
 };
 
-contextBridge.exposeInMainWorld("patentApi", api);
-contextBridge.exposeInMainWorld("documentFontPlatform", process.platform);
+if (process.isMainFrame) {
+  contextBridge.exposeInMainWorld("patentApi", api);
+  contextBridge.exposeInMainWorld("documentFontPlatform", process.platform);
+}

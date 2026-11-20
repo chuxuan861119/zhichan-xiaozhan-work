@@ -111,7 +111,10 @@ let forcedCloseOccurred = false;
 let tutorialSeed: TutorialSeedService | undefined;
 async function createLibraryIpcOptions() {
   const localAppData = canonicalSystemPath(process.env.LOCALAPPDATA ?? app.getPath("userData"));
-  const override = resolveLibraryOverride(process.env);
+  const override = resolveLibraryOverride({
+    ZHICHAN_XIAOZHAN_WORK_LIBRARY_ROOT: process.env.ZHICHAN_XIAOZHAN_WORK_LIBRARY_ROOT,
+    PATENT_WORKBENCH_LIBRARY_ROOT: process.env.PATENT_WORKBENCH_LIBRARY_ROOT,
+  });
   await migrateDefaultLibraryDirectory({
     localAppData,
     hasExplicitOverride: override !== undefined,
@@ -589,7 +592,10 @@ if (!tutorialSession && !allowMultipleTestInstances && !app.requestSingleInstanc
         }
       }
       installPrintProtocol();
-      installAppProtocol(join(__dirname, "../renderer"));
+      installAppProtocol(join(__dirname, "../renderer"), undefined, {
+        editorRoot: join(__dirname, "../design-editor"),
+        developmentRendererUrl: app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL,
+      });
       installDrawioProtocol();
       installIpcDataProtocol();
       const libraryServices = await createLibraryIpcOptions();

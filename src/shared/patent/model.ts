@@ -350,7 +350,10 @@ function refinePatent(
   });
 
   patent.figures.forEach((figure, index) => {
-    if (!assetIds.has(figure.assetId)) {
+    if (
+      !assetIds.has(figure.assetId) ||
+      assetsById.get(figure.assetId)?.kind === "design-editor-project"
+    ) {
       ctx.addIssue({
         code: "custom",
         message: "附图资源不存在",
@@ -374,12 +377,46 @@ function refinePatent(
   patent.designPatent?.views.forEach((view, index) => {
     const path = ["designPatent", "views", index];
     const source = assetsById.get(view.assetId);
-    if (!source || (source.mediaType !== "image/jpeg" && source.mediaType !== "image/png"))
+    if (!source || source.kind === "design-editor-project")
       ctx.addIssue({
         code: "custom",
         message: "外观设计视图资源不存在",
         path: [...path, "assetId"],
       });
+    if (!view.editor) return;
+    const { sourceAssetId, applied } = view.editor;
+    if (sourceAssetId !== view.assetId)
+      ctx.addIssue({
+        code: "custom",
+        message: "编辑工程来源与原图不一致",
+        path: [...path, "editor", "sourceAssetId"],
+      });
+    for (const key of ["saved", "recovery", "applied"] as const) {
+      const checkpoint = view.editor[key];
+      if (checkpoint && assetsById.get(checkpoint.projectAssetId)?.kind !== "design-editor-project")
+        ctx.addIssue({
+          code: "custom",
+          message: "分层编辑工程资产不存在或类型不正确",
+          path: [...path, "editor", key, "projectAssetId"],
+        });
+    }
+    if (applied) {
+      const image = assetsById.get(applied.imageAssetId),
+        project = assetsById.get(applied.projectAssetId);
+      if (
+        image?.kind !== "image" ||
+        image.widthPx !== applied.widthPx ||
+        image.heightPx !== applied.heightPx ||
+        project?.kind !== "design-editor-project" ||
+        project.widthPx !== applied.widthPx ||
+        project.heightPx !== applied.heightPx
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "已应用图片与分层工程尺寸或资源不一致",
+          path: [...path, "editor", "applied"],
+        });
+    }
   });
   if (
     patent.abstractDrawingFigureId !== null &&

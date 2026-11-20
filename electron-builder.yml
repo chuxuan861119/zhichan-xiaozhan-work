@@ -14,6 +14,7 @@ files:
   - out/main/**
   - out/preload/**
   - out/renderer/**
+  - out/design-editor/**
   - package.json
   - "!**/*.map"
   - "!**/*.hidden-test-*"

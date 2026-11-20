@@ -77,6 +77,8 @@ export type PortableSettings = z.infer<typeof PortableSettingsSchema>;
 // Adding an AppSettings field without updating this policy is a type error.
 export const SETTING_TRANSFER_POLICY = {
   autoCheckUpdates: "local",
+  designEditorPreferences: "local",
+  designAutoTrimDefaults: "local",
   contentSearchEnabled: "portable",
   drawingDetailDefaultRatio: "portable",
   drawingAutoAdjustLabelSize: "local",

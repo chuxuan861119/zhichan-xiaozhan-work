@@ -1,0 +1,98 @@
+.klecks-panels__status:has(.klecks-quick-size) {
+  position: relative;
+}
+.klecks-panels__status:has(.klecks-quick-size__form) {
+  z-index: 16;
+}
+.klecks-quick-size {
+  position: relative;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.klecks-quick-size__edit {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+}
+.klecks-quick-size__form,
+.klecks-quick-size__fields,
+.klecks-quick-size__fields label,
+.klecks-quick-size__link,
+.klecks-quick-size__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.klecks-quick-size__form {
+  gap: 9px;
+  color: #304158;
+}
+.klecks-quick-size__fields input {
+  box-sizing: border-box;
+  width: 48px;
+  min-height: 23px;
+  padding: 2px 4px;
+  background: #fff;
+  color: inherit;
+  border: 1px solid var(--ke-border, #d9e0e8);
+  border-radius: 4px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.klecks-quick-size__link input {
+  margin: 0;
+  accent-color: #27766c;
+}
+.klecks-panels__status .klecks-quick-size__actions button {
+  padding-inline: 6px;
+}
+.klecks-panels__status .klecks-quick-size__actions button[type="submit"]:not(:disabled) {
+  color: #075f57;
+  background: #dff1ec;
+}
+.klecks-quick-size__hint {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: calc(100% + 6px);
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 300px;
+  margin: 0;
+  padding: 5px 8px;
+  border: 1px solid #ecd8b5;
+  border-radius: 5px;
+  background: #fff8e9;
+  color: #7e4b13;
+  white-space: normal;
+}
+@media (min-width: 1251px) {
+  .klecks-quick-size__value[data-editing="true"],
+  .klecks-quick-size:has(.klecks-quick-size__form) > .klecks-quick-size__edit {
+    display: none;
+  }
+}
+@media (max-width: 1250px) {
+  .klecks-panels__status > .klecks-quick-size {
+    position: static;
+  }
+  .klecks-quick-size__form {
+    position: absolute;
+    inset-inline-start: 8px;
+    bottom: calc(100% + 5px);
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    max-width: calc(100% - 16px);
+    padding: 8px 10px;
+    border: 1px solid var(--ke-border, #d9e0e8);
+    border-radius: 7px;
+    background: #fff;
+    box-shadow: var(--ui-shadow-floating, 0 14px 36px rgb(15 23 42 / 14%));
+  }
+  .klecks-quick-size__hint {
+    position: static;
+    flex: 1 0 100%;
+    width: auto;
+    max-width: none;
+  }
+}

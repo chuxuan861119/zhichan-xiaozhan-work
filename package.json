@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "check:dependencies": "node scripts/check-installed-dependencies.cjs",
-    "predev": "npm run check:dependencies",
+    "predev": "npm run check:dependencies && npm run build:design-editor",
     "dev": "electron-vite dev",
     "postinstall": "electron-builder install-app-deps",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
@@ -19,7 +19,7 @@
     "pretest:unit:watch": "npm run check:dependencies",
     "test:unit:watch": "vitest",
     "prebuild:app": "npm run check:dependencies",
-    "build:app": "npm run build:cli && electron-vite build",
+    "build:app": "npm run build:cli && electron-vite build && npm run build:design-editor",
     "generate:icon": "node build/generate-icon.mjs",
     "vendor:drawings": "python tools/drawing-converter/prepare_runtime.py",
     "vendor:cad": "node scripts/build-cadcraft.mjs",
@@ -46,7 +46,8 @@
     "cli": "node out/cli/index.cjs",
     "vendor:cli": "node scripts/vendor-cli-runtime.mjs",
     "build:usage-service": "node scripts/build-usage-service.mjs",
-    "verify:source-release": "node scripts/verify-open-source-release.mjs"
+    "verify:source-release": "node scripts/verify-open-source-release.mjs",
+    "build:design-editor": "node scripts/build-klecks-editor.mjs"
   },
   "dependencies": {
     "@tiptap/core": "3.31.4",
@@ -68,6 +69,7 @@
     "@tiptap/react": "3.31.4",
     "@tiptap/starter-kit": "3.31.4",
     "@xmldom/xmldom": "0.9.12",
+    "ag-psd": "31.0.1",
     "docx": "9.7.1",
     "dompurify": "3.4.16",
     "file-type": "22.0.1",
@@ -80,9 +82,11 @@
     "mathlive": "0.110.0",
     "mathml-to-latex": "1.8.0",
     "pdfjs-dist": "6.2.108",
+    "polygon-clipping": "0.15.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "0.35.5",
+    "transformation-matrix": "3.1.0",
     "write-file-atomic": "7.0.0",
     "yauzl": "3.4.0",
     "yazl": "3.3.1",
@@ -104,19 +108,23 @@
     "electron": "43.7.7",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
+    "esbuild": "0.25.12",
     "jsdom": "29.0.1",
     "json5": "2.2.3",
     "typescript": "7.0.2",
     "vite": "7.3.6",
-    "vitest": "4.1.11",
-    "esbuild": "0.25.12"
+    "vitest": "4.1.11"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "overrides": {
     "@electron/get": "5.1.0",
-    "@xmldom/xmldom@>=0.9.0": "$@xmldom/xmldom"
+    "@xmldom/xmldom@>=0.9.0": "$@xmldom/xmldom",
+    "polygon-clipping": {
+      "robust-predicates": "3.0.2",
+      "splaytree": "3.1.2"
+    }
   },
   "license": "GPL-3.0-only",
   "homepage": "https://zcxzz.cn/work/",

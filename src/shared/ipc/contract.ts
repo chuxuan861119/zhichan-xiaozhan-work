@@ -9,6 +9,7 @@ import { type DrawingTileRaster, DrawingTileRasterSchema } from "../drawing-mark
 import { type AgreementAccept, type AgreementState, AgreementStateSchema } from "../legal/model.js";
 import { type UpdateState, UpdateStateSchema } from "../updates/model.js";
 import { type UsageChoice, type UsageState, UsageStateSchema } from "../usage-statistics/model.js";
+import type { TemporaryImageApi } from "./temporary-images.js";
 
 export { DrawingImportProgressSchema } from "../drawing-markup/import-progress.js";
 
@@ -126,6 +127,7 @@ import {
 } from "../library/model.js";
 import { ClaimsRichParagraphsSchema } from "../patent/claims-rich-text.js";
 import { PatdocWorkspaceSchema } from "../patent/continuation.js";
+import { DesignEditorMetadataSchema } from "../patent/design-editor-project.js";
 import { DesignPatentImageOperationSchema, DesignPatentSchema } from "../patent/design-patent.js";
 import { UnlinkedDrawingExplanationSchema } from "../patent/drawing-explanations.js";
 import {
@@ -217,6 +219,7 @@ import {
 } from "./primitives.js";
 import { RendererFailureLocationSchema } from "./renderer-failure-location.js";
 import { AppErrorSchema, type AppResult, appResultSchema } from "./result.js";
+export const PatentFormattingResultSchema = appResultSchema(z.array(PatentBookKindSchema).max(5));
 
 export const IPC_CHANNELS = {
   patentsExportFolder: "patents:export-folder",
@@ -233,6 +236,8 @@ export const IPC_CHANNELS = {
   formulaDrawingsRender: "formula-drawings:render",
   clipboardReadText: "clipboard:read-text",
   clipboardPaste: "clipboard:paste",
+  clipboardReadImage: "clipboard:read-image",
+  clipboardWriteImage: "clipboard:write-image",
   clipboardWriteText: "clipboard:write-text",
   ipcDataSaveReport: "ipc-data:save-report",
   documentsActivate: "documents:activate",
@@ -243,6 +248,7 @@ export const IPC_CHANNELS = {
   documentsRelease: "documents:release",
   assetsChooseAndImport: "assets:choose-and-import",
   assetsChooseAndImportMany: "assets:choose-and-import-many",
+  assetsChooseDesignFiles: "assets:choose-design-files",
   assetsImportBytes: "assets:import-bytes",
   drawingsImport: "drawings:import",
   drawingsImportProgress: "drawings:import-progress",
@@ -260,6 +266,19 @@ export const IPC_CHANNELS = {
   assetsSaveImage: "assets:save-image",
   assetsSaveImages: "assets:save-images",
   assetsProcessDesignImage: "assets:process-design-image",
+  assetsPrepareDesignEditorSource: "assets:prepare-design-editor-source",
+  assetsStageDesignEditorProject: "assets:stage-design-editor-project",
+  assetsReadDesignEditorProject: "assets:read-design-editor-project",
+  assetsAcquireDesignEditorWorkspace: "assets:acquire-design-editor-workspace",
+  assetsReleaseDesignEditorWorkspace: "assets:release-design-editor-workspace",
+  imageEditorDecodeRaster: "image-editor:decode-raster",
+  imageEditorExportRaster: "image-editor:export-raster",
+  imageEditorDecodePsd: "image-editor:decode-psd",
+  imageEditorExportPsd: "image-editor:export-psd",
+  imageEditorBeginBatch: "image-editor:begin-batch",
+  imageEditorWriteBatchRaster: "image-editor:write-batch-raster",
+  imageEditorWriteBatchPsd: "image-editor:write-batch-psd",
+  imageEditorFinishBatch: "image-editor:finish-batch",
   draftsList: "drafts:list",
   draftsSave: "drafts:save",
   draftsOpen: "drafts:open",
@@ -455,6 +474,8 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.formulaDrawingsRender,
   IPC_CHANNELS.clipboardReadText,
   IPC_CHANNELS.clipboardPaste,
+  IPC_CHANNELS.clipboardReadImage,
+  IPC_CHANNELS.clipboardWriteImage,
   IPC_CHANNELS.clipboardWriteText,
   IPC_CHANNELS.ipcDataSaveReport,
   IPC_CHANNELS.documentsActivate,
@@ -465,6 +486,7 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.documentsRelease,
   IPC_CHANNELS.assetsChooseAndImport,
   IPC_CHANNELS.assetsChooseAndImportMany,
+  IPC_CHANNELS.assetsChooseDesignFiles,
   IPC_CHANNELS.assetsImportBytes,
   IPC_CHANNELS.drawingsImport,
   IPC_CHANNELS.drawingsCancelImport,
@@ -481,6 +503,19 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.assetsSaveImage,
   IPC_CHANNELS.assetsSaveImages,
   IPC_CHANNELS.assetsProcessDesignImage,
+  IPC_CHANNELS.assetsPrepareDesignEditorSource,
+  IPC_CHANNELS.assetsStageDesignEditorProject,
+  IPC_CHANNELS.assetsReadDesignEditorProject,
+  IPC_CHANNELS.assetsAcquireDesignEditorWorkspace,
+  IPC_CHANNELS.assetsReleaseDesignEditorWorkspace,
+  IPC_CHANNELS.imageEditorDecodeRaster,
+  IPC_CHANNELS.imageEditorExportRaster,
+  IPC_CHANNELS.imageEditorDecodePsd,
+  IPC_CHANNELS.imageEditorExportPsd,
+  IPC_CHANNELS.imageEditorBeginBatch,
+  IPC_CHANNELS.imageEditorWriteBatchRaster,
+  IPC_CHANNELS.imageEditorWriteBatchPsd,
+  IPC_CHANNELS.imageEditorFinishBatch,
   IPC_CHANNELS.draftsList,
   IPC_CHANNELS.draftsSave,
   IPC_CHANNELS.draftsOpen,
@@ -788,6 +823,8 @@ export type ImportAssetBatchRequest = z.infer<typeof ImportAssetBatchRequestSche
 export const ImportedAssetSchema = z.object({
   descriptor: AssetDescriptorSchema,
   preview: z.instanceof(Uint8Array),
+  // Per-import name; content-addressed storage may retain an earlier descriptor name.
+  importedName: z.string().min(1).max(1024).optional(),
 });
 export type ImportedAsset = z.infer<typeof ImportedAssetSchema>;
 
@@ -859,6 +896,101 @@ export const AssetReferenceRequestSchema = z.object({
   sessionId: SessionIdSchema,
   assetId: z.string().uuid(),
 });
+export type AssetReferenceRequest = z.infer<typeof AssetReferenceRequestSchema>;
+
+export const DesignImageProcessRequestSchema = z
+  .object({
+    sessionId: SessionIdSchema,
+    assetId: StableIdSchema,
+    operations: z.array(DesignPatentImageOperationSchema).max(100),
+  })
+  .strict();
+export type DesignImageProcessRequest = z.infer<typeof DesignImageProcessRequestSchema>;
+
+export const DesignImageSubjectBoundsSchema = z
+  .object({
+    leftPx: z.number().int().nonnegative(),
+    topPx: z.number().int().nonnegative(),
+    widthPx: z.number().int().positive(),
+    heightPx: z.number().int().positive(),
+  })
+  .strict();
+export const DesignImageProcessResultSchema = z
+  .object({
+    bytes: z.instanceof(Uint8Array),
+    widthPx: z.number().int().positive(),
+    heightPx: z.number().int().positive(),
+    subjectBounds: DesignImageSubjectBoundsSchema.nullable(),
+  })
+  .strict();
+export type DesignImageProcessResult = z.infer<typeof DesignImageProcessResultSchema>;
+export const DesignEditorSourceSchema = z
+  .object({
+    bytes: z.instanceof(Uint8Array),
+    widthPx: z.number().int().positive().max(10000),
+    heightPx: z.number().int().positive().max(10000),
+    mediaType: z.literal("image/png"),
+    initializedFrom: z.enum(["original", "legacy-recipe"]),
+    initialLayerKind: z.enum(["regular", "background"]),
+  })
+  .strict()
+  .refine((value) => value.widthPx * value.heightPx <= 40000000);
+export type DesignEditorSource = z.infer<typeof DesignEditorSourceSchema>;
+export const DesignEditorSourceResultSchema = appResultSchema(DesignEditorSourceSchema);
+export const DesignEditorWorkspaceRequestSchema = z
+  .object({
+    sessionId: SessionIdSchema,
+    frameId: z.string().uuid(),
+    scope: z.literal("application").optional(),
+  })
+  .strict();
+export const DesignEditorWorkspaceLeaseSchema = DesignEditorWorkspaceRequestSchema.extend({
+  leaseId: z.string().uuid(),
+  limitBytes: z.number().int().positive().safe(),
+}).strict();
+export const DesignEditorWorkspaceReleaseSchema = z
+  .object({ sessionId: SessionIdSchema, leaseId: z.string().uuid() })
+  .strict();
+export const DesignEditorWorkspaceLeaseResultSchema = appResultSchema(
+  DesignEditorWorkspaceLeaseSchema,
+);
+export type DesignEditorWorkspaceLease = z.infer<typeof DesignEditorWorkspaceLeaseSchema>;
+export const StageDesignEditorProjectRequestSchema = z
+  .object({
+    sessionId: SessionIdSchema,
+    project: z
+      .object({
+        metadata: DesignEditorMetadataSchema,
+        psd: z
+          .instanceof(Uint8Array)
+          .refine((bytes) => bytes.byteLength >= 26 && bytes.byteLength <= 50 * 1024 * 1024),
+        backings: z
+          .array(
+            z
+              .object({
+                id: z.string().min(1).max(208),
+                bytes: z.instanceof(Uint8Array),
+              })
+              .strict(),
+          )
+          .max(16),
+      })
+      .strict()
+      .refine(
+        (project) =>
+          project.psd.byteLength +
+            project.backings.reduce((total, asset) => total + asset.bytes.byteLength, 0) <=
+          50 * 1024 * 1024,
+      ),
+    thumbnail: z
+      .instanceof(Uint8Array)
+      .refine((bytes) => bytes.byteLength > 0 && bytes.byteLength <= 4 * 1024 * 1024),
+  })
+  .strict();
+export type StageDesignEditorProjectRequest = z.infer<typeof StageDesignEditorProjectRequestSchema>;
+export const DesignEditorProjectDataSchema = StageDesignEditorProjectRequestSchema.shape.project;
+export type DesignEditorProjectData = z.infer<typeof DesignEditorProjectDataSchema>;
+export const DesignEditorProjectDataResultSchema = appResultSchema(DesignEditorProjectDataSchema);
 
 export const DrawingTileRequestSchema = AssetReferenceRequestSchema.extend({
   tileId: z.string().regex(/^tile-[0-9]{1,4}$/u),
@@ -1758,7 +1890,6 @@ export const DesignPatentExportRequestSchema = z
   })
   .strict();
 export type DesignPatentExportRequest = z.infer<typeof DesignPatentExportRequestSchema>;
-
 export const DesignPatentExportReportSchema = z
   .object({
     outputDirectory: LocalPathSchema,
@@ -1844,6 +1975,7 @@ export const WindowLayoutStateSchema = z
   .strict();
 export type WindowLayoutState = z.infer<typeof WindowLayoutStateSchema>;
 
+
 export const NullableOpenedDocumentResultSchema = appResultSchema(OpenedDocumentSchema.nullable());
 export const OpenedDocumentResultSchema = appResultSchema(OpenedDocumentSchema);
 export const SavedDocumentResultSchema = appResultSchema(SavedDocumentSchema);
@@ -1868,6 +2000,22 @@ export const LibraryRelocationResultSchema = appResultSchema(z.boolean());
 export const NullableImportedAssetResultSchema = appResultSchema(ImportedAssetSchema.nullable());
 export const ImportedAssetResultSchema = appResultSchema(ImportedAssetSchema);
 export const ImportedAssetListResultSchema = appResultSchema(z.array(ImportedAssetSchema));
+export const DesignFileSelectionSchema = z
+  .array(
+    z
+      .object({
+        name: z.string().min(1).max(1024),
+        bytes: z
+          .instanceof(Uint8Array)
+          .refine((b) => b.byteLength > 0 && b.byteLength <= 50 * 1024 ** 2),
+      })
+      .strict(),
+  )
+  .max(100)
+  .refine(
+    (files) => files.reduce((sum, file) => sum + file.bytes.byteLength, 0) <= 128 * 1024 ** 2,
+  );
+export const DesignFileSelectionResultSchema = appResultSchema(DesignFileSelectionSchema);
 export const PreviewBytesResultSchema = appResultSchema(z.instanceof(Uint8Array));
 export const NullableLocalPathResultSchema = appResultSchema(LocalPathSchema.nullable());
 export const NullableLocalPathListResultSchema = appResultSchema(
@@ -1886,33 +2034,6 @@ export const FlowchartRenderPreviewResultSchema = appResultSchema(FlowchartRende
 export const FlowchartCommitPreviewResultResultSchema = appResultSchema(
   FlowchartCommitPreviewResultSchema,
 );
-export const DesignImageProcessRequestSchema = z
-  .object({
-    sessionId: SessionIdSchema,
-    assetId: StableIdSchema,
-    operations: z.array(DesignPatentImageOperationSchema).max(100),
-  })
-  .strict();
-export type DesignImageProcessRequest = z.infer<typeof DesignImageProcessRequestSchema>;
-
-export const DesignImageSubjectBoundsSchema = z
-  .object({
-    leftPx: z.number().int().nonnegative(),
-    topPx: z.number().int().nonnegative(),
-    widthPx: z.number().int().positive(),
-    heightPx: z.number().int().positive(),
-  })
-  .strict();
-export const DesignImageProcessResultSchema = z
-  .object({
-    bytes: z.instanceof(Uint8Array),
-    widthPx: z.number().int().positive(),
-    heightPx: z.number().int().positive(),
-    subjectBounds: DesignImageSubjectBoundsSchema.nullable(),
-  })
-  .strict();
-export type DesignImageProcessResult = z.infer<typeof DesignImageProcessResultSchema>;
-
 export const DesignImageProcessAppResultSchema = appResultSchema(DesignImageProcessResultSchema);
 export const PrintPreviewResultSchema = appResultSchema(PrintPreviewSchema);
 export const PrinterDescriptorsResultSchema = appResultSchema(z.array(PrinterDescriptorSchema));
@@ -1978,6 +2099,9 @@ export const NullableExportReportResultSchema = appResultSchema(ExportReportSche
 export const NullableDesignPatentExportReportResultSchema = appResultSchema(
   DesignPatentExportReportSchema.nullable(),
 );
+export const DesignPatentExportDestinationResultSchema = appResultSchema(
+  z.string().uuid().nullable(),
+);
 export const NullableSavedDocumentLibraryResultSchema = appResultSchema(
   SavedDocumentSchema.nullable(),
 );
@@ -2006,6 +2130,18 @@ export const ClipboardTextWriteRequestSchema = z.union([
 ]);
 export type ClipboardTextWriteRequest = z.infer<typeof ClipboardTextWriteRequestSchema>;
 export const ClipboardTextResultSchema = appResultSchema(ClipboardTextSchema);
+export const ClipboardImageSchema = z
+  .object({
+    bytes: z
+      .instanceof(Uint8Array)
+      .refine((value) => value.byteLength > 0 && value.byteLength <= 50 * 1024 * 1024),
+    width: z.number().int().positive().max(10000),
+    height: z.number().int().positive().max(10000),
+  })
+  .strict()
+  .refine((value) => value.width * value.height <= 40000000);
+export type ClipboardImage = z.infer<typeof ClipboardImageSchema>;
+export const ClipboardImageResultSchema = appResultSchema(ClipboardImageSchema.nullable());
 export const WindowLayoutStateResultSchema = appResultSchema(WindowLayoutStateSchema);
 export { RecoverySourceSchema };
 export const PreparedRecoveryResultSchema = appResultSchema(PreparedRecoverySchema.nullable());
@@ -2086,6 +2222,7 @@ export interface PatentApi {
     onProgress(listener: (progress: DataTransferProgress) => void): () => void;
   };
 
+  imageEditor?: TemporaryImageApi;
   chemistry: {
     rasterizePreview(request: ChemicalPreviewRequest): Promise<AppResult<ImportedChemicalPreview>>;
     readStructureSource(
@@ -2099,6 +2236,10 @@ export interface PatentApi {
     paste(): Promise<AppResult<void>>;
     readText(): Promise<AppResult<string>>;
     writeText(text: ClipboardTextWriteRequest): Promise<AppResult<void>>;
+    /** Optional platform capability; only invoke from an explicit paste action. */
+    readImage?(): Promise<AppResult<ClipboardImage | null>>;
+    writeImage?(image: ClipboardImage): Promise<AppResult<void>>;
+    writeText(text: string): Promise<AppResult<void>>;
   };
   documents: {
     activate(request: ActivateDocumentSessionRequest): Promise<AppResult<void>>;
@@ -2128,8 +2269,27 @@ export interface PatentApi {
     cancelDrawingImport(
       request: z.infer<typeof DrawingCancelImportSchema>,
     ): Promise<AppResult<boolean>>;
+    acquireDesignEditorWorkspace?(
+      request: z.infer<typeof DesignEditorWorkspaceRequestSchema>,
+    ): Promise<AppResult<DesignEditorWorkspaceLease>>;
+    releaseDesignEditorWorkspace?(
+      request: z.infer<typeof DesignEditorWorkspaceReleaseSchema>,
+    ): Promise<AppResult<void>>;
+    readDesignEditorProject?(
+      request: AssetReferenceRequest,
+    ): Promise<AppResult<DesignEditorProjectData>>;
+    /** Staging is not a saved-state acknowledgement; commit the case reference separately. */
+    stageDesignEditorProject?(
+      request: StageDesignEditorProjectRequest,
+    ): Promise<AppResult<ImportedAsset>>;
+    prepareDesignEditorSource?(
+      request: DesignImageProcessRequest,
+    ): Promise<AppResult<DesignEditorSource>>;
     chooseAndImport(sessionId: string): Promise<AppResult<ImportedAsset | null>>;
     chooseAndImportMany(sessionId: string): Promise<AppResult<ImportedAsset[]>>;
+    chooseDesignFiles?(
+      sessionId: string,
+    ): Promise<AppResult<Array<{ name: string; bytes: Uint8Array }>>>;
     importBytes(request: ImportAssetRequest): Promise<AppResult<ImportedAsset>>;
     importMany(request: ImportAssetBatchRequest): Promise<AppResult<ImportedAsset[]>>;
     stageReferences(request: StageAssetReferencesRequest): Promise<AppResult<ImportedAsset[]>>;

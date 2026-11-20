@@ -1,3 +1,4 @@
+/// <reference types="electron-vite/node" />
 import { randomUUID } from "node:crypto";
 import {
   access,
@@ -25,6 +26,7 @@ import {
   systemPreferences,
   type WebContents,
 } from "electron";
+import writeFileAtomic from "write-file-atomic";
 import { ZodError, z } from "zod";
 import {
   AutomationError,
@@ -36,6 +38,7 @@ import {
   APPLICATION_NAME,
   APPLICATION_VERSION,
 } from "../../shared/branding.js";
+import { referencedDocumentAssetIds } from "../../shared/document/asset-references.js";
 import { publicDocxExportIssue } from "../../shared/exports/docx-error-message.js";
 import { createDocxDefaultFilename } from "../../shared/exports/docx-filename.js";
 import { auxiliaryExportDocument } from "../../shared/exports/patent-export-scope.js";
@@ -52,6 +55,8 @@ import {
   ChemicalPreviewRequestSchema,
   ChemicalPreviewResultSchema,
   ChemicalStructureSourceResultSchema,
+  ClipboardImageSchema,
+  ClipboardTextSchema,
   ClipboardTextWriteRequestSchema,
   CopyImagesRequestSchema,
   DesignImageProcessRequestSchema,
@@ -97,6 +102,7 @@ import {
   SnapshotSettingsSchema,
   StableIdSchema,
   StageAssetReferencesRequestSchema,
+  StageDesignEditorProjectRequestSchema,
   StorageFolderKindSchema,
 } from "../../shared/ipc/contract.js";
 import {
@@ -109,6 +115,9 @@ import { AgreementAcceptSchema } from "../../shared/legal/model.js";
 import { ContentSearchRequestSchema } from "../../shared/library/content-search.js";
 import { redDraftClipboardFormats } from "../../shared/patent/claims-draft-clipboard.js";
 import { richDraftClipboardFormats } from "../../shared/patent/claims-rich-text.js";
+import { validateEditorBinaryHeader } from "../../shared/patent/design-editor-binary.js";
+import { DESIGN_IMAGE_EXTENSIONS } from "../../shared/patent/design-image-formats.js";
+import { inspectDesignPatent } from "../../shared/patent/design-patent.js";
 import type { PatentTemplateEditorSnapshot } from "../../shared/patent/template-catalog.js";
 import {
   isAgentCliAvailable,
@@ -116,7 +125,6 @@ import {
   isNetworkAiAvailable,
 } from "../../shared/platform.js";
 import { RecoverySourceSchema } from "../../shared/recovery/self-service-recovery.js";
-import { inspectDesignPatent } from "../../shared/patent/design-patent.js";
 import type { StartupRecoveryReport } from "../../shared/recovery/startup-recovery.js";
 import { DEFAULT_SNAPSHOT_SETTINGS } from "../../shared/snapshot/model.js";
 import { TutorialLessonIdSchema } from "../../shared/tutorial/model.js";
@@ -205,20 +213,36 @@ import {
   exportDesignPatentPdf,
   renderDesignPatentBriefHtml,
 } from "../design-patent/design-patent-exporter.js";
+import { EditorResourceAdmissionError } from "../design-patent/editor-operation-pool.js";
+import { readPersistedEditorProject } from "../design-patent/editor-project-reader.js";
+import { stageEditorProject } from "../design-patent/editor-project-staging.js";
+import { prepareDesignEditorSource } from "../design-patent/editor-source.js";
+import { registerEditorWorkspaceResources } from "../design-patent/editor-workspace-ipc.js";
+import {
+  EditorWorkspaceConflictError,
+  EditorWorkspaceLeases,
+} from "../design-patent/editor-workspace-leases.js";
 import { processDesignImage } from "../design-patent/image-processor.js";
+import { TemporaryImageBatch } from "../design-patent/temporary-image-batch.js";
+import { TemporaryImageFiles } from "../design-patent/temporary-image-files.js";
+import { registerTemporaryImageIpc } from "../design-patent/temporary-image-ipc.js";
+import { TemporaryImageJobs } from "../design-patent/temporary-image-jobs.js";
+import { writeTemporaryImageExclusive } from "../design-patent/temporary-image-output.js";
+import createTemporaryImageWorker from "../design-patent/temporary-image-worker?nodeWorker";
 import { DocumentRegistry, normalizeDocumentPath } from "../documents/document-registry.js";
 import { FileService } from "../documents/file-service.js";
 import type { PatdocPayload, PatentPatdocPayload } from "../documents/patdoc-format.js";
 import { DocxImportSessionService } from "../docx-import/docx-import-session-service.js";
 import { DraftService } from "../drafts/draft-service.js";
-import { DocxExportError, saveDocxToPath } from "../exports/docx-exporter.js";
+import { createDocxPackage, DocxExportError, saveDocxToPath } from "../exports/docx-exporter.js";
 import { renderFormulaFallback } from "../exports/formula-fallback.js";
-import { savePatentDocxToPath } from "../exports/patent-docx-exporter.js";
+import { createPatentDocxPackage, savePatentDocxToPath } from "../exports/patent-docx-exporter.js";
 import { loadPatentExportAssets } from "../exports/patent-export-assets.js";
 import { createPatentPrintPackage } from "../exports/patent-print-template.js";
 import { mapPrintError } from "../exports/print-error.js";
 import { printDocumentStore } from "../exports/print-protocol.js";
 import { PrintService } from "../exports/print-service.js";
+import { renderPrintHtml } from "../exports/print-template.js";
 import { toPrinterDescriptors } from "../exports/printer-info.js";
 import { buildFlowchartPdfHtml } from "../flowcharts/flowchart-pdf.js";
 import { saveIpcReport } from "../ipc-data-center/save-ipc-report.js";
@@ -264,10 +288,6 @@ import {
 } from "./owned-native-dialog.js";
 import { registerPatentBundleIpc } from "./register-patent-bundle-ipc.js";
 import { registerPatentFolderIpc } from "./register-patent-folder-ipc.js";
-import { referencedDocumentAssetIds } from "../../shared/document/asset-references.js";
-import { createPatentDocxPackage } from "../exports/patent-docx-exporter.js";
-import { createDocxPackage } from "../exports/docx-exporter.js";
-import { renderPrintHtml } from "../exports/print-template.js";
 import { SessionLifecycle } from "./session-lifecycle.js";
 
 const serviceNotConnected: AppResult<never> = {
@@ -1126,6 +1146,77 @@ export function registerIpcHandlers(
       patentTemplates?.closeEditor({ sessionId });
     }
   };
+  const editorWorkspaceLeases = new EditorWorkspaceLeases();
+  const temporaryImageJobs = new TemporaryImageJobs(createTemporaryImageWorker);
+  const temporaryImageFiles = new TemporaryImageFiles({
+    choose: async (name, format) => {
+      const extensions =
+        format === "jpeg" ? ["jpg", "jpeg"] : format === "tiff" ? ["tif", "tiff"] : [format];
+      const selection = await dialog.showSaveDialog({
+        title: "导出编辑后的图片",
+        defaultPath: name,
+        filters: [{ name: `${format.toUpperCase()} 图片`, extensions }],
+      });
+      return selection.canceled ? null : (selection.filePath ?? null);
+    },
+    exists: async (path) => {
+      try {
+        await stat(path);
+        return true;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+        throw error;
+      }
+    },
+    confirmOverwrite: async (path) => {
+      const result = await dialog.showMessageBox({
+        type: "warning",
+        title: "覆盖图片",
+        message: "目标图片已存在，是否覆盖？",
+        detail: path,
+        buttons: ["取消", "覆盖"],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true,
+      });
+      return result.response === 1;
+    },
+    encode: (bytes, options) =>
+      temporaryImageJobs.encode({ bytes: Uint8Array.from(bytes), options, suggestedName: "image" }),
+    encodePsd: (input) => temporaryImageJobs.encodePsd(input),
+    writeAtomic: async (path, bytes) => {
+      await writeFileAtomic(path, Buffer.from(bytes));
+    },
+  });
+  const temporaryImageBatch = new TemporaryImageBatch({
+    chooseDirectory: async () => {
+      const result = await dialog.showOpenDialog({
+        title: "选择批量导出目录",
+        properties: ["openDirectory", "createDirectory"],
+      });
+      return result.canceled ? null : (result.filePaths[0] ?? null);
+    },
+    encode: (bytes, options) =>
+      temporaryImageJobs.encode({ bytes: Uint8Array.from(bytes), options, suggestedName: "image" }),
+    encodePsd: (input) => temporaryImageJobs.encodePsd(input),
+    writeExclusive: writeTemporaryImageExclusive,
+  });
+  registerTemporaryImageIpc(
+    register,
+    temporaryImageJobs,
+    temporaryImageFiles,
+    (error) => {
+      if (error instanceof EditorResourceAdmissionError)
+        return appFailure("INVALID_INPUT", { message: error.message });
+      if (error instanceof ZodError) return appFailure("INVALID_INPUT");
+      if (error instanceof Error && !("code" in error))
+        return appFailure("INVALID_INPUT", {
+          message: error.message.slice(0, 500) || "图片处理失败。",
+        });
+      return ipcFailure(error, logger);
+    },
+    temporaryImageBatch,
+  );
   const operations = new OperationCoordinator();
   const bmpToPng = async (bytes: Uint8Array) => {
     const decoded = decodeBmpToBgra(bytes);
@@ -1175,6 +1266,45 @@ export function registerIpcHandlers(
       return ipcFailure(error, logger);
     }
   });
+  register(IPC_CHANNELS.clipboardReadImage, async () => {
+    try {
+      await harmony?.requireClipboardAccess();
+      const image = clipboard.readImage();
+      if (image.isEmpty()) return { ok: true, value: null };
+      const { width, height } = image.getSize(1);
+      if (
+        !Number.isSafeInteger(width) ||
+        !Number.isSafeInteger(height) ||
+        width < 1 ||
+        height < 1 ||
+        width > 10000 ||
+        height > 10000 ||
+        width * height > 40000000
+      ) {
+        throw new Error("剪贴板图片尺寸超过安全范围。");
+      }
+      const bytes = new Uint8Array(image.toPNG({ scaleFactor: 1 }));
+      return { ok: true, value: ClipboardImageSchema.parse({ bytes, width, height }) };
+    } catch (error) {
+      return ipcFailure(error, logger);
+    }
+  });
+  register(IPC_CHANNELS.clipboardWriteImage, async (_event, input) => {
+    try {
+      await harmony?.requireClipboardAccess();
+      const validated = ClipboardImageSchema.parse(input);
+      validateEditorBinaryHeader(validated.bytes, "png", validated);
+      const image = nativeImage.createFromBuffer(Buffer.from(validated.bytes));
+      if (image.isEmpty()) throw new Error("剪贴板图片无法解码。");
+      const size = image.getSize(1);
+      if (size.width !== validated.width || size.height !== validated.height)
+        throw new Error("剪贴板图片实际尺寸不一致。");
+      clipboard.writeImage(image);
+      return { ok: true, value: undefined };
+    } catch (error) {
+      return ipcFailure(error, logger);
+    }
+  });
   register(IPC_CHANNELS.clipboardWriteText, (_event, textInput) => {
     try {
       const request = ClipboardTextWriteRequestSchema.parse(textInput);
@@ -1192,7 +1322,7 @@ export function registerIpcHandlers(
     try {
       const validated = ImportAssetBatchRequestSchema.parse(request);
       sessions.requireActive(validated.sessionId);
-      const stored = [];
+      const stored: Awaited<ReturnType<typeof loadImageFile>>[] = [];
       for (const image of validated.images) {
         stored.push(
           await importImage({ originalName: image.originalName, bytes: image.bytes }, { bmpToPng }),
@@ -1527,6 +1657,14 @@ export function registerIpcHandlers(
   let disposeSnapshotTimer: (() => Promise<void>) | undefined;
   let snapshotTimer: SnapshotTimer | undefined;
   const openPatentSessions = new Map<string, string>();
+  const designPatentSessions = new Set<string>();
+  const openSnapshotPatentIds = () => [
+    ...new Set(
+      [...openPatentSessions]
+        .filter(([sessionId]) => !designPatentSessions.has(sessionId))
+        .map(([, patentId]) => patentId),
+    ),
+  ];
   const patentSessionOwners = new Map<string, RendererLifecycleOwner>();
   const ownerPatentSessions = new Map<RendererLifecycleOwner, Set<string>>();
   if (!isAgentCliAvailable(process.platform)) {
@@ -2451,6 +2589,7 @@ export function registerIpcHandlers(
       sessions.requireActive(request.sessionId);
       const descriptor = await assetStore.descriptorOrLoad(request.sessionId, request.assetId);
       if (!descriptor) throw new Error("图纸资源不存在。");
+      if (descriptor.kind === "design-editor-project") return appFailure("NOT_FOUND");
       if (descriptor.kind === "drawing-tiles") {
         requireTileOwner(eventInput, request.sessionId, request.assetId);
         const index = await assetStore.readDrawingTileIndex(request.sessionId, request.assetId);
@@ -2549,6 +2688,8 @@ export function registerIpcHandlers(
       sessions.requireActive(request.targetSessionId);
       const assets = [];
       for (const assetId of request.assetIds) {
+        const descriptor = await assetStore.descriptorOrLoad(request.sourceSessionId, assetId);
+        if (descriptor?.kind === "design-editor-project") return appFailure("NOT_FOUND");
         const asset = await assetStore.getOrLoad(request.sourceSessionId, assetId);
         if (!asset) throw new Error(`图片资源不存在：${assetId}`);
         assets.push(asset);
@@ -2620,11 +2761,44 @@ export function registerIpcHandlers(
       ) {
         return appFailure("IMAGE_IMPORT_LIMIT");
       }
-      const stored = [];
+      const stored: Awaited<ReturnType<typeof loadImageFile>>[] = [];
       for (const filePath of selection.filePaths) {
         stored.push(await loadImageFile(filePath));
       }
-      return { ok: true, value: await assetStore.putPersistentManyStaged(sessionId, stored) };
+      const imported = await assetStore.putPersistentManyStaged(sessionId, stored);
+      return {
+        ok: true,
+        value: imported.map((item, index) => ({
+          ...item,
+          importedName: stored[index]!.descriptor.originalName,
+        })),
+      };
+    } catch (error) {
+      return ipcFailure(error, logger);
+    }
+  });
+  register(IPC_CHANNELS.assetsChooseDesignFiles, async (_event, sessionIdInput) => {
+    try {
+      const sessionId = SessionIdSchema.parse(sessionIdInput);
+      sessions.requireActive(sessionId);
+      const selection = await dialog.showOpenDialog({
+        title: "插入多张专利附图",
+        properties: ["openFile", "multiSelections"],
+        filters: [{ name: "支持的图片", extensions: [...DESIGN_IMAGE_EXTENSIONS] }],
+      });
+      if (selection.canceled) return { ok: true, value: [] };
+      if (selection.filePaths.length > 100) throw new Error("一次最多选择100张图片。");
+      const files = [];
+      let total = 0;
+      for (const path of selection.filePaths) {
+        const size = (await stat(path)).size;
+        total += size;
+        if (!size || size > 50 * 1024 ** 2 || total > 128 * 1024 ** 2)
+          throw new Error("单张图片限50 MiB，单批限128 MiB，请分批导入。");
+        const bytes = Uint8Array.from(await readFile(path));
+        files.push({ name: basename(path), bytes });
+      }
+      return { ok: true, value: files };
     } catch (error) {
       return ipcFailure(error, logger);
     }
@@ -2633,6 +2807,8 @@ export function registerIpcHandlers(
     try {
       const { sessionId, assetId } = AssetReferenceRequestSchema.parse(request);
       sessions.requireActive(sessionId);
+      const descriptor = await assetStore.descriptorOrLoad(sessionId, assetId);
+      if (descriptor?.kind === "design-editor-project") return appFailure("NOT_FOUND");
       const preview = await assetStore.previewOrLoad(sessionId, assetId);
       return preview ? { ok: true, value: preview } : appFailure("NOT_FOUND");
     } catch (error) {
@@ -2962,6 +3138,75 @@ export function registerIpcHandlers(
       return ipcFailure(error, logger);
     }
   });
+  register(IPC_CHANNELS.assetsPrepareDesignEditorSource, async (_event, input) => {
+    try {
+      const request = DesignImageProcessRequestSchema.parse(input);
+      sessions.requireActive(request.sessionId);
+      const asset = await assetStore.getOrLoad(request.sessionId, request.assetId);
+      if (!asset) return appFailure("NOT_FOUND");
+      if (asset.descriptor.mediaType !== "image/jpeg" && asset.descriptor.mediaType !== "image/png")
+        return appFailure("INVALID_INPUT");
+      const value = await prepareDesignEditorSource(asset.original, request.operations);
+      sessions.requireActive(request.sessionId);
+      return { ok: true, value };
+    } catch (error) {
+      if (error instanceof EditorResourceAdmissionError)
+        return appFailure("INVALID_INPUT", { message: error.message });
+      return ipcFailure(error, logger);
+    }
+  });
+  registerEditorWorkspaceResources(register, {
+    leases: editorWorkspaceLeases,
+    requireActive: (sessionId) => {
+      sessions.requireActive(sessionId);
+    },
+    failure: (error) => {
+      if (
+        error instanceof EditorResourceAdmissionError ||
+        error instanceof EditorWorkspaceConflictError
+      )
+        return appFailure("INVALID_INPUT", { message: error.message });
+      return ipcFailure(error, logger);
+    },
+  });
+  register(IPC_CHANNELS.assetsStageDesignEditorProject, async (_event, input) => {
+    try {
+      const request = StageDesignEditorProjectRequestSchema.parse(input);
+      return {
+        ok: true,
+        value: await stageEditorProject(request, assetStore, () => {
+          sessions.requireActive(request.sessionId);
+        }),
+      };
+    } catch (error) {
+      if (error instanceof EditorResourceAdmissionError)
+        return appFailure("INVALID_INPUT", { message: error.message });
+      return ipcFailure(error, logger);
+    }
+  });
+  register(IPC_CHANNELS.assetsReadDesignEditorProject, async (_event, input) => {
+    try {
+      const request = AssetReferenceRequestSchema.parse(input);
+      const patents = libraryIpcOptions?.patents;
+      if (!patents?.requireActiveReadSession) return appFailure("NOT_FOUND");
+      const value = await readPersistedEditorProject(request, assetStore, () => {
+        const patentId = sessions.requireActive(request.sessionId);
+        const patent = patents.requireActiveReadSession!(request.sessionId, patentId);
+        if (
+          patent.patentType !== "design" ||
+          !patent.assets.some(
+            (asset) => asset.assetId === request.assetId && asset.kind === "design-editor-project",
+          )
+        )
+          throw new AppOperationError({ code: "NOT_FOUND", message: "normalized" });
+      });
+      return { ok: true, value };
+    } catch (error) {
+      if (error instanceof EditorResourceAdmissionError)
+        return appFailure("INVALID_INPUT", { message: error.message });
+      return ipcFailure(error, logger);
+    }
+  });
   register(IPC_CHANNELS.exportsDocx, async (event, requestInput) => {
     let outputPath: string | undefined;
     try {
@@ -3199,6 +3444,7 @@ export function registerIpcHandlers(
       return ipcFailure(error, logger, "export.failed", outputPath);
     }
   });
+  // One short-lived, single-use destination per session. Never accept a renderer-provided path.
   register(IPC_CHANNELS.exportsDesignPatent, async (_event, requestInput) => {
     try {
       const request = DesignPatentExportRequestSchema.parse(requestInput);
@@ -3466,6 +3712,7 @@ export function registerIpcHandlers(
         await operations.cancelAndWaitScope(sessionId);
       }
       printService.releaseSession(sessionId);
+      editorWorkspaceLeases.releaseSession(sessionId);
       assetStore.destroySession(sessionId);
       documentRegistry.release(sessionId);
       openedDocuments.delete(sessionId);
@@ -3521,6 +3768,7 @@ export function registerIpcHandlers(
           automation?.barrier.sessionChanged(patentId);
           retiredPatentId = patentId;
           openPatentSessions.delete(sessionId);
+          designPatentSessions.delete(sessionId);
           const owner = patentSessionOwners.get(sessionId);
           patentSessionOwners.delete(sessionId);
           if (owner) ownerPatentSessions.get(owner)?.delete(sessionId);
@@ -3533,6 +3781,7 @@ export function registerIpcHandlers(
         }
         printService.releaseSession(sessionId);
         releaseAiPolishSession?.(sessionId, retiredPatentId);
+        editorWorkspaceLeases.releaseSession(sessionId);
         await assetStore.discardAllPersistentStages(sessionId);
         assetStore.destroySession(sessionId);
       } finally {
@@ -3544,6 +3793,7 @@ export function registerIpcHandlers(
       event: unknown,
     ) => {
       openPatentSessions.set(opened.sessionId, opened.patentId);
+      if (opened.patent.patentType === "design") designPatentSessions.add(opened.sessionId);
       automation?.barrier.sessionChanged(opened.patentId);
       const owner = rendererLifecycleOwner(event);
       if (owner) {
@@ -3577,18 +3827,24 @@ export function registerIpcHandlers(
     };
     registerPatentFolderIpc(register, {
       patents: libraryIpcOptions.patents,
-      requireSession: (sessionId, patentId) => { sessions.requireActive(sessionId, patentId); },
+      requireSession: (sessionId, patentId) => {
+        sessions.requireActive(sessionId, patentId);
+      },
       render: async (patent, sessionId, entry, format, cad) => {
         if (entry.kind === "flowchart") {
           if (!libraryIpcOptions.flowcharts) throw new Error("流程图服务不可用。");
           return libraryIpcOptions.flowcharts.exportBackup(patent.patentId, entry.id);
         }
         if (entry.kind === "drawing") {
-          const project = patent.drawingProjects.find(p => p.projectId === entry.id)!;
+          const project = patent.drawingProjects.find((p) => p.projectId === entry.id)!;
           if (project.cad) {
-            const compiled = cad.find(c => c.projectId === entry.id);
+            const compiled = cad.find((c) => c.projectId === entry.id);
             if (!compiled) throw new Error("CAD 图纸尚未生成，请重试。");
-            const converted = await runCadCodec(cadRuntime(), format === "dwg" ? "dxf-to-dwg" : "dxf-to-scene", compiled.bytes);
+            const converted = await runCadCodec(
+              cadRuntime(),
+              format === "dwg" ? "dxf-to-dwg" : "dxf-to-scene",
+              compiled.bytes,
+            );
             return format === "dwg" ? converted : compiled.bytes;
           }
           const source = await assetStore.getOrLoad(sessionId, project.sourceAssetId);
@@ -3597,20 +3853,34 @@ export function registerIpcHandlers(
         }
         if (entry.kind === "book") {
           const bookKind = entry.id as import("../../shared/patent/model.js").PatentBookKind;
-          const assets = await loadPatentExportAssets(assetStore, sessionId, patent, {mode: "single", bookKind});
+          const assets = await loadPatentExportAssets(assetStore, sessionId, patent, {
+            mode: "single",
+            bookKind,
+          });
           if (format === "docx") {
-            const output = await createPatentDocxPackage({patent, mode: "single", bookKind}, assets);
-            if (output.issues.some(i => i.severity === "error")) throw new Error("文档包含无法导出的内容，未输出不完整文件。");
+            const output = await createPatentDocxPackage(
+              { patent, mode: "single", bookKind },
+              assets,
+            );
+            if (output.issues.some((i) => i.severity === "error"))
+              throw new Error("文档包含无法导出的内容，未输出不完整文件。");
             return output.buffer;
           }
-          const output = await createPatentPrintPackage({patent, mode: "single", bookKind, assets});
-          if (output.issues.some(i => i.severity === "error")) throw new Error("文档包含无法导出的内容，未输出不完整文件。");
+          const output = await createPatentPrintPackage({
+            patent,
+            mode: "single",
+            bookKind,
+            assets,
+          });
+          if (output.issues.some((i) => i.severity === "error"))
+            throw new Error("文档包含无法导出的内容，未输出不完整文件。");
           return printService.createHtmlPdf(sessionId, output.html);
         }
         const document = auxiliaryExportDocument(patent, entry.id);
         if (format === "docx") {
-          const output = await createDocxPackage({sessionId, document}, assetStore);
-          if (output.issues.some(i => i.severity === "error")) throw new Error("文档包含无法导出的内容，未输出不完整文件。");
+          const output = await createDocxPackage({ sessionId, document }, assetStore);
+          if (output.issues.some((i) => i.severity === "error"))
+            throw new Error("文档包含无法导出的内容，未输出不完整文件。");
           return output.buffer;
         }
         const assets = [];
@@ -3688,6 +3958,8 @@ export function registerIpcHandlers(
         assetStore.commitPersistentStages(sessionId, assetIds),
       onPatentBookEditCommitted: (sessionId, assetIds) =>
         assetStore.commitPersistentStages(sessionId, assetIds),
+      onPatentDesignEditCommitted: (sessionId, assetIds) =>
+        assetStore.commitPersistentStages(sessionId, assetIds),
       onSessionReleased: retireLibraryRendererSession,
     });
 
@@ -3744,7 +4016,7 @@ export function registerIpcHandlers(
             }
           },
         },
-        listOpenPatentIds: () => [...new Set(openPatentSessions.values())],
+        listOpenPatentIds: openSnapshotPatentIds,
         readSettings: readSnapshotSettings,
       });
       snapshotTimer = activeSnapshotTimer;
@@ -3765,7 +4037,7 @@ export function registerIpcHandlers(
           value: {
             enabled: snapshotSettings.enabled,
             intervalMinutes: snapshotSettings.intervalMinutes,
-            openPatentCount: new Set(openPatentSessions.values()).size,
+            openPatentCount: openSnapshotPatentIds().length,
             lastCheckAt: timerStatus.lastCheckAt,
             lastAutomaticSnapshotAt: timerStatus.lastAutomaticSnapshotAt,
             nextCheckAt: timerStatus.nextCheckAt,
@@ -3806,7 +4078,9 @@ export function registerIpcHandlers(
           // Multi-version snapshots are currently implemented for patents only.
           // Do not advertise a library document's live state as a recoverable snapshot.
           if (!filters.documentType || filters.documentType === "patent") {
-            const activePatents = await patents.list("active");
+            const activePatents = (await patents.list("active")).filter(
+              (patent) => patent.patentType !== "design",
+            );
             const targetIds = filters.documentId
               ? [filters.documentId]
               : activePatents.map((p: { patentId: string }) => p.patentId);
@@ -4227,6 +4501,7 @@ export function registerIpcHandlers(
   }
 
   return async () => {
+    editorWorkspaceLeases.dispose();
     await updates.close();
     disposeAutomationAttention?.();
     await automationInitialization;
@@ -4557,6 +4832,7 @@ function createBackupService(
             documentId: patentOpened.value.patent.patentId,
             displayName: patentOpened.value.patent.name ?? "未命名专利",
             revision: patentOpened.value.patent.revision,
+            createdAt: patentOpened.value.patent.createdAt,
           };
         }
         const documentOpened = await fileService.openDocument(filePath);
@@ -4565,13 +4841,14 @@ function createBackupService(
             documentOpened.value.settings.backupSource,
           );
           if (source.success) {
-            return source.data;
+            return { ...source.data, createdAt: documentOpened.value.document.createdAt };
           }
           return {
             documentType: "library_document" as const,
             documentId: documentOpened.value.document.documentId,
             displayName: documentOpened.value.document.title,
             revision: 0,
+            createdAt: documentOpened.value.document.createdAt,
           };
         }
         throw new Error(`无法读取备份文件: ${documentOpened.error.message}`);

@@ -4,6 +4,7 @@
 
 - [产品署名](PRODUCT_ATTRIBUTIONS.txt)；[选区光标 xbitmaps](xbitmaps/LICENSE.txt)。
 - [npm 许可材料](npm/)：React、Tiptap/ProseMirror、Lucide、DOCX、PDF.js、DOMPurify 及其生产依赖，逐项版本与文本见完整汇总。
+- [Klecks（MIT）](klecks/LICENSE.txt)：[上游来源与适配记录](../../vendor/klecks/UPSTREAM.md)。构建时许可随修图页面一起放入应用。
 - [draw.io](drawio/)：LICENSE、NOTICE、内嵌依赖原始许可与版本来源。
 - [Ketcher / Indigo](ketcher/)：原始 LICENSE、NOTICE；WASM 来源及哈希见完整汇总。
 - [Sharp / libvips](sharp-libvips/)：许可证、对应源码及动态库替换说明。

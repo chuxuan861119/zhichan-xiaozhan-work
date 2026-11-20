@@ -47,17 +47,44 @@ function isDiagramDownloadUrl(url: string): boolean {
   );
 }
 
+function isDesignEditorNavigation(url: string): boolean {
+  try {
+    const frame = new URL(url);
+    return (
+      frame.protocol === "patent-app:" &&
+      frame.hostname === "editor" &&
+      !frame.username &&
+      !frame.password &&
+      !frame.port &&
+      frame.pathname === "/index.html" &&
+      frame.searchParams.size === 3 &&
+      /^[a-f0-9-]{36}$/i.test(frame.searchParams.get("session") ?? "") &&
+      /^(windows|mac|harmony)$/.test(frame.searchParams.get("platform") ?? "") &&
+      /^\d{9,10}$/.test(frame.searchParams.get("budget") ?? "") &&
+      /^#[a-f0-9]{64}$/.test(frame.hash)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function installDiagramFrameSecurity(target: DiagramSecurityTarget): void {
   target.on("will-frame-navigate", (details) => {
     if (
       details.isMainFrame ||
-      (!isAllowedDiagramNavigationUrl(details.url) && !isIpcDataPageUrl(details.url))
+      (!isAllowedDiagramNavigationUrl(details.url) &&
+        !isIpcDataPageUrl(details.url) &&
+        !isDesignEditorNavigation(details.url))
     )
       details.preventDefault();
   });
   target.setWindowOpenHandler(() => ({ action: "deny" }));
   target.session.on("will-download", (event, item) => {
-    if (isDiagramDownloadUrl(item.getURL()) || /^(?:blob:)?patent-ipc:/u.test(item.getURL()))
+    if (
+      isDiagramDownloadUrl(item.getURL()) ||
+      /^(?:blob:)?patent-ipc:/u.test(item.getURL()) ||
+      /^(?:blob:)?patent-app:\/\/editor\//u.test(item.getURL())
+    )
       event.preventDefault();
   });
 }

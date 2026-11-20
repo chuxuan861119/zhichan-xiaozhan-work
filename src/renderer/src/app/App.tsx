@@ -4117,11 +4117,20 @@ function WorkbenchWindow() {
     }
     const closesLastPatent = patents.state.sessions.length === 1;
     const returnToLibrary = closesLastPatent && library.view === "editor";
-    if (returnToLibrary) library.setView("library");
+    const isDesign = patents.state.sessions.some(
+      (session) => session.patentId === patentId && session.patent.patentType === "design",
+    );
+    if (returnToLibrary && !isDesign) library.setView("library");
     let closed = false;
     try {
       closed = await closePatentWithEmbeddedEditors(patentId);
-      if (closed) await library.refreshActive();
+      if (closed) {
+        if (returnToLibrary && isDesign && closeNavigationRef.current.view === "editor" &&
+            [null, patentId].includes(closeNavigationRef.current.activePatentId)) {
+          library.setView("library");
+        }
+        await library.refreshActive();
+      }
     } finally {
       // Keep the live editor mounted during persistence. Restore it on cancellation,
       // but never steal navigation from another patent opened in the meantime.
@@ -5646,20 +5655,34 @@ function WorkbenchWindow() {
             >
             {patentsAvailable ? (
               <PatentBookViewportProvider store={patentBookViewportStore}>
-                {activePatentSession?.patent.patentType === "design" ? (
-                <DesignPatentWorkbench
-                  session={activePatentSession}
-                  onUpdate={(designPatent, assets) =>
-                    patents.updateDesignPatent(activePatentSession.patentId, designPatent, assets)
-                  }
-                  onPrepareExport={() =>
-                    patents.prepareDesignPatentExport(activePatentSession.patentId)
-                  }
-                  onExportCommitted={(patent, savedAt) =>
-                    patents.adoptDesignPatentExport(activePatentSession.patentId, patent, savedAt)
-                  }
-                />
-              ) : patents.activeSession && workspaceLayout.mode === "dual" ? (
+                {patents.state.sessions
+                  .filter((session) => session.patent.patentType === "design")
+                  .map((session) => {
+                    const visible = activePatentSession?.sessionId === session.sessionId;
+                    return (
+                      <div key={session.sessionId} hidden={!visible}>
+                        <DesignPatentWorkbench
+                          session={session}
+                          active={visible && library.view !== "library"}
+                          onUpdate={(designPatent, assets) =>
+                            patents.updateDesignPatent(session.patentId, designPatent, assets)
+                          }
+                          onPrepareExport={async () => {
+                            const result = await patents.prepareDesignPatentExport(
+                              session.patentId,
+                              session.localRevision,
+                              new AbortController().signal,
+                            );
+                            return result?.revision ?? null;
+                          }}
+                          onExportCommitted={(patent, savedAt) =>
+                            patents.adoptDesignPatentExport(session.patentId, patent, savedAt)
+                          }
+                        />
+                      </div>
+                    );
+                  })}
+                {activePatentSession?.patent.patentType === "design" ? null : patents.activeSession && workspaceLayout.mode === "dual" ? (
                   <DualDocumentWorkspace
                     left={paneView("left")}
                     right={paneView("right")}

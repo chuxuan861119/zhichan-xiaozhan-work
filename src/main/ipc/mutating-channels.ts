@@ -16,6 +16,7 @@ export const MUTATING_IPC_CHANNELS: ReadonlySet<IpcChannel> = new Set([
   IPC_CHANNELS.assetsChooseAndImportMany,
   IPC_CHANNELS.assetsImportBytes,
   IPC_CHANNELS.assetsImportMany,
+  IPC_CHANNELS.assetsStageDesignEditorProject,
   IPC_CHANNELS.assetsStageReferences,
   IPC_CHANNELS.assetsDiscardImports,
   IPC_CHANNELS.draftsSave,

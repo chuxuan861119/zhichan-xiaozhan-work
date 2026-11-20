@@ -13,7 +13,13 @@ import type { AppError } from "../../../shared/ipc/result";
 import { showApplicationError } from "../shared/error-dialog";
 import { ApplicationExitProgress } from "./application-exit-progress";
 
-type ApplicationCloseParticipant = () => Promise<boolean>;
+export type ApplicationClosePreparation = {
+  /** Apply approved changes only after every participant has agreed to exit. */
+  commit(): Promise<boolean>;
+  /** Release retained input/resources if exit is cancelled or fails. Must not destroy the session. */
+  cancel(): Promise<void>;
+};
+type ApplicationCloseParticipant = () => Promise<boolean | ApplicationClosePreparation>;
 export type ApplicationClosePhase = "editor" | "aggregate" | "backup";
 export type ApplicationFlushReason = "application-close" | "full-data-transfer" | "background-save";
 type ApplicationCloseParticipantOptions = {
@@ -156,8 +162,27 @@ export function ApplicationCloseProvider({ children }: PropsWithChildren) {
           const failedParticipantIds = results
             .filter((result) => !result.succeeded)
             .map((result) => result.participantId);
-          if (failedParticipantIds.length > 0) return { ok: false, failedParticipantIds };
-          return currentFlush.promise;
+          const report = failedParticipantIds.length
+            ? { ok: false, failedParticipantIds }
+            : await currentFlush.promise;
+          const preparations = results.filter((item) => typeof item.succeeded === "object");
+          for (const item of preparations) {
+            const preparation = item.succeeded as ApplicationClosePreparation;
+            try {
+              if (!report.ok || closeCancelled.current || !(await preparation.commit())) {
+                await preparation.cancel();
+                return {
+                  ok: false,
+                  failedParticipantIds: [...report.failedParticipantIds, item.participantId],
+                };
+              }
+            } catch (error) {
+              await preparation.cancel().catch(() => undefined);
+              showApplicationError(appError(error));
+              return { ok: false, failedParticipantIds: [item.participantId] };
+            }
+          }
+          return report;
         });
       }
       if (reason === "application-close") currentFlush.applicationCloseRequested = true;
@@ -176,6 +201,8 @@ export function ApplicationCloseProvider({ children }: PropsWithChildren) {
       errorShown: false,
       promise: Promise.resolve({ ok: true, failedParticipantIds: [] }),
     };
+    const preparations: Array<{ participantId: string; preparation: ApplicationClosePreparation }> =
+      [];
     const runRegistrations = async (
       registrations: Array<[string, ParticipantRegistration]>,
     ): Promise<ApplicationFlushReport> => {
@@ -197,6 +224,9 @@ export function ApplicationCloseProvider({ children }: PropsWithChildren) {
       const failedParticipantIds = results
         .filter((result) => !result.succeeded)
         .map((result) => result.participantId);
+      for (const result of results)
+        if (typeof result.succeeded === "object")
+          preparations.push({ participantId: result.participantId, preparation: result.succeeded });
       if (reason === "application-close" && closeCancelled.current)
         failedParticipantIds.push("application-close-cancelled");
       return { ok: failedParticipantIds.length === 0, failedParticipantIds };
@@ -211,7 +241,21 @@ export function ApplicationCloseProvider({ children }: PropsWithChildren) {
     const backupRegistrations = participantSnapshot.filter(
       ([, registration]) => registration.phase === "backup",
     );
-    const finishReport = (report: ApplicationFlushReport) => {
+    const finishReport = async (report: ApplicationFlushReport) => {
+      try {
+        if (report.ok && !closeCancelled.current) {
+          for (const item of preparations) {
+            if (!(await item.preparation.commit()))
+              return { ok: false, failedParticipantIds: [item.participantId] };
+          }
+        }
+      } catch (error) {
+        flush.participantThrew = true;
+        return { ok: false, failedParticipantIds: preparations.map((item) => item.participantId) };
+      } finally {
+        // Both successful and cancelled preparations must release their input locks.
+        await Promise.allSettled(preparations.map((item) => item.preparation.cancel()));
+      }
       if (flush.applicationCloseRequested && flush.participantThrew && !flush.errorShown) {
         flush.errorShown = true;
         showApplicationError({ code: "INTERNAL", message: "Local application close failed" });

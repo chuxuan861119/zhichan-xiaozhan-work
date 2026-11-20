@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DesignEditorStateSchema } from "./design-editor-state.js";
 
 export const MAX_DESIGN_IMAGE_EDGE_PX = 6_000;
 export const MAX_DESIGN_IMAGE_PIXELS = 16_000_000;
@@ -82,10 +83,35 @@ export const DesignPatentViewSchema = z
       .strict()
       .nullable(),
     operations: z.array(DesignPatentImageOperationSchema).max(100),
+    subjectBoundsSource: z.enum(["automatic", "manual"]).nullable().optional(),
+    subjectBoundsConfirmed: z.boolean().optional(),
+    editor: DesignEditorStateSchema.optional(),
     note: z.string().trim().max(500).nullable(),
   })
   .strict();
 export type DesignPatentView = z.infer<typeof DesignPatentViewSchema>;
+
+// All views in this workbench have a slot or supplemental role.
+export function isAssignedDesignView(view: { kind: DesignPatentViewKind }): boolean {
+  return DesignPatentViewKindSchema.safeParse(view.kind).success;
+}
+
+export function normalizeDesignPatentMeasurementStatus(input: unknown): unknown {
+  if (!input || typeof input !== "object" || !("views" in input) || !Array.isArray(input.views))
+    return input;
+  return {
+    ...input,
+    views: input.views.map((view: unknown) => {
+      if (!view || typeof view !== "object" || !("subjectBounds" in view)) return view;
+      return {
+        subjectBoundsSource: view.subjectBounds ? "automatic" : null,
+        subjectBoundsConfirmed: false,
+        ...view,
+      };
+    }),
+  };
+}
+
 
 export const DesignPatentOmissionReasonSchema = z.enum([
   "same-or-symmetric",

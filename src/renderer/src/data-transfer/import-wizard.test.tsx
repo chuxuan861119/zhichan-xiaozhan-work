@@ -405,7 +405,7 @@ test("renders package failures without offering an unsafe continuation", async (
 
 test("unlocks application closing after a failed import commit", async () => {
   const user = userEvent.setup();
-  let guard: (() => Promise<boolean>) | undefined;
+  let guard: (() => Promise<unknown>) | undefined;
   render(
     <ImportWizard
       open

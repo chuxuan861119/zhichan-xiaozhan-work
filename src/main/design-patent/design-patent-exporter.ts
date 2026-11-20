@@ -9,6 +9,7 @@ import {
   inspectDesignPatent,
   renderDesignPatentBriefLines,
 } from "../../shared/patent/design-patent.js";
+import { resolveDesignViewImage } from "../../shared/patent/design-view-image.js";
 import type { CanonicalPatent } from "../../shared/patent/model.js";
 import { processDesignImage } from "./image-processor.js";
 
@@ -88,11 +89,11 @@ async function exportDesignPatentBundle(input: {
         DESIGN_VIEW_EXPORT_ORDER.indexOf(left.kind) - DESIGN_VIEW_EXPORT_ORDER.indexOf(right.kind),
     );
     for (const [index, view] of orderedViews.entries()) {
-      const asset = assets.get(view.assetId);
+      const asset = assets.get(resolveDesignViewImage(view).assetId);
       if (!asset) throw new Error(`Design view ${view.viewId} references a missing asset.`);
       const processed = await processDesignImage(
         await input.assetBytes(asset.assetId),
-        view.operations,
+        resolveDesignViewImage(view).operations,
       );
       const filename = `${String(index + 1).padStart(2, "0")}-${safeName(view.label)}.${asset.mediaType === "image/jpeg" ? "jpg" : "png"}`;
       const imagePath = join(imagesDirectory, filename);

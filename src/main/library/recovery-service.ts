@@ -15,6 +15,7 @@ import {
 import { JsonObjectSchema } from "../../shared/ipc/primitives.js";
 import {
   DesignPatentSchema,
+  normalizeDesignPatentMeasurementStatus,
 } from "../../shared/patent/design-patent.js";
 import { normalizeDrawingBooks } from "../../shared/patent/drawing-content.js";
 import { migratePatentBookDocument } from "../../shared/patent/migrations.js";
@@ -878,10 +879,12 @@ export class LibraryRecoveryService {
     const designPatent =
       row.patent_type === "design"
         ? (designOverride ??
-          this.#readStoredLibraryState(
-            database,
-            `patent:${expected.patentId}:design-patent-state`,
-            `patent-design-state:${expected.patentId}`,
+          normalizeDesignPatentMeasurementStatus(
+            this.#readStoredLibraryState(
+              database,
+              `patent:${expected.patentId}:design-patent-state`,
+              `patent-design-state:${expected.patentId}`,
+            ),
           ))
         : null;
     const ownedAssetIds = (
@@ -1041,7 +1044,7 @@ function migratePatentEditPayloadDocuments(input: unknown): unknown {
   if (payload.type === "design-patent-edit")
     return {
       ...payload,
-      designPatent: payload.designPatent,
+      designPatent: normalizeDesignPatentMeasurementStatus(payload.designPatent),
     };
   const migrateDocument = (value: unknown): unknown => {
     const migrated = migratePatentBookDocument(value);

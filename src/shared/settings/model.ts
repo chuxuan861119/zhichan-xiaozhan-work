@@ -12,6 +12,8 @@ import {
   CustomDualViewPresetsSchema,
   DEFAULT_CUSTOM_DUAL_VIEW_PRESETS,
 } from "./custom-dual-view.js";
+import { AutoTrimOptionsSchema } from "./design-auto-trim.js";
+import { DesignEditorPreferencesSchema } from "./design-editor-preferences.js";
 import { DEFAULT_EDITOR_COLORS, EditorColorsSchema } from "./editor-colors.js";
 import {
   DEFAULT_INVENTION_CONTENT_PREFIX,
@@ -81,6 +83,8 @@ export const AppSettingsSchema = AppSettingsV1Schema.extend({
   closeToTray: z.boolean().default(true),
   trayIntroDismissed: z.boolean().default(false),
   editorIntroductionSeen: z.boolean().default(false),
+  designEditorPreferences: DesignEditorPreferencesSchema.optional(),
+  designAutoTrimDefaults: AutoTrimOptionsSchema.optional(),
   referenceMarkSyncIntroDismissed: z.boolean(),
   referenceMarkLocatorEnabled: z.boolean(),
   inventionContentPrefix: InventionContentPrefixSchema.default(DEFAULT_INVENTION_CONTENT_PREFIX),

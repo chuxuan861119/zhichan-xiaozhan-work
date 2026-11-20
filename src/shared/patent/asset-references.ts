@@ -4,8 +4,10 @@ import type { CanonicalPatent } from "./model.js";
 
 /** Current content only. Undo leases and snapshot indexes own historical resources separately. */
 export function retainCurrentPatentAssets<T extends CanonicalPatent>(patent: T): T {
+  // The design workbench owns a separate undo/redo history and deliberately keeps
+  // original and staged version references outside the document snapshot system.
+  if (patent.patentType === "design") return patent;
   const used = new Set(patent.figures.map((figure) => figure.assetId));
-  for (const view of patent.designPatent?.views ?? []) used.add(view.assetId);
   for (const book of [...patent.books, ...patent.auxiliaryDocuments]) {
     for (const assetId of referencedDocumentAssetIds(book.document)) used.add(assetId);
   }

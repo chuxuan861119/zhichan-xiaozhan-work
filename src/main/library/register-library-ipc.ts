@@ -118,8 +118,8 @@ export type RegisterLibraryIpcOptions = {
     Partial<
       Pick<
         PatentService,
-        | "updateDesignPatent"
         | "getLibraryPreview"
+        | "updateDesignPatent"
         | "hasImportedBundle"
         | "importBundle"
         | "requireActiveReadSession"
@@ -198,6 +198,10 @@ export type RegisterLibraryIpcOptions = {
     assetIds: readonly string[],
   ): Promise<void> | void;
   onPatentBookEditCommitted?(sessionId: string, assetIds: readonly string[]): Promise<void> | void;
+  onPatentDesignEditCommitted?(
+    sessionId: string,
+    assetIds: readonly string[],
+  ): Promise<void> | void;
   onSessionReleased?(sessionId: string): Promise<void> | void;
   authorizeOpenPath?(path: string): boolean;
   docxImports?: {
@@ -322,9 +326,11 @@ function resolvedCreationTemplates(
   options: Pick<RegisterLibraryIpcOptions, "patentTemplates">,
   patentType: PatentType,
 ): { templates: PatentTemplateSettings; templateAssetIds: string[] } {
-  if (patentType === "design") {
-    return { templates: createFactoryPatentTemplates(() => crypto.randomUUID()), templateAssetIds: [] };
-  }
+  if (patentType === "design")
+    return {
+      templates: createFactoryPatentTemplates(() => crypto.randomUUID()),
+      templateAssetIds: [],
+    };
   const source = options.patentTemplates?.resolveCreationSource(patentType);
   if (!source) throw new Error("Patent template catalog is unavailable.");
   const templates = createFactoryPatentTemplates(() => crypto.randomUUID());
@@ -819,12 +825,18 @@ export function registerLibraryIpcHandlers(options: RegisterLibraryIpcOptions): 
       const request = parseInput(PatentUpdateDesignPatentRequestSchema, input);
       const value = await options.patents.updateDesignPatent(request);
       try {
-        await options.onPatentFigureEditCommitted?.(
+        await options.onPatentDesignEditCommitted?.(
           request.sessionId,
           request.assets.map((asset) => asset.assetId),
         );
       } catch {
-        await logWithoutBlocking(options.logger?.log("warn", { event: "design.asset_stage_release_deferred" }));
+        // The case is already durable. Keep the stage lease for later reconciliation;
+        // never report a failed save or retry a committed revision merely for cleanup.
+        await logWithoutBlocking(
+          options.logger?.log("warn", {
+            event: "design.asset_stage_release_deferred",
+          }),
+        );
       }
       return { ok: true, value };
     });

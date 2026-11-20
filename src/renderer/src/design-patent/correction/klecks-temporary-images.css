@@ -1,0 +1,36 @@
+.klecks-temporary-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  min-width: 0;
+  max-width: min(42vw, 360px);
+  padding: 0 6px;
+  color: #40655e;
+  font-size: 12px;
+}
+.klecks-temporary-message > details {
+  min-width: 0;
+}
+.klecks-temporary-message > details > div {
+  left: 0;
+  right: auto;
+  width: min(420px, 75vw);
+  overflow-wrap: anywhere;
+}
+.klecks-temporary-message > span,
+.klecks-temporary-message summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.klecks-temporary-message button {
+  flex: none;
+  font: inherit;
+  padding: 3px 8px;
+  border: 1px solid #cadad7;
+  border-radius: 4px;
+  background: white;
+  color: inherit;
+}

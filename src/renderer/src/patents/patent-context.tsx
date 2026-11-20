@@ -22,6 +22,8 @@ import type {
   FlowchartSaveRequest,
   PatentApi,
   PatentCreateRequest,
+  PatentDescriptionEditorState,
+  PatentEditAck,
   SavedDocument,
 } from "../../../shared/ipc/contract";
 import type { JsonObject } from "../../../shared/ipc/primitives";
@@ -29,8 +31,11 @@ import type { AppError, AppResult } from "../../../shared/ipc/result";
 import { moveAuxiliaryDocument as reorderAuxiliaryDocuments } from "../../../shared/patent/auxiliary-management";
 import type { PatdocWorkspace } from "../../../shared/patent/continuation";
 import { descriptionInventionTitle } from "../../../shared/patent/description";
+import {
+  type DesignPatent,
+  isAssignedDesignView,
+} from "../../../shared/patent/design-patent";
 import { fitInsertedFigures } from "../../../shared/patent/figure-insertion-size";
-import type { DesignPatent } from "../../../shared/patent/design-patent";
 import type {
   AuxiliaryDocument,
   CanonicalPatent,
@@ -50,13 +55,43 @@ import type {
   ExplicitSnapshotSource,
   SnapshotCreationResult,
 } from "../../../shared/snapshot/model";
-import { useApplicationCloseParticipant } from "../app/application-close-coordinator";
+import {
+  type ApplicationClosePreparation,
+  useApplicationCloseGuard,
+  useApplicationCloseParticipant,
+} from "../app/application-close-coordinator";
 import { MotionPresence } from "../app/motion-presence";
 import { rendererSaveRecovery } from "../app/renderer-save-recovery";
 import {
   BackupRuntimeCoordinator,
   requestPatentCloseBackup,
 } from "../backup/backup-runtime-coordinator";
+import { prepareKlecksApplicationClose } from "../design-patent/correction/klecks-application-close";
+import { withKlecksCaseApplication } from "../design-patent/correction/klecks-case-application";
+import {
+  commitKlecksCaseCheckpoint,
+  discardKlecksCaseRecovery,
+  type KlecksCaseCheckpoint,
+} from "../design-patent/correction/klecks-case-checkpoint";
+import { KlecksCaseDocuments } from "../design-patent/correction/klecks-case-documents";
+import { createKlecksCaseRecoveryDiscard } from "../design-patent/correction/klecks-case-recovery-discard";
+import { KlecksCloseCoordinator } from "../design-patent/correction/klecks-close-coordinator";
+import { useKlecksClosePrompt } from "../design-patent/correction/klecks-close-prompt";
+import { applyKlecksFrameBatch } from "../design-patent/correction/klecks-frame-application";
+import type { KlecksFrameClient } from "../design-patent/correction/klecks-frame-client";
+import {
+  type KlecksFrameSaveInput,
+  saveKlecksFrameProject,
+} from "../design-patent/correction/klecks-frame-save";
+import { KlecksNativeClipboard } from "../design-patent/correction/klecks-native-clipboard";
+import {
+  type KlecksProjectSaveDependencies,
+  type KlecksProjectSaveInput,
+  saveKlecksProject,
+} from "../design-patent/correction/klecks-project-save";
+import { KlecksRecoveryCheckpoints } from "../design-patent/correction/klecks-recovery-checkpoints";
+import { useKlecksRecoveryPrompt } from "../design-patent/correction/klecks-recovery-prompt";
+import type { PreparedDesignExport } from "../design-patent/design-patent-workbench";
 import { confirmAppAction } from "../shared/app-dialog";
 import { showApplicationError } from "../shared/error-dialog";
 import { type OperationFeedback, OperationFeedbackOverlay } from "../shared/operation-feedback";
@@ -104,7 +139,7 @@ type PatentContextValue = {
     suggestedName?: string,
     workspace?: PatdocWorkspace,
   ): Promise<SavedDocument | null>;
-  activatePatent(patentId: string): void;
+  activatePatent(patentId: string): Promise<boolean>;
   activateBook(patentId: string, bookKind: PatentBookKind): void;
   activateAuxiliaryDocument(patentId: string, auxiliaryDocumentId: string): void;
   createAuxiliaryDocument(patentId: string, document: AuxiliaryDocument): Promise<boolean>;
@@ -154,7 +189,46 @@ type PatentContextValue = {
     historyLabel: "导入附图" | "粘贴附图",
   ): void;
   updateDesignPatent(patentId: string, designPatent: DesignPatent, assets: AssetDescriptor[]): void;
-  prepareDesignPatentExport(patentId: string): Promise<number | null>;
+  commitDesignEditorCheckpoint(
+    patentId: string,
+    sessionId: string,
+    input: KlecksCaseCheckpoint,
+  ): Promise<PatentEditAck>;
+  saveDesignEditorProject(
+    patentId: string,
+    input: KlecksProjectSaveInput,
+    callbacks: Pick<KlecksProjectSaveDependencies, "isCurrent" | "onSaved">,
+  ): Promise<PatentEditAck>;
+  saveDesignEditorFrame(
+    patentId: string,
+    input: KlecksFrameSaveInput,
+    frame: KlecksFrameClient,
+    isCurrent: () => boolean,
+  ): ReturnType<typeof saveKlecksFrameProject>;
+  checkpointDesignEditor(
+    patentId: string,
+    backgroundTargets?: readonly { sessionId: string; viewId: string; generation: number }[],
+  ): Promise<number>;
+  applyDesignEditorImages(
+    patentId: string,
+    viewIds?: string[],
+  ): Promise<{ count: number; revision: number } | null>;
+  saveDesignEditorEdits(patentId: string, viewIds?: string[]): Promise<number>;
+  prepareDesignEditorRecoveryDiscard(
+    patentId: string,
+    input: Parameters<typeof createKlecksCaseRecoveryDiscard>[3],
+  ): ReturnType<typeof createKlecksCaseRecoveryDiscard>;
+  attachDesignEditorFrame(
+    patentId: string,
+    frame: KlecksFrameClient,
+    changed: () => void,
+  ): { controller: KlecksCaseDocuments; unsubscribe(): void };
+  releaseDesignEditorFrame(patentId: string, frame: KlecksFrameClient): void;
+  prepareDesignPatentExport(
+    patentId: string,
+    previewRevision: number,
+    signal: AbortSignal,
+  ): Promise<PreparedDesignExport | null>;
   adoptDesignPatentExport(patentId: string, patent: CanonicalPatent, savedAt: string): boolean;
   updatePatentSettings(
     patentId: string,
@@ -209,6 +283,7 @@ type PatentContextValue = {
     patentId: string,
     options?: { allowDiscardOnSaveFailure?: boolean },
   ): Promise<boolean>;
+  registerPatentLeaveGuard(patentId: string, guard: () => Promise<boolean>): () => void;
 };
 
 const PatentContext = createContext<PatentContextValue | null>(null);
@@ -239,6 +314,43 @@ function mergeAssetSnapshots(
   const assets = new Map(current.map((asset) => [asset.assetId, structuredClone(asset)]));
   for (const asset of incoming) assets.set(asset.assetId, structuredClone(asset));
   return [...assets.values()];
+}
+
+type DesignFrameOwner = {
+  sessionId: string;
+  frame: KlecksFrameClient;
+  controller: KlecksCaseDocuments;
+  listeners: Set<() => void>;
+  fingerprint: string | null;
+  checkpoints: KlecksRecoveryCheckpoints | null;
+  explicitSaves: KlecksRecoveryCheckpoints | null;
+  writeTail?: Promise<unknown>;
+  explicitSaveTargets?: string[] | undefined;
+  closing: KlecksCloseCoordinator | null;
+  lifecycle: AbortController;
+  requestedSave?: Promise<void> | null;
+};
+function runDesignFrameWrite<T>(owner: DesignFrameOwner, operation: () => Promise<T>): Promise<T> {
+  const work = (owner.writeTail ?? Promise.resolve()).catch(() => {}).then(operation);
+  owner.writeTail = work;
+  return work;
+}
+function synchronizeDesignFrame(
+  owner: DesignFrameOwner,
+  session: PatentSession,
+  refreshIds?: readonly string[],
+): void {
+  const design = session.patent.designPatent;
+  if (!design) return;
+  const fingerprint = JSON.stringify([design.views, session.patent.assets]);
+  if (owner.fingerprint === fingerprint && !refreshIds?.length) return;
+  owner.fingerprint = fingerprint;
+  // Per-image and synchronization errors are retained in the controller for the workspace to render.
+  void owner.controller
+    .reconcile(design.views, session.patent.assets, undefined, undefined, refreshIds)
+    .catch(() => {
+      owner.fingerprint = null;
+    });
 }
 
 export function PatentProvider({
@@ -281,11 +393,156 @@ export function PatentProvider({
     (patentId: string) => automationViews[patentId]?.epoch ?? 0,
     [automationViews],
   );
+  const designFrames = useRef(new Map<string, DesignFrameOwner>());
   const referenceUndo = useRef(new ReferenceMarkUndoManager());
   const descriptionDrawingHistory = useRef(new DescriptionDrawingHistoryManager());
+  const leaveGuards = useRef(new Map<string, () => Promise<boolean>>());
   const stateRef = useRef(state);
   stateRef.current = state;
   const hasOpenPatents = useCallback(() => stateRef.current.sessions.length > 0, []);
+  const recoveryPrompt = useKlecksRecoveryPrompt();
+  const requestRecovery = recoveryPrompt.request;
+  const closePrompt = useKlecksClosePrompt();
+  const requestEditorClose = closePrompt.request;
+  const exportPrompt = useKlecksClosePrompt();
+  const requestEditorExport = exportPrompt.request;
+  const discardFactory = useRef<PatentContextValue["prepareDesignEditorRecoveryDiscard"] | null>(
+    null,
+  );
+  const editorSaveRequest = useRef<
+    (
+      patentId: string,
+      frame: KlecksFrameClient,
+      identity: { sessionId: string; viewId: string; generation: number },
+    ) => void
+  >(() => {});
+
+  const attachDesignEditorFrame = useCallback(
+    (patentId: string, frame: KlecksFrameClient, changed: () => void) => {
+      const session = stateRef.current.sessions.find((item) => item.patentId === patentId);
+      if (!session || session.patent.patentType !== "design") {
+        throw { code: "CANCELLED", message: "外观设计案件会话不存在。" } satisfies AppError;
+      }
+      let owner = designFrames.current.get(patentId);
+      if (owner && (owner.frame !== frame || owner.sessionId !== session.sessionId)) {
+        owner.lifecycle.abort();
+        owner.controller.dispose();
+        owner.frame.close();
+        designFrames.current.delete(patentId);
+        owner = undefined;
+      }
+      if (!owner) {
+        const listeners = new Set<() => void>();
+        const controller = new KlecksCaseDocuments(session.sessionId, {
+          enabled: () => frame.isActive?.() ?? true,
+          documents: frame.documents,
+          assets: window.patentApi.assets,
+          changed: () => {
+            for (const listener of listeners) listener();
+          },
+          chooseRecovery: (view, signal) => {
+            let operation: ReturnType<typeof createKlecksCaseRecoveryDiscard> | null = null;
+            return requestRecovery({
+              label: view.label,
+              signal,
+              discard: async () => {
+                if (!operation) {
+                  const identity = controller.identity(view.viewId);
+                  if (!identity || !view.editor || !discardFactory.current)
+                    throw new Error("恢复版本所属图片会话已改变。");
+                  operation = discardFactory.current(patentId, {
+                    identity,
+                    sourceAssetId: view.assetId,
+                    expectedEditor: view.editor,
+                  });
+                }
+                await operation.run();
+              },
+            });
+          },
+        });
+        owner = {
+          sessionId: session.sessionId,
+          frame,
+          controller,
+          listeners,
+          fingerprint: null,
+          checkpoints: null,
+          explicitSaves: null,
+          closing: null,
+          lifecycle: new AbortController(),
+        };
+        designFrames.current.set(patentId, owner);
+        const unsubscribeSave = frame.onSaveRequested?.((identity) =>
+          editorSaveRequest.current(patentId, frame, identity),
+        );
+        if (unsubscribeSave)
+          owner.lifecycle.signal.addEventListener("abort", unsubscribeSave, { once: true });
+        if (frame.clipboard && frame.onClipboardRequested) {
+          const clipboard = new KlecksNativeClipboard(
+            frame,
+            window.patentApi.clipboard ?? {},
+            (message) => showApplicationError({ code: "INVALID_INPUT", message }),
+          );
+          const clipboardOwner = owner;
+          const unsubscribeClipboard = frame.onClipboardRequested(
+            session.sessionId,
+            (action, identity) => {
+              if (
+                clipboardOwner.lifecycle.signal.aborted ||
+                designFrames.current.get(patentId) !== clipboardOwner ||
+                stateRef.current.activePatentId !== patentId ||
+                !controller.isCurrent(identity)
+              )
+                return;
+              void clipboard
+                .execute(action)
+                .catch((error) => showApplicationError(appError(error)));
+            },
+          );
+          owner.lifecycle.signal.addEventListener(
+            "abort",
+            () => {
+              unsubscribeClipboard();
+              clipboard.dispose();
+            },
+            { once: true },
+          );
+        }
+      }
+      const attached = owner;
+      attached.listeners.add(changed);
+      synchronizeDesignFrame(attached, session);
+      return {
+        controller: attached.controller,
+        unsubscribe: () => {
+          attached.listeners.delete(changed);
+        },
+      };
+    },
+    [requestRecovery],
+  );
+  const releaseDesignEditorFrame = useCallback((patentId: string, frame: KlecksFrameClient) => {
+    const owner = designFrames.current.get(patentId);
+    if (!owner || owner.frame !== frame) return;
+    owner.lifecycle.abort();
+    owner.controller.dispose();
+    owner.frame.close();
+    designFrames.current.delete(patentId);
+  }, []);
+  useEffect(() => {
+    for (const [patentId, owner] of designFrames.current) {
+      const session = state.sessions.find(
+        (item) => item.patentId === patentId && item.sessionId === owner.sessionId,
+      );
+      if (!session || session.patent.patentType !== "design") {
+        owner.lifecycle.abort();
+        owner.controller.dispose();
+        owner.frame.close();
+        designFrames.current.delete(patentId);
+      } else synchronizeDesignFrame(owner, session);
+    }
+  }, [state.sessions]);
 
   useEffect(() => {
     const settingsApi = window.patentApi?.settings;
@@ -438,6 +695,11 @@ export function PatentProvider({
           queue.dispose();
         });
       }
+      for (const owner of designFrames.current.values()) {
+        owner.controller.dispose();
+        owner.frame.close();
+      }
+      designFrames.current.clear();
     },
     [],
   );
@@ -841,8 +1103,12 @@ export function PatentProvider({
     [updateAutomationView],
   );
 
-  const activatePatent = useCallback((patentId: string) => {
+  const activatePatent = useCallback(async (patentId: string) => {
+    const currentPatentId = stateRef.current.activePatentId;
+    const guard = leaveGuards.current.get(currentPatentId);
+    if (guard && !(await guard())) return false;
     dispatch({ type: "ACTIVATE_PATENT", patentId });
+    return true;
   }, []);
 
   const activateBook = useCallback((patentId: string, bookKind: PatentBookKind) => {
@@ -1093,27 +1359,483 @@ export function PatentProvider({
         (candidate) => candidate.patentId === patentId,
       );
       if (session?.patent.patentType !== "design") return;
-      ensureQueue(session).enqueueDesignPatent(designPatent, assets);
+      const queue = ensureQueue(session);
+      const queued = queue.enqueueDesignPatent(designPatent, assets);
+      const owner = designFrames.current.get(patentId);
+      if (owner?.sessionId === session.sessionId) {
+        synchronizeDesignFrame(owner, { ...session, patent: queued.patent });
+      }
     },
     [ensureQueue],
   );
 
+  const commitDesignEditorCheckpoint = useCallback(
+    async (patentId: string, sessionId: string, input: KlecksCaseCheckpoint) => {
+      const session = stateRef.current.sessions.find((item) => item.patentId === patentId);
+      if (!session || session.sessionId !== sessionId) {
+        throw { code: "CANCELLED", message: "工程所属案件会话已关闭或更换。" } satisfies AppError;
+      }
+      return commitKlecksCaseCheckpoint(ensureQueue(session), input);
+    },
+    [ensureQueue],
+  );
+
+  const saveDesignEditorProject = useCallback(
+    (
+      patentId: string,
+      input: KlecksProjectSaveInput,
+      callbacks: Pick<KlecksProjectSaveDependencies, "isCurrent" | "onSaved">,
+    ) =>
+      saveKlecksProject(input, {
+        stage: (request) =>
+          window.patentApi.assets.stageDesignEditorProject?.(request) ??
+          Promise.resolve({
+            ok: false,
+            error: {
+              code: "NOT_FOUND",
+              message: "当前平台未提供分层工程保存能力。",
+            },
+          }),
+        commit: (request) => commitDesignEditorCheckpoint(patentId, input.sessionId, request),
+        isCurrent: () =>
+          stateRef.current.sessions.some(
+            (session) => session.patentId === patentId && session.sessionId === input.sessionId,
+          ) && callbacks.isCurrent(),
+        onSaved: callbacks.onSaved,
+      }),
+    [commitDesignEditorCheckpoint],
+  );
+
+  const saveDesignEditorFrame = useCallback(
+    (
+      patentId: string,
+      input: KlecksFrameSaveInput,
+      frame: KlecksFrameClient,
+      isCurrent: () => boolean,
+    ) =>
+      saveKlecksFrameProject(input, {
+        projects: frame.projects,
+        persist: (request, callbacks) => saveDesignEditorProject(patentId, request, callbacks),
+        isCurrent: (target) =>
+          stateRef.current.sessions.some(
+            (session) => session.patentId === patentId && session.sessionId === target.sessionId,
+          ) && isCurrent(),
+      }),
+    [saveDesignEditorProject],
+  );
+
+  const prepareDesignEditorRecoveryDiscard = useCallback(
+    (patentId: string, input: Parameters<typeof createKlecksCaseRecoveryDiscard>[3]) => {
+      const owner = designFrames.current.get(patentId);
+      const session = stateRef.current.sessions.find(
+        (item) => item.patentId === patentId && item.sessionId === input.identity.sessionId,
+      );
+      if (
+        !owner ||
+        !session ||
+        owner.sessionId !== session.sessionId ||
+        !owner.controller.isCurrent(input.identity)
+      )
+        throw { code: "CANCELLED", message: "舍弃操作所属图片会话不存在。" } satisfies AppError;
+      return createKlecksCaseRecoveryDiscard(
+        ensureQueue(session),
+        owner.controller,
+        owner.frame,
+        input,
+        () =>
+          designFrames.current.get(patentId) === owner &&
+          stateRef.current.sessions.some(
+            (item) => item.patentId === patentId && item.sessionId === owner.sessionId,
+          ),
+      );
+    },
+    [ensureQueue],
+  );
+  discardFactory.current = prepareDesignEditorRecoveryDiscard;
+
+  const checkpointDesignEditor = useCallback(
+    async (
+      patentId: string,
+      backgroundTargets?: readonly { sessionId: string; viewId: string; generation: number }[],
+    ) => {
+      const owner = designFrames.current.get(patentId);
+      if (!owner) return 0;
+      const capturedTargets = backgroundTargets?.map((target) => ({ ...target }));
+      return runDesignFrameWrite(owner, async () => {
+        const requireSession = () => {
+          const session = stateRef.current.sessions.find(
+            (value) => value.patentId === patentId && value.sessionId === owner.sessionId,
+          );
+          if (!session || designFrames.current.get(patentId) !== owner)
+            throw { code: "CANCELLED", message: "图片编辑会话已改变。" };
+          return session;
+        };
+        const queue = ensureQueue(requireSession());
+        if (queue.snapshot().saveError) await queue.retry();
+        if (capturedTargets) {
+          let saved = 0;
+          for (const identity of capturedTargets) {
+            if (!owner.controller.isCurrent(identity)) continue;
+            const state = owner.frame.state.snapshot();
+            if (
+              state?.identity?.viewId === identity.viewId &&
+              !state.dirty &&
+              !state.selectionDirty
+            )
+              continue;
+            const view = ensureQueue(requireSession())
+              .snapshot()
+              .patent.designPatent?.views.find((value) => value.viewId === identity.viewId);
+            if (!view) continue;
+            // The engine freezes an immutable revision before encoding. No document activation or input lock.
+            await saveDesignEditorFrame(
+              patentId,
+              {
+                identity,
+                sourceAssetId: view.assetId,
+                expectedEditor: view.editor,
+                kind:
+                  state?.identity?.viewId === identity.viewId && !state.dirty
+                    ? "saved"
+                    : "recovery",
+                selectionOnly: state?.identity?.viewId === identity.viewId && !state.dirty,
+              },
+              owner.frame,
+              () =>
+                designFrames.current.get(patentId) === owner &&
+                owner.controller.isCurrent(identity),
+            );
+            saved++;
+          }
+          return saved;
+        }
+        if (!owner.checkpoints)
+          owner.checkpoints = new KlecksRecoveryCheckpoints({
+            targets: () => {
+              requireSession();
+              return owner.controller.loadedIdentities();
+            },
+            current: (target) =>
+              designFrames.current.get(patentId) === owner &&
+              owner.controller.isCurrent(target) &&
+              stateRef.current.sessions.some(
+                (session) =>
+                  session.patentId === patentId && session.sessionId === target.sessionId,
+              ),
+            activate: (target) => owner.controller.activate(target.viewId),
+            state: () => owner.frame.state.snapshot(),
+            lock: async (token, locked) => {
+              await owner.frame.documents.interactionLock(owner.sessionId, token, locked);
+            },
+            shouldSave: () => owner.frame.state.snapshot()?.dirty === true,
+            saveRecovery: async (identity) => {
+              const session = requireSession();
+              const view = ensureQueue(session)
+                .snapshot()
+                .patent.designPatent?.views.find((value) => value.viewId === identity.viewId);
+              if (!view || !owner.controller.isCurrent(identity))
+                throw { code: "CANCELLED", message: "图片来源已改变，未提交恢复检查点。" };
+              await saveDesignEditorFrame(
+                patentId,
+                {
+                  identity,
+                  sourceAssetId: view.assetId,
+                  expectedEditor: view.editor,
+                  kind: "recovery",
+                },
+                owner.frame,
+                () =>
+                  designFrames.current.get(patentId) === owner &&
+                  owner.controller.isCurrent(identity),
+              );
+            },
+          });
+        return owner.checkpoints.run();
+      });
+    },
+    [ensureQueue, saveDesignEditorFrame],
+  );
+
+  const saveDesignEditorEdits = useCallback(
+    async (patentId: string, viewIds?: string[]) => {
+      const owner = designFrames.current.get(patentId);
+      if (!owner) return 0;
+      const ids = viewIds ? [...viewIds] : undefined;
+      return runDesignFrameWrite(owner, async () => {
+        const requireSession = () => {
+          const session = stateRef.current.sessions.find(
+            (item) => item.patentId === patentId && item.sessionId === owner.sessionId,
+          );
+          if (!session || designFrames.current.get(patentId) !== owner)
+            throw { code: "CANCELLED", message: "图片编辑会话已改变。" };
+          return session;
+        };
+        const queue = ensureQueue(requireSession());
+        if (queue.snapshot().saveError) await queue.retry();
+        // An attached kernel may have no case canvas yet, or only a temporary image.
+        // No case checkpoint is needed unless there are live documents to save.
+        if (!owner.explicitSaves && !owner.controller.hasLoadedCaseDocuments()) return 0;
+        owner.explicitSaveTargets = ids;
+        if (!owner.explicitSaves)
+          owner.explicitSaves = new KlecksRecoveryCheckpoints({
+            targets: () => {
+              requireSession();
+              return owner.controller
+                .loadedIdentities()
+                .filter(
+                  (target) =>
+                    !owner.explicitSaveTargets || owner.explicitSaveTargets.includes(target.viewId),
+                );
+            },
+            current: (target) =>
+              designFrames.current.get(patentId) === owner && owner.controller.isCurrent(target),
+            activate: (target) => owner.controller.activate(target.viewId),
+            state: () => owner.frame.state.snapshot(),
+            lock: async (token, locked) => {
+              await owner.frame.documents.interactionLock(owner.sessionId, token, locked);
+            },
+            shouldSave: () => {
+              const state = owner.frame.state.snapshot();
+              return !!(state?.dirty || state?.selectionDirty);
+            },
+            saveRecovery: async (identity) => {
+              const view = ensureQueue(requireSession())
+                .snapshot()
+                .patent.designPatent?.views.find((item) => item.viewId === identity.viewId);
+              if (!view || !owner.controller.isCurrent(identity))
+                throw { code: "CANCELLED", message: "图片来源已改变，未明确保存。" };
+              const result = await saveDesignEditorFrame(
+                patentId,
+                {
+                  identity,
+                  sourceAssetId: view.assetId,
+                  expectedEditor: view.editor,
+                  kind: "saved",
+                },
+                owner.frame,
+                () =>
+                  designFrames.current.get(patentId) === owner &&
+                  owner.controller.isCurrent(identity),
+              );
+              if (!result.editorConfirmed)
+                throw new Error("工程已写入案件，但编辑器尚未确认保存点，请重试。");
+            },
+          });
+        return owner.explicitSaves.run();
+      });
+    },
+    [ensureQueue, saveDesignEditorFrame],
+  );
+
+  const adoptDesignCaseSnapshot = useCallback(
+    (session: PatentSession, snapshot: PatentSaveCoordinatorSnapshot, ids: readonly string[]) => {
+      const owner = designFrames.current.get(session.patentId);
+      if (owner?.sessionId === session.sessionId)
+        synchronizeDesignFrame(owner, { ...session, patent: snapshot.patent }, ids);
+      const action = { type: "SESSION_PERSISTED_PATENT_ADOPTED", snapshot } as const;
+      stateRef.current = patentReducer(stateRef.current, action);
+      dispatch(action);
+    },
+    [],
+  );
+  const applyDesignEditorImages = useCallback(
+    (patentId: string, viewIds?: string[], expectedRevision?: number, signal?: AbortSignal) => {
+      const owner = designFrames.current.get(patentId);
+      if (!owner)
+        throw new Error("请先进入小栈修图打开图片，再应用最新编辑。也可以使用上次已应用图片导出。");
+      const capturedIds = viewIds ? [...new Set(viewIds)] : undefined;
+      return runDesignFrameWrite(owner, async () => {
+        const requireSession = () => {
+          const session = stateRef.current.sessions.find(
+            (item) => item.patentId === patentId && item.sessionId === owner.sessionId,
+          );
+          if (
+            signal?.aborted ||
+            !session ||
+            designFrames.current.get(patentId) !== owner ||
+            owner.frame.isActive?.() === false
+          )
+            throw new Error("图片编辑会话已改变，未继续应用。");
+          return session;
+        };
+        const queue = ensureQueue(requireSession());
+        if (queue.snapshot().saveError) await queue.retry();
+        await queue.flush();
+        let revision = expectedRevision ?? queue.snapshot().localRevision;
+        const requireCurrent = () => {
+          requireSession();
+          const snapshot = queue.snapshot();
+          if (snapshot.localRevision !== revision || snapshot.persistedRevision !== revision)
+            throw new Error("材料已更新，请确认当前预览后重试。");
+        };
+        const assigned = () =>
+          queue.snapshot().patent.designPatent?.views.filter(isAssignedDesignView) ?? [];
+        const ids = capturedIds ?? assigned().map((view) => view.viewId);
+        const original = owner.frame.state.snapshot()?.identity;
+        if (owner.frame.state.snapshot()?.pending || owner.frame.state.snapshot()?.locked)
+          throw new Error("请先完成当前图片操作，再应用到视图。");
+        const token = crypto.randomUUID();
+        let lockRequested = false;
+        try {
+          // Recovery decisions must finish before taking the batch interaction lock.
+          for (const id of ids) {
+            requireCurrent();
+            const view = assigned().find((item) => item.viewId === id);
+            if (!view) throw new Error("待应用图片已移除。");
+            if (!view.editor?.recovery && owner.frame.state.snapshot()) continue;
+            const opened = await owner.controller.activate(id);
+            await queue.flush();
+            const after = assigned().find((item) => item.viewId === id);
+            const discarded = Boolean(
+              view.editor?.recovery && after?.editor && !after.editor.recovery,
+            );
+            if (discarded) revision++;
+            requireCurrent();
+            if (!opened && !(discarded && owner.frame.state.snapshot()?.activeId === id))
+              return null;
+          }
+          if (!ids.length) return { count: 0, revision };
+          const base = queue.snapshot().patent;
+          const targets = ids.map((id) => {
+            const view = assigned().find((item) => item.viewId === id);
+            const identity = owner.controller.identity(id);
+            if (!identity || !view) throw new Error("待应用图片已移除。");
+            return { identity, sourceAssetId: view.assetId, expectedEditor: view.editor };
+          });
+          lockRequested = true;
+          if (
+            !(await owner.frame.documents.interactionLock(owner.sessionId, token, true)) ||
+            !owner.frame.state.snapshot()?.locked
+          )
+            throw new Error("图片编辑器尚未确认输入保护。");
+          const count = await applyKlecksFrameBatch(targets, {
+            assets: window.patentApi.assets,
+            projects: owner.frame.projects,
+            requireCurrent: (target) => {
+              requireCurrent();
+              if (
+                !owner.frame.state.snapshot()?.locked ||
+                (target && !owner.controller.isCurrent(target.identity))
+              )
+                throw new Error("图片编辑目标已改变，未应用整批图片。");
+            },
+            prepare: async (target) => {
+              if (!(await owner.controller.activate(target.identity.viewId)))
+                throw new Error("未能打开待应用图片，未应用整批图片。");
+              const state = owner.frame.state.snapshot();
+              if (
+                !state?.locked ||
+                state.pending ||
+                state.identity?.viewId !== target.identity.viewId ||
+                state.identity.generation !== target.identity.generation
+              )
+                throw new Error("图片编辑状态已改变，未应用整批图片。");
+              return state.unapplied;
+            },
+            commit: async (items) => {
+              const next = items.reduce(
+                (patent, item) => withKlecksCaseApplication(patent, item),
+                base,
+              );
+              if (!next.designPatent) throw new Error("外观设计会话已关闭。");
+              requireCurrent();
+              const session = requireSession();
+              const snapshot = await queue.commitDesignPatentAtomically(
+                revision,
+                next.designPatent,
+                next.assets,
+              );
+              revision = snapshot.persistedRevision;
+              adoptDesignCaseSnapshot(session, snapshot, []);
+            },
+          });
+          return { count, revision };
+        } finally {
+          try {
+            if (
+              original &&
+              owner.controller.isCurrent(original) &&
+              owner.frame.state.snapshot()?.activeId !== original.viewId
+            )
+              await owner.controller.activate(original.viewId).catch(() => false);
+          } finally {
+            if (lockRequested)
+              await owner.frame.documents.interactionLock(owner.sessionId, token, false);
+          }
+        }
+      });
+    },
+    [adoptDesignCaseSnapshot, ensureQueue],
+  );
+
   const prepareDesignPatentExport = useCallback(
-    async (patentId: string) => {
+    async (patentId: string, previewRevision: number, signal: AbortSignal) => {
       const session = stateRef.current.sessions.find(
         (candidate) => candidate.patentId === patentId,
       );
-      if (!session) return null;
+      if (!session || signal.aborted) return null;
       const queue = ensureQueue(session);
+      const isCurrent = () =>
+        !signal.aborted &&
+        stateRef.current.sessions.some(
+          (item) => item.patentId === patentId && item.sessionId === session.sessionId,
+        );
+      const requireRevision = (revision: number) => {
+        const snapshot = queue.snapshot();
+        if (snapshot.localRevision !== revision || snapshot.persistedRevision !== revision)
+          throw new Error("材料已更新，请确认当前预览后重试。");
+      };
       try {
         await queue.flush();
-        return queue.snapshot().persistedRevision;
+        if (!isCurrent()) return null;
+        requireRevision(previewRevision);
+        const saved = await saveDesignEditorEdits(patentId);
+        await queue.flush();
+        if (!isCurrent()) return null;
+        // Each explicit save checkpoint writes one revision. The atomic apply
+        // below separately validates its recovery decisions and final revision.
+        let revision = previewRevision + saved;
+        requireRevision(revision);
+        const unapplied =
+          queue
+            .snapshot()
+            .patent.designPatent?.views.filter(
+              (view) =>
+                isAssignedDesignView(view) &&
+                (view.editor?.recovery ||
+                  (view.editor?.saved &&
+                    view.editor.saved.projectAssetId !== view.editor.applied?.projectAssetId)),
+            ) ?? [];
+        if (unapplied.length) {
+          const choice = await requestEditorExport(
+            unapplied.length,
+            signal,
+            "export",
+            unapplied.filter((view) => view.editor?.recovery).length,
+          );
+          if (choice === "cancel" || !isCurrent()) return null;
+          requireRevision(revision);
+          if (choice === "save") {
+            const applied = await applyDesignEditorImages(
+              patentId,
+              unapplied.map((view) => view.viewId),
+              revision,
+              signal,
+            );
+            if (!applied || !isCurrent()) return null;
+            revision = applied.revision;
+          }
+          await queue.flush();
+        }
+        if (!isCurrent()) return null;
+        requireRevision(revision);
+        return { previewRevision, revision };
       } catch (error) {
-        showApplicationError(appError(error));
-        return null;
+        if (!isCurrent()) return null;
+        throw error instanceof Error ? error : new Error(appError(error).message);
       }
     },
-    [ensureQueue],
+    [ensureQueue, saveDesignEditorEdits, applyDesignEditorImages, requestEditorExport],
   );
 
   const adoptDesignPatentExport = useCallback(
@@ -1487,9 +2209,32 @@ export function PatentProvider({
     [ensureQueue],
   );
 
+  const persistActivePatent = useCallback(async () => {
+    if (!activeSession) return false;
+    try {
+      await saveDesignEditorEdits(activeSession.patentId);
+    } catch (error) {
+      showApplicationError(appError(error));
+      return false;
+    }
+    return drainPatent(activeSession);
+  }, [activeSession, drainPatent, saveDesignEditorEdits]);
   const saveActivePatent = useCallback(async () => {
     setManualSaveFeedback(null);
     if (!activeSession) return false;
+    if (activeSession.patent.patentType === "design") {
+      const editor = designFrames.current.get(activeSession.patentId),
+        identity = editor?.frame.state.snapshot()?.identity;
+      if (identity && editor?.controller.isTemporary(identity.viewId)) {
+        try {
+          return await editor.controller.saveTemporary(identity);
+        } catch (error) {
+          showApplicationError(appError(error));
+          return false;
+        }
+      }
+      return persistActivePatent();
+    }
     if (!(await drainPatent(activeSession))) return false;
     setManualSnapshotError(null);
     try {
@@ -1505,12 +2250,7 @@ export function PatentProvider({
       setManualSnapshotError(`正文已经保存，但“手动保存”快照创建失败：${detail}。请重试。`);
       return false;
     }
-  }, [activeSession, createExplicitSnapshot, drainPatent]);
-
-  const persistActivePatent = useCallback(async () => {
-    if (!activeSession) return false;
-    return drainPatent(activeSession);
-  }, [activeSession, drainPatent]);
+  }, [activeSession, createExplicitSnapshot, drainPatent, persistActivePatent]);
 
   const preparePatentSnapshot = useCallback(
     async (patentId: string) => {
@@ -1527,6 +2267,35 @@ export function PatentProvider({
     (patentId: string) => queues.current.get(patentId)?.snapshot().patent ?? null,
     [],
   );
+  editorSaveRequest.current = (patentId, frame, identity) => {
+    const owner = designFrames.current.get(patentId),
+      session = stateRef.current.sessions.find((item) => item.patentId === patentId);
+    if (
+      !owner ||
+      owner.frame !== frame ||
+      owner.sessionId !== identity.sessionId ||
+      owner.lifecycle.signal.aborted ||
+      stateRef.current.activePatentId !== patentId ||
+      !session
+    )
+      return;
+    const target = owner.controller.identity(identity.viewId);
+    if (!target || target.generation !== identity.generation || owner.requestedSave) return;
+    owner.requestedSave = (async () => {
+      try {
+        if (owner.controller.isTemporary(identity.viewId)) {
+          await owner.controller.saveTemporary(identity);
+          return;
+        }
+        await saveDesignEditorEdits(patentId, [identity.viewId]);
+        if (!owner.lifecycle.signal.aborted) await drainPatent(session);
+      } catch (error) {
+        showApplicationError(appError(error));
+      }
+    })().finally(() => {
+      owner.requestedSave = null;
+    });
+  };
 
   const applyReferenceMarkPlan = useCallback(
     (
@@ -1717,7 +2486,7 @@ export function PatentProvider({
 
   const exportActivePatdoc = useCallback(
     async (suggestedName?: string, workspace?: PatdocWorkspace) => {
-      if (!activeSession || !(await drainPatent(activeSession))) return null;
+      if (!activeSession || !(await persistActivePatent())) return null;
       try {
         const snapshot = ensureQueue(activeSession).snapshot();
         const result = await window.patentApi.patents.exportPatdoc({
@@ -1738,10 +2507,10 @@ export function PatentProvider({
         return null;
       }
     },
-    [activeSession, drainPatent, ensureQueue],
+    [activeSession, persistActivePatent, ensureQueue],
   );
 
-  const closePatent = useCallback(
+  const closePatentWithoutEditor = useCallback(
     async (patentId: string, options: { allowDiscardOnSaveFailure?: boolean } = {}) => {
       const pendingOperation = closingPatentOperations.current.get(patentId);
       if (pendingOperation) return pendingOperation;
@@ -1763,6 +2532,7 @@ export function PatentProvider({
         }
         const prunedAssets = current.assets.filter(
           (asset) =>
+            current.patentType === "design" ||
             asset.kind !== "vector-image" ||
             liveFigureAssets.has(asset.assetId) ||
             current.books.some((book) => JSON.stringify(book.document).includes(asset.assetId)) ||
@@ -1790,7 +2560,7 @@ export function PatentProvider({
               return false;
             }
           }
-          if (persisted) {
+          if (persisted && current.patentType !== "design") {
             if (options.allowDiscardOnSaveFailure === false) {
               // Agent requests must fail safely instead of waiting for a GUI retry/skip decision.
               try {
@@ -1845,6 +2615,105 @@ export function PatentProvider({
     [createCloseSnapshot, createExplicitSnapshot, drainPatent, ensureQueue, releaseSession],
   );
 
+  const editorCloseDependencies = useCallback(
+    (
+      patentId: string,
+      owner: DesignFrameOwner,
+      queue: PatentSaveCoordinator,
+    ): Omit<ConstructorParameters<typeof KlecksCloseCoordinator>[0], "close"> => {
+      const current = () =>
+        designFrames.current.get(patentId) === owner && !owner.lifecycle.signal.aborted;
+      return {
+        targets: () => owner.controller.loadedIdentities(),
+        current: (target) => current() && owner.controller.isCurrent(target),
+        activate: (target) => owner.controller.activate(target.viewId),
+        state: () => owner.frame.state.snapshot(),
+        lock: async (token, locked) => {
+          await owner.frame.documents.interactionLock(owner.sessionId, token, locked);
+        },
+        choose: (dirty) => requestEditorClose(dirty.length, owner.lifecycle.signal),
+        save: async (identity) => {
+          const view = queue
+            .snapshot()
+            .patent.designPatent?.views.find((item) => item.viewId === identity.viewId);
+          if (!view || !current()) throw new Error("图片会话已改变，未保存并关闭。");
+          const result = await saveDesignEditorFrame(
+            patentId,
+            { identity, sourceAssetId: view.assetId, expectedEditor: view.editor, kind: "saved" },
+            owner.frame,
+            () => current() && owner.controller.isCurrent(identity),
+          );
+          if (!result.editorConfirmed)
+            throw new Error("工程已写入，但编辑器尚未确认保存点，未关闭案件。");
+        },
+        discard: async (identity, token) => {
+          const view = queue
+            .snapshot()
+            .patent.designPatent?.views.find((item) => item.viewId === identity.viewId);
+          if (!view || !current()) throw new Error("图片会话已改变，未放弃修改。");
+          if (view.editor?.recovery)
+            await discardKlecksCaseRecovery(queue, {
+              viewId: view.viewId,
+              sourceAssetId: view.assetId,
+              expectedEditor: view.editor,
+            });
+          const patent = queue.snapshot().patent;
+          if (
+            !patent.designPatent ||
+            !current() ||
+            !(await owner.controller.reinitialize(
+              identity,
+              patent.designPatent.views,
+              patent.assets,
+              token,
+            ))
+          )
+            throw new Error("放弃修改后的图片尚未重新载入，未关闭案件。");
+        },
+      };
+    },
+    [requestEditorClose, saveDesignEditorFrame],
+  );
+
+  const closePatent = useCallback(
+    async (patentId: string, options: { allowDiscardOnSaveFailure?: boolean } = {}) => {
+      if (!stateRef.current.sessions.some((item) => item.patentId === patentId)) return true;
+      const guard = leaveGuards.current.get(patentId);
+      if (guard && !(await guard())) return false;
+      const owner = designFrames.current.get(patentId);
+      if (!owner) return closePatentWithoutEditor(patentId, options);
+      try {
+        if (!(await owner.controller.prepareTemporaryClose())) return false;
+        const session = stateRef.current.sessions.find(
+          (item) => item.patentId === patentId && item.sessionId === owner.sessionId,
+        );
+        if (!session) return false;
+        const queue = ensureQueue(session);
+        if (queue.snapshot().saveError) await queue.retry();
+        if (owner.controller.snapshot().syncError) {
+          const patent = queue.snapshot().patent;
+          if (!patent.designPatent) return false;
+          await owner.controller.reconcile(
+            patent.designPatent.views,
+            patent.assets,
+            owner.controller.snapshot().requestedId ?? undefined,
+          );
+        }
+        await owner.writeTail;
+        if (!owner.closing)
+          owner.closing = new KlecksCloseCoordinator({
+            ...editorCloseDependencies(patentId, owner, queue),
+            close: () => closePatentWithoutEditor(patentId, { allowDiscardOnSaveFailure: false }),
+          });
+        return await owner.closing.run();
+      } catch (error) {
+        showApplicationError(appError(error));
+        return false;
+      }
+    },
+    [closePatentWithoutEditor, ensureQueue, editorCloseDependencies],
+  );
+
   closeForAutomation.current = closePatent;
 
   const requestClose = useCallback(
@@ -1852,6 +2721,13 @@ export function PatentProvider({
       void closePatent(patentId);
     },
     [closePatent],
+  );
+  const registerPatentLeaveGuard = useCallback(
+    (patentId: string, guard: () => Promise<boolean>) => {
+      leaveGuards.current.set(patentId, guard);
+      return () => leaveGuards.current.delete(patentId);
+    },
+    [],
   );
 
   const flushAllForApplicationClose = useCallback(async () => {
@@ -1870,7 +2746,11 @@ export function PatentProvider({
           ]),
         );
         for (const session of sessions) {
-          if (!(await createCloseSnapshot(session.patentId, "application-close"))) return false;
+          if (
+            session.patent.patentType !== "design" &&
+            !(await createCloseSnapshot(session.patentId, "application-close"))
+          )
+            return false;
         }
         // Snapshot creation yields to late composition/import callbacks. Re-drain
         // all books until the snapshot and persisted revisions describe the same state.
@@ -1891,7 +2771,83 @@ export function PatentProvider({
     }
   }, [createCloseSnapshot, drainPatent, ensureQueue]);
 
+  const prepareDesignEditorsForClose = useCallback(async (): Promise<
+    boolean | ApplicationClosePreparation
+  > => {
+    const plans: ApplicationClosePreparation[] = [];
+    const cancel = async () => {
+      const results = await Promise.allSettled(plans.map((plan) => plan.cancel()));
+      const failures = results.filter(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
+      );
+      if (failures.length)
+        throw new AggregateError(
+          failures.map((result) => result.reason),
+          "退出取消后未能解除全部图片保护。",
+        );
+    };
+    try {
+      for (const session of stateRef.current.sessions.filter(
+        (item) => item.patent.patentType === "design",
+      )) {
+        const guard = leaveGuards.current.get(session.patentId);
+        if (guard && !(await guard())) {
+          await cancel();
+          return false;
+        }
+        const temporaryOwner = designFrames.current.get(session.patentId);
+        if (temporaryOwner && !(await temporaryOwner.controller.prepareTemporaryClose())) {
+          await cancel();
+          return false;
+        }
+        const queue = ensureQueue(session);
+        if (!(await queue.drainAndVerify())) {
+          await cancel();
+          return false;
+        }
+        const owner = designFrames.current.get(session.patentId);
+        if (owner) {
+          await owner.writeTail;
+          if (owner.controller.snapshot().syncError) {
+            const patent = queue.snapshot().patent;
+            if (!patent.designPatent) throw new Error("图片案件类型已改变。");
+            await owner.controller.reconcile(
+              patent.designPatent.views,
+              patent.assets,
+              owner.controller.snapshot().requestedId ?? undefined,
+            );
+          }
+          const plan = await prepareKlecksApplicationClose(
+            editorCloseDependencies(session.patentId, owner, queue),
+          );
+          if (!plan) {
+            await cancel();
+            return false;
+          }
+          plans.push(plan);
+        }
+      }
+      if (!plans.length) return true;
+      return {
+        cancel,
+        commit: async () => {
+          for (const plan of plans) if (!(await plan.commit())) return false;
+          return true;
+        },
+      };
+    } catch (error) {
+      try {
+        await cancel();
+      } catch (cleanupError) {
+        showApplicationError(appError(cleanupError));
+      }
+      showApplicationError(appError(error));
+      return false;
+    }
+  }, [ensureQueue, editorCloseDependencies]);
+
   useApplicationCloseParticipant("patents", flushAllForApplicationClose, "aggregate");
+  useApplicationCloseGuard("design-editors", prepareDesignEditorsForClose);
 
   const saveFlowchartSource = useCallback(
     async (
@@ -2121,6 +3077,7 @@ export function PatentProvider({
     };
   }, [ensureQueue, saveFlowchartSource]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: The epoch publishes ref-backed design board busy and history changes to context consumers.
   const value = useMemo<PatentContextValue>(
     () => ({
       state,
@@ -2146,6 +3103,15 @@ export function PatentProvider({
       updatePatentFigures,
       appendImportedPatentFigures,
       updateDesignPatent,
+      commitDesignEditorCheckpoint,
+      saveDesignEditorProject,
+      saveDesignEditorFrame,
+      checkpointDesignEditor,
+      applyDesignEditorImages,
+      saveDesignEditorEdits,
+      prepareDesignEditorRecoveryDiscard,
+      attachDesignEditorFrame,
+      releaseDesignEditorFrame,
       prepareDesignPatentExport,
       adoptDesignPatentExport,
       updatePatentSettings,
@@ -2172,6 +3138,7 @@ export function PatentProvider({
       prepareActiveAiCorrection,
       requestClose,
       closePatent,
+      registerPatentLeaveGuard,
     }),
     [
       state,
@@ -2197,6 +3164,15 @@ export function PatentProvider({
       updatePatentFigures,
       appendImportedPatentFigures,
       updateDesignPatent,
+      commitDesignEditorCheckpoint,
+      saveDesignEditorProject,
+      saveDesignEditorFrame,
+      checkpointDesignEditor,
+      applyDesignEditorImages,
+      saveDesignEditorEdits,
+      prepareDesignEditorRecoveryDiscard,
+      attachDesignEditorFrame,
+      releaseDesignEditorFrame,
       prepareDesignPatentExport,
       adoptDesignPatentExport,
       updatePatentSettings,
@@ -2223,12 +3199,16 @@ export function PatentProvider({
       prepareActiveAiCorrection,
       requestClose,
       closePatent,
+      registerPatentLeaveGuard,
     ],
   );
 
   return (
     <PatentContext.Provider value={value}>
       {children}
+      {recoveryPrompt.dialog}
+      {closePrompt.dialog}
+      {exportPrompt.dialog}
       {Object.entries(automationViews)
         .filter(([, view]) => view.readOnly)
         .map(([patentId]) => (

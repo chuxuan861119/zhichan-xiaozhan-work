@@ -473,6 +473,16 @@ export const DrawingTilesAssetDescriptorSchema = VectorImageAssetDescriptorSchem
     .max(256 * 1024 * 1024),
 }).strict();
 
+/** Original bytes are a versioned layered project; preview bytes remain PNG. */
+export const DesignEditorProjectAssetDescriptorSchema = ImageAssetDescriptorSchema.extend({
+  kind: z.literal("design-editor-project"),
+  mediaType: z.literal("application/vnd.patent-workbench.klecks-project"),
+  extension: z.literal("klecks"),
+});
+export type DesignEditorProjectAssetDescriptor = z.infer<
+  typeof DesignEditorProjectAssetDescriptorSchema
+>;
+
 const CurrentAssetDescriptorSchema = z.discriminatedUnion("kind", [
   DrawingSourceAssetDescriptorSchema,
   DrawingTilesAssetDescriptorSchema,
@@ -480,6 +490,7 @@ const CurrentAssetDescriptorSchema = z.discriminatedUnion("kind", [
   ChemicalPreviewAssetDescriptorSchema,
   FlowchartPreviewAssetDescriptorSchema,
   VectorImageAssetDescriptorSchema,
+  DesignEditorProjectAssetDescriptorSchema,
 ]);
 export const AssetDescriptorSchema = z.preprocess((input) => {
   if (
@@ -501,12 +512,18 @@ export const CanonicalDocumentSchema = z
     formatVersion: z.literal(CANONICAL_DOCUMENT_FORMAT_VERSION),
     documentId: z.string().uuid(),
     title: z.string().min(1).max(500),
-    patentType: z.enum(["invention", "utility-model"]).nullable(),
+    patentType: z.enum(["invention", "utility-model", "design"]).nullable(),
     createdAt: z.string().datetime(),
     modifiedAt: z.string().datetime(),
     page: PageSettingsSchema,
     content: z.array(BlockNodeSchema).max(MAX_DOCUMENT_NODES),
-    assets: z.array(AssetDescriptorSchema).max(100_000),
+    assets: z
+      .array(AssetDescriptorSchema)
+      .max(100_000)
+      .refine(
+        (assets): boolean => assets.every((asset) => asset.kind !== "design-editor-project"),
+        "分层编辑工程只能保存在案件资产中，不能作为旧式独立文档资产。",
+      ),
   })
   .strict();
 

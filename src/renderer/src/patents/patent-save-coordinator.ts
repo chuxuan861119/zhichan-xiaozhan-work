@@ -18,8 +18,8 @@ import type {
 import type { JsonObject } from "../../../shared/ipc/primitives";
 import type { AppError, AppResult } from "../../../shared/ipc/result";
 import type { LibrarySaveState } from "../../../shared/library/model";
-import { normalizeDrawingBooks } from "../../../shared/patent/drawing-content";
 import type { DesignPatent } from "../../../shared/patent/design-patent";
+import { normalizeDrawingBooks } from "../../../shared/patent/drawing-content";
 import {
   type CanonicalPatent,
   PATENT_BOOK_ORDER,
@@ -120,7 +120,6 @@ type PendingDesignPatentEdit = {
   assets: CanonicalPatent["assets"];
   localRevision: number;
 };
-
 type PendingFlowchartEdit = {
   type: "flowchart-source";
   projectId: string;
@@ -130,9 +129,7 @@ type PendingFlowchartEdit = {
   lastPageId: string | null;
   localRevision: number;
 };
-
 type PersistedMutation = { patent: CanonicalPatent; savedAt: string };
-
 type PendingPersistedMutation = {
   type: "persisted-mutation";
   run(expectedRevision: number): Promise<AppResult<PersistedMutation | null>>;
@@ -140,15 +137,14 @@ type PendingPersistedMutation = {
   fail(error: AppError): void;
   localRevision: number;
 };
-
 type PendingEdit =
   | PendingBookEdit
   | PendingAuxiliaryDocumentEdit
   | PendingFigureEdit
   | PendingSettingsEdit
   | PendingFlowchartEdit
-  | PendingDesignPatentEdit
-  | PendingPersistedMutation;
+  | PendingPersistedMutation
+  | PendingDesignPatentEdit;
 
 type DrainWaiter = {
   resolve(): void;
@@ -234,6 +230,7 @@ export class PatentSaveCoordinator {
   #lastSavedAt: string | null = null;
   #saveError: AppError | null = null;
   #running = false;
+  #atomicDesignCommit = false;
   #disposed = false;
   #freezeToken: string | null = null;
   readonly #applyBookEdit: PatentSaveCoordinatorOptions["applyBookEdit"];
@@ -246,6 +243,13 @@ export class PatentSaveCoordinator {
   readonly #callbacks: QueueCallbacks;
   readonly #pending: PendingEdit[] = [];
   readonly #waiters: DrainWaiter[] = [];
+  readonly #designCompletions = new Map<
+    number,
+    {
+      resolve(ack: PatentEditAck): void;
+      reject(error: AppError): void;
+    }
+  >();
 
   constructor(options: PatentSaveCoordinatorOptions) {
     this.patentId = options.patentId;
@@ -677,6 +681,7 @@ export class PatentSaveCoordinator {
     designPatent: DesignPatent,
     assets: readonly AssetDescriptor[],
   ): PatentSaveCoordinatorSnapshot {
+    this.#assertWritable();
     if (this.#patent.patentType !== "design") throw new Error("Patent is not a design patent.");
     this.#localRevision += 1;
     const localRevision = this.#localRevision;
@@ -698,6 +703,26 @@ export class PatentSaveCoordinator {
     return this.snapshot();
   }
 
+  async saveDesignPatent(
+    designPatent: DesignPatent,
+    assets: readonly AssetDescriptor[],
+  ): Promise<PatentEditAck> {
+    this.#assertWritable();
+    if (this.#disposed)
+      throw { code: "CANCELLED", message: "案件保存会话已关闭。" } satisfies AppError;
+    if (this.#saveError) throw this.#saveError;
+    const target = this.#localRevision + 1;
+    return new Promise((resolve, reject) => {
+      this.#designCompletions.set(target, { resolve, reject });
+      try {
+        this.enqueueDesignPatent(designPatent, assets);
+      } catch (error) {
+        this.#designCompletions.delete(target);
+        reject(toAppError(error));
+      }
+    });
+  }
+
   enqueueReferenceMarkTransaction(input: {
     referenceMarks: CanonicalPatent["referenceMarks"];
     referenceMarkSettings: CanonicalPatent["referenceMarkSettings"];
@@ -708,6 +733,59 @@ export class PatentSaveCoordinator {
       patentType: this.#patent.patentType,
       ...input,
     });
+  }
+
+  #assertWritable() {
+    if (this.#atomicDesignCommit)
+      throw {
+        code: "LIBRARY_LOCKED",
+        message: "六视图尺寸正在提交，请稍后重试。",
+      } satisfies AppError;
+  }
+
+  /** Do not publish anything until the whole design revision is durably accepted. */
+  async commitDesignPatentAtomically(
+    expectedRevision: number,
+    designPatent: DesignPatent,
+    assets: AssetDescriptor[],
+  ) {
+    this.#assertWritable();
+    if (
+      this.#disposed ||
+      this.#running ||
+      this.#pending.length ||
+      this.#saveError ||
+      this.#persistedRevision !== expectedRevision ||
+      this.#patent.patentType !== "design"
+    )
+      throw {
+        code: "REVISION_CONFLICT",
+        message: "案件内容已变化，请重新预览后重试。",
+      } satisfies AppError;
+    if (!this.#updateDesignPatent) throw new Error("当前平台不支持保存外观设计。");
+    this.#atomicDesignCommit = true;
+    try {
+      const result = await this.#updateDesignPatent({
+        patentId: this.patentId,
+        sessionId: this.sessionId,
+        expectedRevision,
+        designPatent,
+        assets,
+      });
+      if (!result.ok) throw result.error;
+      return this.adoptPersistedPatent(
+        {
+          ...this.#patent,
+          designPatent,
+          assets,
+          revision: result.value.revision,
+          modifiedAt: result.value.savedAt,
+        },
+        result.value.savedAt,
+      );
+    } finally {
+      this.#atomicDesignCommit = false;
+    }
   }
 
   async retry(): Promise<void> {
@@ -828,6 +906,10 @@ export class PatentSaveCoordinator {
       if (edit.type === "persisted-mutation") edit.fail(internalError());
     }
     for (const waiter of this.#waiters.splice(0)) waiter.reject(internalError());
+    for (const waiter of this.#designCompletions.values()) {
+      waiter.reject({ code: "CANCELLED", message: "案件保存会话已关闭。" });
+    }
+    this.#designCompletions.clear();
   }
 
   #startPump(): void {
@@ -848,6 +930,7 @@ export class PatentSaveCoordinator {
         // Once sent, preserve the exact operation, including across failed retries.
         if (item.type === "book") item.coalescible = false;
         const result = await this.#persist(item);
+        if (this.#disposed) return;
         if (!result.ok) {
           this.#fail(result.error);
           break;
@@ -939,13 +1022,17 @@ export class PatentSaveCoordinator {
           this.#patent = { ...this.#patent, revision: this.#persistedRevision };
         }
         this.#aggregateSaveState = this.#deriveAggregateSaveState();
+        if (item.type === "design-patent") {
+          this.#designCompletions.get(item.localRevision)?.resolve(result.value);
+          this.#designCompletions.delete(item.localRevision);
+        }
         this.#emit("onConfirmed", acceptedFlowchartNoOp);
         if (item.type === "settings" && item.autoTitleRecognition) {
           this.#callbacks.onAutoTitlePersisted?.(this.snapshot());
         }
       }
     } catch (error) {
-      this.#fail(toAppError(error));
+      if (!this.#disposed) this.#fail(toAppError(error));
     } finally {
       this.#running = false;
       this.#notifyWaiters();
@@ -1224,6 +1311,8 @@ export class PatentSaveCoordinator {
     }
     this.#saveError = error;
     this.#aggregateSaveState = "failed";
+    for (const waiter of this.#designCompletions.values()) waiter.reject(error);
+    this.#designCompletions.clear();
     const failedKinds = this.#pendingBookKinds();
     this.#bookSaveStates = Object.fromEntries(
       PATENT_BOOK_ORDER.map((kind) => [

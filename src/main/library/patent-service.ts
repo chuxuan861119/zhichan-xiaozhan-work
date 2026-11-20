@@ -36,6 +36,7 @@ import { createBlankPatent } from "../../shared/patent/defaults.js";
 import {
   type DesignPatent,
   DesignPatentSchema,
+  normalizeDesignPatentMeasurementStatus,
 } from "../../shared/patent/design-patent.js";
 import {
   planDisableDrawingBooks,
@@ -2282,7 +2283,7 @@ export class PatentService {
         revision,
         modifiedAt: savedAt,
         assets,
-        designPatent: structuredClone(input.designPatent),
+        designPatent: normalizeDesignPatentMeasurementStatus(structuredClone(input.designPatent)),
       });
       const operationId = this.randomUUID();
       this.database.transaction((database) => {
@@ -2787,7 +2788,9 @@ export class PatentService {
     ) as { value: Uint8Array } | undefined;
     if (!row) throw new LibraryServiceError("CORRUPT_FILE", "Design patent state is missing.");
     return DesignPatentSchema.parse(
-      parsedJson(`patent-design-state:${patentId}`, row.value),
+      normalizeDesignPatentMeasurementStatus(
+        parsedJson(`patent-design-state:${patentId}`, row.value),
+      ),
     );
   }
 
