@@ -1152,6 +1152,8 @@ test("persists a design-patent image and brief state through the active session"
       assetId: descriptor.assetId,
       expression: "line-drawing",
       subjectBounds: { leftPx: 0, topPx: 0, widthPx: 101, heightPx: 81 },
+      subjectBoundsSource: "automatic",
+      subjectBoundsConfirmed: false,
       operations: [],
       note: null,
     },

@@ -1,0 +1,652 @@
+/* Keep these established workbench tokens local: the current shell no longer
+   mounts the legacy .design-patent-workbench token provider. */
+.window-shell.is-design-workspace:has(
+  .design-workspace-shell__main[data-step="brief"][data-active="true"]
+) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.window-shell.is-design-workspace:has(
+    > .app-view-transition-stage:not([hidden])
+      .design-workspace-shell__main[data-step="brief"][data-active="true"]
+  )
+  > .status-bar:not(:has(.klecks-status-dock))
+  > .status-zoom {
+  display: inline-flex;
+}
+.design-brief-complete {
+  --design-accent: #1d6673;
+  --design-accent-hover: #164f59;
+  --design-accent-soft: #e7f2f2;
+  --design-border: #dce5e7;
+  --design-border-strong: #b7c9cd;
+  --design-canvas: #f5f8f8;
+  --design-surface: #fff;
+  --design-text: #17323d;
+  --design-muted: #526970;
+  --design-warning: #8b651f;
+  --brief-danger: #b42318;
+  --brief-font-ui: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  color: var(--design-text);
+  font: 14px / 1.6 var(--brief-font-ui);
+}
+.design-brief-complete .design-patent-workbench__brief-sheet {
+  padding: 32px 40px 36px;
+  border-color: var(--design-border-strong);
+  border-radius: 8px;
+  background: var(--design-surface);
+  box-shadow: none;
+}
+.design-brief-complete .design-patent-workbench__brief-sheet-header {
+  padding-bottom: 0;
+  border: 0;
+}
+.design-brief-complete .design-patent-workbench__brief-sheet-header p {
+  margin: 0 0 6px;
+  color: var(--design-muted);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+.design-brief-complete .design-patent-workbench__brief-sheet-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+.design-brief-complete button {
+  width: auto;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--design-border-strong);
+  border-radius: 6px;
+  color: var(--design-text);
+  background: var(--design-surface);
+  font: 500 13px / 20px var(--brief-font-ui);
+  cursor: pointer;
+  transition:
+    color var(--design-step-duration, 400ms) ease-in-out,
+    background-color var(--design-step-duration, 400ms) ease-in-out,
+    border-color var(--design-step-duration, 400ms) ease-in-out;
+}
+.design-brief-complete button:hover:not(:disabled) {
+  color: var(--design-accent);
+  background: var(--design-canvas);
+  border-color: var(--design-accent);
+}
+.design-brief-complete :is(button, input[type="checkbox"]):focus-visible {
+  outline: 2px solid var(--design-accent);
+  outline-offset: 3px;
+}
+.design-brief-complete button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.design-brief-complete .design-patent-workbench__brief-toc {
+  width: 100%;
+  gap: 16px;
+  margin: 20px 0 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--design-border);
+  border-radius: 0;
+  background: transparent;
+}
+.design-brief-complete .design-patent-workbench__brief-toc button {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 0;
+  color: var(--design-muted);
+  background: transparent;
+  box-shadow: none;
+}
+.design-brief-complete .design-patent-workbench__brief-toc button[aria-pressed="true"] {
+  color: var(--design-accent);
+  font-weight: 600;
+  box-shadow: inset 0 -2px var(--design-accent);
+}
+.design-brief-complete .design-patent-workbench__form-section {
+  gap: 20px 24px;
+  margin-top: 24px;
+  padding: 0 0 28px;
+  border-bottom: 1px solid var(--design-border);
+}
+.design-brief-complete .design-patent-workbench__form-section > legend {
+  color: var(--design-text);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+.design-brief-complete .design-brief-field {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  min-width: 0;
+  align-content: start;
+}
+.design-brief-complete .design-brief-field:has(input) {
+  grid-column: auto;
+}
+.design-brief-complete .design-patent-workbench__brief-form > .design-brief-field {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--design-border);
+}
+.design-brief-complete .design-patent-workbench__brief-form label {
+  min-width: 0;
+  color: var(--design-text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.design-brief-complete
+  .design-patent-workbench__form-section
+  > label:not(:has(> input[type="checkbox"])),
+.design-brief-complete .design-brief-frames > label,
+.design-brief-complete .design-brief-omissions label:has(select) {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.design-brief-label__requirement {
+  margin-left: 6px;
+  color: var(--design-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.design-brief-label__required-mark {
+  margin-right: 4px;
+  color: var(--brief-danger);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+}
+.design-brief-complete
+  .design-patent-workbench__brief-form
+  :is(input:not([type="checkbox"]), select, textarea) {
+  min-width: 0;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--design-border-strong);
+  border-radius: 6px;
+  color: var(--design-text);
+  background: var(--design-surface);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+}
+.design-brief-complete
+  .design-patent-workbench__brief-form
+  :is(input:not([type="checkbox"]), select) {
+  height: 40px;
+  min-height: 40px;
+}
+.design-brief-complete .design-patent-workbench__brief-form select:not([multiple]) {
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%2317323d' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  background-position: right 12px center;
+}
+.design-brief-complete .design-patent-workbench__brief-form textarea {
+  min-height: 112px;
+  line-height: 1.65;
+  resize: vertical;
+}
+.design-brief-complete .design-patent-workbench__brief-form textarea.design-brief-field__auto-grow {
+  min-height: 40px;
+  field-sizing: content;
+}
+@supports (field-sizing: content) {
+  .design-brief-complete
+    .design-patent-workbench__brief-form
+    textarea.design-brief-field__auto-grow {
+    resize: none;
+  }
+}
+.design-brief-complete .design-patent-workbench__brief-form :is(input, select, textarea):focus {
+  border-color: var(--design-accent);
+  box-shadow: 0 0 0 3px var(--design-accent-soft);
+}
+.design-brief-field__help {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  color: var(--design-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+.design-brief-field__help small {
+  font-size: 11px;
+  line-height: inherit;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.design-brief-field__error,
+.design-brief-stale {
+  margin: 0;
+  color: var(--brief-danger);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.design-brief-complete .design-brief-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--design-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+.design-brief-complete .design-brief-check {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 0;
+}
+.design-brief-complete input[type="checkbox"] {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--design-accent);
+}
+.design-brief-complete .design-brief-points {
+  gap: 8px 24px;
+  padding: 0;
+  border: 0;
+}
+.design-brief-complete .design-brief-points legend {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.design-brief-complete .design-brief-points label {
+  gap: 8px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.design-brief-color-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--design-muted);
+  font-size: 12px;
+}
+.design-brief-complete .design-patent-workbench__representative-preview {
+  grid-template-columns: minmax(0, 1fr) clamp(64px, 20%, 104px);
+  gap: 12px 16px;
+  padding: 0;
+  border: 0;
+}
+.design-brief-representative__controls {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+.design-brief-complete button.design-brief-representative__thumb,
+.design-brief-representative__empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid var(--design-border);
+  border-radius: 6px;
+  background: var(--design-canvas);
+}
+.design-brief-complete button.design-brief-representative__thumb {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  cursor: zoom-in;
+}
+.design-brief-complete .design-brief-representative__thumb > img {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.design-brief-representative__empty {
+  border-style: dashed;
+  color: var(--design-muted);
+  font-size: 12px;
+}
+.design-brief-groups,
+.design-brief-frames {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 16px;
+  min-width: 0;
+}
+.design-brief-complete .design-brief-group {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--design-border);
+  border-radius: 6px;
+}
+.design-brief-group > legend {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.design-brief-group > .design-brief-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--design-canvas);
+}
+.design-brief-group > .design-brief-note > button:first-of-type {
+  color: var(--brief-danger);
+  border-color: var(--brief-danger);
+}
+.design-brief-group__heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+}
+.design-brief-complete .design-brief-group__heading > button {
+  margin-top: 28px;
+  color: var(--brief-danger);
+  white-space: nowrap;
+}
+.design-brief-image-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+  min-width: 0;
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: auto;
+}
+.design-brief-complete .design-brief-image-choices label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.design-brief-image-choices label:has(input:checked) {
+  background: var(--design-accent-soft);
+}
+.design-brief-image-choices > p {
+  grid-column: 1 / -1;
+}
+.design-brief-groups > button {
+  justify-self: start;
+  color: var(--design-accent);
+}
+.design-brief-frames ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: brief-frame;
+}
+.design-brief-frames li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--design-border);
+  counter-increment: brief-frame;
+}
+.design-brief-frames li::before {
+  content: counter(brief-frame, decimal-leading-zero);
+  color: var(--design-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.design-brief-frames li > span {
+  min-width: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.design-brief-frames li > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+  margin: 0;
+}
+.design-brief-frames li > div > button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.design-brief-omissions {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 0;
+  padding: 0;
+}
+.design-brief-omissions > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--design-border);
+}
+.design-brief-complete .design-brief-omissions .design-brief-check {
+  grid-column: auto;
+}
+.design-brief-complete .design-brief-omissions .design-brief-field {
+  grid-column: 1 / -1;
+}
+.design-brief-complete .design-patent-workbench__collapsible-section {
+  border-color: var(--design-border);
+}
+.design-brief-complete .design-patent-workbench__collapsible-section > button {
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-weight: 500;
+}
+.design-brief-disclosure {
+  grid-column: 1 / -1;
+  margin-top: 24px;
+  border-top: 1px solid var(--design-border);
+}
+.design-brief-complete .design-brief-disclosure > button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  align-items: center;
+  padding: 12px 8px;
+  text-align: left;
+}
+.design-brief-complete .design-brief-disclosure > button:focus-visible {
+  outline-offset: -3px;
+}
+.design-brief-disclosure__status {
+  color: var(--design-muted);
+  font-size: 12px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.design-brief-disclosure__action {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--design-accent);
+}
+.design-brief-disclosure__body {
+  height: 0;
+  overflow: hidden;
+}
+.design-brief-disclosure__clip {
+  min-height: 0;
+  overflow: hidden;
+}
+.design-brief-disclosure__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  padding: 0 4px 4px;
+}
+.design-brief-complete .design-brief-option-section:last-child {
+  border-bottom: 0;
+}
+.design-brief-inline-action {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--design-muted);
+  font-size: 13px;
+}
+.design-brief-complete .design-patent-workbench__form-section[tabindex="-1"]:focus {
+  outline: 2px solid var(--design-accent);
+  outline-offset: 4px;
+}
+.design-brief-warnings {
+  grid-column: 1 / -1;
+  margin: 20px 0 0;
+  padding: 16px 20px;
+  border: 1px solid var(--design-border);
+  border-left: 3px solid var(--design-warning);
+  border-radius: 4px;
+  color: var(--design-text);
+  background: var(--design-canvas);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.design-brief-warnings strong {
+  color: var(--design-warning);
+  font-weight: 600;
+}
+.design-brief-warnings ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+.design-brief-warnings > span {
+  color: var(--design-muted);
+  font-size: 12px;
+}
+.design-brief-complete .design-patent-workbench__brief-preview {
+  margin: 0;
+  padding: 28px 0;
+  border: 0;
+}
+.design-brief-complete .design-patent-workbench__brief-preview-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 24px;
+  font-family: var(--brief-font-ui);
+}
+.design-brief-complete .design-patent-workbench__brief-preview-heading :is(p, h2) {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.design-brief-complete .design-patent-workbench__brief-preview > p {
+  margin: 14px 0 0;
+  color: var(--design-text);
+  font-family: SimSun, "Songti SC", serif;
+  font-size: 16px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.design-brief-complete .design-patent-workbench__brief-actions {
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-color: var(--design-border);
+  font-size: 12px;
+}
+.design-brief-complete .design-patent-workbench__brief-actions .primary-button {
+  min-height: 40px;
+  border-color: var(--design-accent);
+  border-radius: 6px;
+  color: var(--design-surface);
+  background: var(--design-accent);
+  font-weight: 500;
+}
+.design-brief-complete .design-patent-workbench__brief-actions .primary-button:hover {
+  border-color: var(--design-accent-hover);
+  color: var(--design-surface);
+  background: var(--design-accent-hover);
+}
+@media (max-width: 760px) {
+  .design-brief-complete .design-patent-workbench__brief-sheet {
+    padding: 24px 20px;
+  }
+  .design-brief-complete .design-patent-workbench__form-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .design-brief-omissions > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .design-brief-field__help {
+    gap: 8px;
+  }
+  .design-brief-complete .design-patent-workbench__brief-actions {
+    flex-wrap: wrap;
+  }
+  .design-brief-complete .design-patent-workbench__brief-actions .primary-button {
+    margin-left: auto;
+  }
+}
+@media (max-width: 480px) {
+  .design-brief-complete .design-patent-workbench__brief-sheet {
+    padding: 20px 14px;
+  }
+  .design-brief-complete .design-patent-workbench__brief-sheet-header h2 {
+    font-size: 21px;
+  }
+  .design-brief-image-choices {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .design-brief-group__heading {
+    gap: 8px;
+  }
+  .design-brief-complete .design-patent-workbench__representative-preview {
+    column-gap: 10px;
+  }
+  .design-brief-frames li {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+  .design-brief-frames li > div {
+    grid-column: 2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .design-brief-complete button {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .design-brief-complete .design-patent-workbench__brief-form select:not([multiple]) {
+    appearance: auto;
+    padding-right: 12px;
+    background-image: none;
+  }
+}

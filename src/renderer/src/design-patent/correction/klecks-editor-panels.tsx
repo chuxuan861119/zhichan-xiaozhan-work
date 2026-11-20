@@ -37,11 +37,13 @@ import {
   type ReactNode,
   type SyntheticEvent,
   useCallback,
+  useContext,
   useEffect,
   useRef,
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { DesignCorrectionNavigation } from "../design-workspace-shell";
 import { KlecksBucketColor } from "./klecks-bucket-color";
 import { KlecksCanvasFocus, klecksFocusField } from "./klecks-canvas-focus";
 import { type KlecksMenuItem, showKlecksContextMenu } from "./klecks-context-menu";
@@ -476,6 +478,7 @@ export function KlecksEditorPanels({
   } | null>(null);
   const menus = useRef<HTMLDivElement>(null);
   const [compactMenuOpen, setCompactMenuOpen] = useState(false);
+  const workflowNavigation = useContext(DesignCorrectionNavigation);
   const displayMenu = useRef<HTMLDetailsElement>(null);
   const ownedMenus = useCallback(
     () => [
@@ -1153,7 +1156,7 @@ export function KlecksEditorPanels({
             </details>
           </div>
         </div>
-        <strong>小栈修图</strong>
+        {workflowNavigation ?? <strong>小栈修图</strong>}
         <KlecksDocumentTabs
           documents={documents}
           activeId={state?.activeId ?? null}

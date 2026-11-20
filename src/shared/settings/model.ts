@@ -84,6 +84,7 @@ export const AppSettingsSchema = AppSettingsV1Schema.extend({
   trayIntroDismissed: z.boolean().default(false),
   editorIntroductionSeen: z.boolean().default(false),
   designEditorPreferences: DesignEditorPreferencesSchema.optional(),
+  designBriefExportFormat: z.enum(["docx", "pdf"]).default("docx"),
   designAutoTrimDefaults: AutoTrimOptionsSchema.optional(),
   referenceMarkSyncIntroDismissed: z.boolean(),
   referenceMarkLocatorEnabled: z.boolean(),
@@ -159,6 +160,7 @@ export function createSettingsId(
 export const DEFAULT_PATENT_TEMPLATE_SETTINGS = createFactoryPatentTemplates(createSettingsId);
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
+  designBriefExportFormat: "docx",
   autoCheckUpdates: true,
   contentSearchEnabled: true,
   drawingDetailDefaultRatio: 2,

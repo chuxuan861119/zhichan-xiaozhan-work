@@ -12,6 +12,141 @@ import {
 } from "./design-patent-exporter.js";
 
 describe("design patent exporter", () => {
+  it("exports all multi images in user order using custom names", async () => {
+    const root = await mkdtemp(join(tmpdir(), "multi-design-export-"));
+    try {
+      const patent = createBlankPatent({ patentType: "design", name: "界面" });
+      patent.designPatent!.imageMode = "multi-image";
+      patent.designPatent!.views = ["参考图", "变化状态图2", "产品视图"].map((label) => {
+        const assetId = crypto.randomUUID();
+        patent.assets.push({
+          assetId,
+          kind: "image",
+          originalName: "source.png",
+          mediaType: "image/png",
+          extension: "png",
+          byteLength: 1,
+          sha256: "A".repeat(64),
+          previewByteLength: 1,
+          previewSha256: "B".repeat(64),
+          widthPx: 20,
+          heightPx: 30,
+        });
+        return {
+          viewId: crypto.randomUUID(),
+          assetId,
+          kind: "multi-image",
+          label,
+          expression: "line-drawing",
+          subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
+          assignmentStatus: "confirmed",
+          assignmentEvidence: null,
+          operations: [],
+          note: null,
+        };
+      });
+      const bytes = await sharp({
+        create: { width: 20, height: 30, channels: 3, background: "white" },
+      })
+        .png()
+        .toBuffer();
+      const result = await exportDesignPatentDocx({
+        patent,
+        outputRoot: root,
+        assetBytes: async () => bytes,
+        confirmWarnings: true,
+      });
+      expect(result.imagePaths.map((path) => path.split(/[\\/]/u).at(-1))).toEqual([
+        "01-参考图.jpg",
+        "02-变化状态图2.jpg",
+        "03-产品视图.jpg",
+      ]);
+      expect(await sharp(await readFile(result.imagePaths[0]!)).metadata()).toMatchObject({
+        format: "jpeg",
+        width: 20,
+        height: 30,
+        hasAlpha: false,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+  it("exports the applied composite without reapplying the original raster recipe", async () => {
+    const root = await mkdtemp(join(tmpdir(), "design-applied-export-"));
+    try {
+      const patent = createBlankPatent({ patentType: "design", name: "应用图片" }),
+        id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+      const asset = {
+        assetId: id(1),
+        kind: "image" as const,
+        originalName: "source.png",
+        mediaType: "image/png" as const,
+        extension: "png" as const,
+        byteLength: 1,
+        sha256: "A".repeat(64),
+        previewByteLength: 1,
+        previewSha256: "B".repeat(64),
+        widthPx: 10,
+        heightPx: 20,
+      };
+      patent.assets = [asset, { ...asset, assetId: id(2), widthPx: 4, heightPx: 2 }];
+      const checkpoint = {
+        revisionId: id(4),
+        projectAssetId: id(3),
+        createdAt: "2026-11-03T00:00:00.000Z",
+      };
+      patent.designPatent!.views = [
+        {
+          viewId: id(5),
+          kind: "front",
+          label: "主视图",
+          assetId: id(1),
+          expression: "line-drawing",
+          subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
+          operations: [{ kind: "rotate", degrees: 90 }],
+          note: null,
+          editor: {
+            version: 1,
+            sourceAssetId: id(1),
+            saved: checkpoint,
+            recovery: null,
+            applied: { ...checkpoint, imageAssetId: id(2), widthPx: 4, heightPx: 2 },
+          },
+        },
+      ];
+      const image = await sharp({ create: { width: 4, height: 2, channels: 3, background: "red" } })
+        .png()
+        .toBuffer();
+      const reads: string[] = [];
+      patent.designPatent!.brief.omissions = [
+        { viewKind: "rear", reason: "same", referenceKind: "front", otherReason: null },
+      ];
+      const result = await exportDesignPatentDocx({
+        patent,
+        outputRoot: root,
+        assetBytes: async (id) => {
+          reads.push(id);
+          return image;
+        },
+        confirmWarnings: true,
+      });
+      expect(result.imagePaths).toHaveLength(1);
+      expect(renderDesignPatentBrief(patent).join("\n")).toContain(
+        "后视图与主视图相同，省略后视图",
+      );
+      expect(reads).toEqual([id(2)]);
+      expect(await sharp(await readFile(result.imagePaths[0]!)).metadata()).toMatchObject({
+        width: 4,
+        height: 2,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
   it("renders canonical brief-description sentences from selected structured fields", () => {
     const patent = createBlankPatent({ patentType: "design", name: "折叠椅" });
     if (!patent.designPatent) throw new Error("fixture");
@@ -42,6 +177,8 @@ describe("design patent exporter", () => {
         assetId: "00000000-0000-4000-8000-000000000812",
         expression: "line-drawing",
         subjectBounds: null,
+        subjectBoundsSource: null,
+        subjectBoundsConfirmed: false,
         operations: [],
         note: null,
       },
@@ -89,16 +226,56 @@ describe("design patent exporter", () => {
           assetId,
           expression: "line-drawing",
           subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
           operations: [],
           note: null,
         },
         {
           viewId: "00000000-0000-4000-8000-000000000803",
           kind: "perspective",
-          label: "立体图",
+          label: "立体图1",
           assetId,
           expression: "line-drawing",
           subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
+          operations: [],
+          note: null,
+        },
+        {
+          viewId: "00000000-0000-4000-8000-000000000804",
+          kind: "perspective-2",
+          label: "立体图2",
+          assetId,
+          expression: "line-drawing",
+          subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
+          operations: [],
+          note: null,
+        },
+        {
+          viewId: "00000000-0000-4000-8000-000000000805",
+          kind: "perspective-3",
+          label: "立体图3",
+          assetId,
+          expression: "line-drawing",
+          subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
+          operations: [],
+          note: null,
+        },
+        {
+          viewId: "00000000-0000-4000-8000-000000000806",
+          kind: "unassigned",
+          label: "未识别图片",
+          assetId,
+          expression: "line-drawing",
+          subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
           operations: [],
           note: null,
         },
@@ -119,15 +296,19 @@ describe("design patent exporter", () => {
       });
 
       expect(result.imagePaths.map((path) => path.split(/[\\/]/u).at(-1))).toEqual([
-        "01-立体图.png",
-        "02-主视图.png",
+        "01-立体图1.jpg",
+        "02-立体图2.jpg",
+        "03-立体图3.jpg",
+        "04-主视图.jpg",
       ]);
       expect((await readFile(result.documentPath)).byteLength).toBeGreaterThan(0);
       expect((await readFile(result.imagePaths[0] ?? "")).byteLength).toBeGreaterThan(0);
       expect(await readZipEntries(result.zipPath ?? "")).toEqual([
         "外观设计简要说明.docx",
-        "图片/01-立体图.png",
-        "图片/02-主视图.png",
+        "图片/01-立体图1.jpg",
+        "图片/02-立体图2.jpg",
+        "图片/03-立体图3.jpg",
+        "图片/04-主视图.jpg",
       ]);
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -210,6 +391,8 @@ describe("design patent exporter", () => {
           assetId: "00000000-0000-4000-8000-000000000822",
           expression: "line-drawing",
           subjectBounds: null,
+          subjectBoundsSource: null,
+          subjectBoundsConfirmed: false,
           operations: [],
           note: null,
         },

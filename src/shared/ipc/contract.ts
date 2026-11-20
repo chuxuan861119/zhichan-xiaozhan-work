@@ -378,6 +378,7 @@ export const IPC_CHANNELS = {
   exportsPatentPdf: "exports:patent-pdf",
   exportsAuxiliaryDocx: "exports:auxiliary-docx",
   exportsAuxiliaryPdf: "exports:auxiliary-pdf",
+  exportsChooseDesignPatentDestination: "exports:choose-design-patent-destination",
   exportsDesignPatent: "exports:design-patent",
   exportsPdf: "exports:pdf",
   exportsPreview: "exports:preview",
@@ -613,6 +614,7 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.exportsPatentPdf,
   IPC_CHANNELS.exportsAuxiliaryDocx,
   IPC_CHANNELS.exportsAuxiliaryPdf,
+  IPC_CHANNELS.exportsChooseDesignPatentDestination,
   IPC_CHANNELS.exportsDesignPatent,
   IPC_CHANNELS.exportsPdf,
   IPC_CHANNELS.exportsPreview,
@@ -1887,9 +1889,15 @@ export const DesignPatentExportRequestSchema = z
     format: z.enum(["docx", "pdf"]),
     confirmWarnings: z.boolean(),
     zip: z.boolean(),
+    destinationToken: z.string().uuid(),
   })
   .strict();
 export type DesignPatentExportRequest = z.infer<typeof DesignPatentExportRequestSchema>;
+export const DesignPatentExportDestinationRequestSchema = DesignPatentExportRequestSchema.pick({
+  sessionId: true,
+  patentId: true,
+});
+
 export const DesignPatentExportReportSchema = z
   .object({
     outputDirectory: LocalPathSchema,
@@ -2463,6 +2471,9 @@ export interface PatentApi {
     patentPdf(request: PatentDocxExportRequest): Promise<AppResult<ExportReport | null>>;
     auxiliaryDocx(request: AuxiliaryDocumentExportRequest): Promise<AppResult<ExportReport | null>>;
     auxiliaryPdf(request: AuxiliaryDocumentExportRequest): Promise<AppResult<ExportReport | null>>;
+    chooseDesignPatentDestination?(
+      request: z.infer<typeof DesignPatentExportDestinationRequestSchema>,
+    ): Promise<AppResult<string | null>>;
     designPatent(
       request: DesignPatentExportRequest,
     ): Promise<AppResult<DesignPatentExportReport | null>>;

@@ -169,7 +169,10 @@ export function migrateCanonicalPatent(input: unknown): AppResult<CanonicalPaten
       ? { ok: true, value: normalizeLegacyReferenceMarkColors(parsed.data) }
       : invalidVersion("专利结构无效或包含不支持的内容。");
   }
-  if (formatVersion === 9 || formatVersion === 10 || formatVersion === 11) {
+  if (
+    (input as { patentType?: unknown }).patentType !== "design" &&
+    (formatVersion === 9 || formatVersion === 10 || formatVersion === 11)
+  ) {
     const parsed = CanonicalPatentSchema.safeParse(
       stripLegendMarkedParagraphsFromRawPatent({
         ...(input as Record<string, unknown>),
@@ -179,6 +182,56 @@ export function migrateCanonicalPatent(input: unknown): AppResult<CanonicalPaten
     return parsed.success
       ? { ok: true, value: normalizeLegacyReferenceMarkColors(parsed.data) }
       : invalidVersion("专利结构无效或包含不支持的内容。");
+  }
+  if (formatVersion === 11) {
+    const record = input as Record<string, unknown>;
+    const designPatent = record.designPatent as Record<string, unknown> | null;
+    const views = Array.isArray(designPatent?.views)
+      ? designPatent.views.map((view) => ({
+          ...(view as Record<string, unknown>),
+          assignmentStatus: "confirmed",
+          assignmentEvidence: null,
+        }))
+      : [];
+    return migrateCanonicalPatent({
+      ...record,
+      formatVersion: CANONICAL_PATENT_FORMAT_VERSION,
+      designPatent: designPatent === null ? null : { ...designPatent, views },
+    });
+  }
+  if (formatVersion === 10) {
+    const record = input as Record<string, unknown>;
+    const designPatent = record.designPatent as Record<string, unknown> | null;
+    const views = Array.isArray(designPatent?.views)
+      ? designPatent.views.map((view) => {
+          const item = view as Record<string, unknown>;
+          return {
+            ...item,
+            subjectBounds: item.subjectBounds ?? null,
+            subjectBoundsSource: item.subjectBounds == null ? null : "automatic",
+            subjectBoundsConfirmed: false,
+          };
+        })
+      : [];
+    return migrateCanonicalPatent({
+      ...record,
+      formatVersion: 11,
+      designPatent: designPatent === null ? null : { ...designPatent, views },
+    });
+  }
+  if (formatVersion === 9) {
+    return migrateCanonicalPatent({
+      ...(input as Record<string, unknown>),
+      formatVersion: 10,
+    });
+  }
+  if (formatVersion === 8 && (input as { patentType?: unknown }).patentType === "design") {
+    const record = input as Record<string, unknown>;
+    return migrateCanonicalPatent({
+      ...record,
+      formatVersion: 9,
+      designPatent: record.designPatent ?? null,
+    });
   }
   if (formatVersion === 2) {
     return migrateCanonicalPatent({

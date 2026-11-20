@@ -37,7 +37,7 @@ export function validatePatentWithEngine(patent: CanonicalPatent): PatentIssue[]
 
 export function validatePatent(patent: CanonicalPatent): PatentIssue[] {
   if (patent.patentType === "design" && patent.designPatent) {
-    return inspectDesignPatent(patent.designPatent).map((issue) => ({
+    return inspectDesignPatent(patent.designPatent, patent.name).map((issue) => ({
       severity: issue.severity,
       code: issue.code,
       bookKind: "description",

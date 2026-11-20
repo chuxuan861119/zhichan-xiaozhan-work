@@ -56,6 +56,7 @@ import {
   DesignImageProcessAppResultSchema,
   DesignImageProcessRequestSchema,
   DesignPatentExportDestinationResultSchema,
+  DesignPatentExportDestinationRequestSchema,
   DesignPatentExportRequestSchema,
   DirectPrintRequestSchema,
   DiscardImportedAssetsRequestSchema,
@@ -1470,6 +1471,13 @@ const api: PatentApi = {
         IPC_CHANNELS.exportsAuxiliaryPdf,
         AuxiliaryDocumentExportRequestSchema,
         NullableExportReportResultSchema,
+        request,
+      ),
+    chooseDesignPatentDestination: (request) =>
+      invokeWithInput(
+        IPC_CHANNELS.exportsChooseDesignPatentDestination,
+        DesignPatentExportDestinationRequestSchema,
+        DesignPatentExportDestinationResultSchema,
         request,
       ),
     designPatent: (request) =>

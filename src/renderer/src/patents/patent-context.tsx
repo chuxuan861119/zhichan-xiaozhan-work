@@ -32,7 +32,12 @@ import { moveAuxiliaryDocument as reorderAuxiliaryDocuments } from "../../../sha
 import type { PatdocWorkspace } from "../../../shared/patent/continuation";
 import { descriptionInventionTitle } from "../../../shared/patent/description";
 import {
+  type DesignImageMode,
+  resetDesignImageMode,
+} from "../../../shared/patent/design-image-modes";
+import {
   type DesignPatent,
+  type DesignPatentPrimarySlot,
   isAssignedDesignView,
 } from "../../../shared/patent/design-patent";
 import { fitInsertedFigures } from "../../../shared/patent/figure-insertion-size";
@@ -91,7 +96,18 @@ import {
 } from "../design-patent/correction/klecks-project-save";
 import { KlecksRecoveryCheckpoints } from "../design-patent/correction/klecks-recovery-checkpoints";
 import { useKlecksRecoveryPrompt } from "../design-patent/correction/klecks-recovery-prompt";
+import {
+  assertNoResizeDraft,
+  stageSixViewResize,
+} from "../design-patent/correction/klecks-six-view-resize";
+import { boardSignature, DesignBoardHistory } from "../design-patent/design-board-history";
 import type { PreparedDesignExport } from "../design-patent/design-patent-workbench";
+import {
+  planSixViewResize,
+  type SixViewResizeRequest,
+} from "../design-patent/design-six-view-resize";
+import { saveAndAssignDesignView } from "../design-patent/import/design-assignment-save";
+import { SIX_VIEW_KINDS, type SixViewKind } from "../design-patent/six-view-model";
 import { confirmAppAction } from "../shared/app-dialog";
 import { showApplicationError } from "../shared/error-dialog";
 import { type OperationFeedback, OperationFeedbackOverlay } from "../shared/operation-feedback";
@@ -189,6 +205,12 @@ type PatentContextValue = {
     historyLabel: "导入附图" | "粘贴附图",
   ): void;
   updateDesignPatent(patentId: string, designPatent: DesignPatent, assets: AssetDescriptor[]): void;
+  switchDesignImageMode(patentId: string, mode: DesignImageMode): Promise<void>;
+  assignDesignPatentView(
+    patentId: string,
+    viewId: string,
+    kind: DesignPatentPrimarySlot | "unassigned",
+  ): Promise<void>;
   commitDesignEditorCheckpoint(
     patentId: string,
     sessionId: string,
@@ -214,6 +236,20 @@ type PatentContextValue = {
     viewIds?: string[],
   ): Promise<{ count: number; revision: number } | null>;
   saveDesignEditorEdits(patentId: string, viewIds?: string[]): Promise<number>;
+  designBoardHistory(patentId: string): {
+    canUndo: boolean;
+    canRedo: boolean;
+    busy: boolean;
+    undoResize: boolean;
+    redoResize: boolean;
+  };
+  stepDesignBoardHistory(patentId: string, redo: boolean): Promise<void>;
+  resizeDesignBoardViews(
+    patentId: string,
+    expectedRevision: number,
+    request: SixViewResizeRequest,
+  ): Promise<number>;
+  removeDesignBoardView(patentId: string, viewId: string): Promise<void>;
   prepareDesignEditorRecoveryDiscard(
     patentId: string,
     input: Parameters<typeof createKlecksCaseRecoveryDiscard>[3],
@@ -396,6 +432,15 @@ export function PatentProvider({
   const designFrames = useRef(new Map<string, DesignFrameOwner>());
   const referenceUndo = useRef(new ReferenceMarkUndoManager());
   const descriptionDrawingHistory = useRef(new DescriptionDrawingHistoryManager());
+  const boardHistories = useRef(new Map<string, DesignBoardHistory>()),
+    boardBusy = useRef(new Set<string>());
+  const switchingImageModes = useRef(new Set<string>());
+  const [boardEpoch, setBoardEpoch] = useState(0);
+  useEffect(() => {
+    const live = new Set(state.sessions.map((s) => s.sessionId));
+    for (const key of boardHistories.current.keys())
+      if (!live.has(key)) boardHistories.current.delete(key);
+  }, [state.sessions]);
   const leaveGuards = useRef(new Map<string, () => Promise<boolean>>());
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -1359,8 +1404,23 @@ export function PatentProvider({
         (candidate) => candidate.patentId === patentId,
       );
       if (session?.patent.patentType !== "design") return;
-      const queue = ensureQueue(session);
+      if (switchingImageModes.current.has(patentId))
+        throw new Error("图片操作正在提交，请稍后再修改。");
+      const queue = ensureQueue(session),
+        before = queue.snapshot().patent.designPatent;
+      if (
+        before &&
+        boardBusy.current.has(patentId) &&
+        boardSignature(before) !== boardSignature(designPatent)
+      )
+        throw new Error("视图板正在恢复操作，请稍后重试。");
+      let history = boardHistories.current.get(session.sessionId);
+      if (!history) {
+        history = new DesignBoardHistory();
+        boardHistories.current.set(session.sessionId, history);
+      }
       const queued = queue.enqueueDesignPatent(designPatent, assets);
+      if (before) history.record(before, designPatent);
       const owner = designFrames.current.get(patentId);
       if (owner?.sessionId === session.sessionId) {
         synchronizeDesignFrame(owner, { ...session, patent: queued.patent });
@@ -1627,6 +1687,17 @@ export function PatentProvider({
     [ensureQueue, saveDesignEditorFrame],
   );
 
+  const designBoardHistory = useCallback((patentId: string) => {
+    const s = stateRef.current.sessions.find((s) => s.patentId === patentId),
+      h = s ? boardHistories.current.get(s.sessionId) : undefined;
+    return {
+      canUndo: !!h?.canUndo,
+      canRedo: !!h?.canRedo,
+      busy: boardBusy.current.has(patentId),
+      undoResize: !!h?.resizeTargets(false),
+      redoResize: !!h?.resizeTargets(true),
+    };
+  }, []);
   const adoptDesignCaseSnapshot = useCallback(
     (session: PatentSession, snapshot: PatentSaveCoordinatorSnapshot, ids: readonly string[]) => {
       const owner = designFrames.current.get(session.patentId);
@@ -1638,6 +1709,263 @@ export function PatentProvider({
     },
     [],
   );
+  const resizeDesignBoardViews = useCallback(
+    async (patentId: string, expectedRevision: number, request: SixViewResizeRequest) => {
+      if (boardBusy.current.has(patentId)) throw new Error("图片操作正在进行，请稍后重试。");
+      const session = stateRef.current.sessions.find((item) => item.patentId === patentId);
+      if (!session) throw new Error("外观设计会话已关闭。");
+      boardBusy.current.add(patentId);
+      switchingImageModes.current.add(patentId);
+      setBoardEpoch((n) => n + 1);
+      const owner = designFrames.current.get(patentId);
+      const work = async () => {
+        const queue = ensureQueue(session);
+        await queue.flush();
+        const requireCurrent = () => {
+          if (
+            !stateRef.current.sessions.some((item) => item.sessionId === session.sessionId) ||
+            queue.snapshot().localRevision !== expectedRevision
+          )
+            throw new Error("案件内容已变化，请重新预览后重试。");
+        };
+        requireCurrent();
+        const base = queue.snapshot().patent,
+          design = base.designPatent;
+        if (!design || design.imageMode === "multi-image")
+          throw new Error("仅六视图模式可统一尺寸。");
+        const sources = design.views.filter((view) =>
+          SIX_VIEW_KINDS.includes(view.kind as SixViewKind),
+        );
+        const items = planSixViewResize(
+          sources.map((view) => {
+            const displayed = request.items.find(
+              (item) => item.viewId === view.viewId && item.kind === view.kind,
+            );
+            if (!displayed) throw new Error("视图分配已改变，请重新预览。");
+            return { kind: displayed.kind, viewId: view.viewId, ...displayed.before };
+          }),
+          request.axes,
+        ).filter((item) => item.change !== "same");
+        if (!items.length) return 0;
+        const ids = items.map((item) => item.viewId);
+        const requireNoDrafts = () => {
+          for (const view of sources)
+            if (ids.includes(view.viewId)) assertNoResizeDraft(view, owner?.frame);
+        };
+        requireNoDrafts();
+        const staged = await stageSixViewResize(
+          base,
+          items,
+          window.patentApi.assets,
+          session.sessionId,
+          requireCurrent,
+        );
+        requireCurrent();
+        requireNoDrafts();
+        const snapshot = await queue.commitDesignPatentAtomically(
+          expectedRevision,
+          staged.design,
+          staged.assets,
+        );
+        let history = boardHistories.current.get(session.sessionId);
+        if (!history) {
+          history = new DesignBoardHistory();
+          boardHistories.current.set(session.sessionId, history);
+        }
+        history.recordResize(design, staged.design, ids);
+        adoptDesignCaseSnapshot(session, snapshot, ids);
+        return ids.length;
+      };
+      try {
+        return await (owner ? runDesignFrameWrite(owner, work) : work());
+      } finally {
+        switchingImageModes.current.delete(patentId);
+        boardBusy.current.delete(patentId);
+        setBoardEpoch((n) => n + 1);
+      }
+    },
+    [adoptDesignCaseSnapshot, ensureQueue],
+  );
+  const stepDesignBoardHistory = useCallback(
+    async (patentId: string, redo: boolean) => {
+      if (boardBusy.current.has(patentId)) return;
+      const session = stateRef.current.sessions.find((s) => s.patentId === patentId);
+      if (!session) throw new Error("外观设计会话已关闭。");
+      const history = boardHistories.current.get(session.sessionId);
+      if (!history) return;
+      boardBusy.current.add(patentId);
+      setBoardEpoch((n) => n + 1);
+      const resizeIds = history.resizeTargets(redo);
+      if (resizeIds) switchingImageModes.current.add(patentId);
+      try {
+        if (resizeIds) {
+          const owner = designFrames.current.get(patentId);
+          const restore = async () => {
+            const queue = ensureQueue(session);
+            await queue.flush();
+            const current = queue.snapshot().patent;
+            if (!current.designPatent) throw new Error("外观设计会话已关闭。");
+            for (const view of current.designPatent.views)
+              if (resizeIds.includes(view.viewId)) assertNoResizeDraft(view, owner?.frame);
+            const step = history.prepareResizeStep(current.designPatent, redo);
+            if (!step) throw new Error("部分图片版本已变化，无法整批恢复；现有编辑已保留。");
+            const snapshot = await queue.commitDesignPatentAtomically(
+              current.revision,
+              step.design,
+              current.assets,
+            );
+            step.finish();
+            adoptDesignCaseSnapshot(session, snapshot, resizeIds);
+          };
+          await (owner ? runDesignFrameWrite(owner, restore) : restore());
+          return;
+        }
+        await saveDesignEditorEdits(patentId);
+        if (!stateRef.current.sessions.some((s) => s.sessionId === session.sessionId))
+          throw new Error("外观设计会话已改变。");
+        const queue = ensureQueue(session);
+        await queue.flush();
+        const current = queue.snapshot().patent.designPatent;
+        if (!current) return;
+        const next = redo ? history.redo(current) : history.undo(current);
+        if (!next) throw new Error("没有可恢复的视图板操作，或视图板已在其他位置改变。");
+        let queued: ReturnType<typeof queue.enqueueDesignPatent>;
+        try {
+          queued = queue.enqueueDesignPatent(next, queue.snapshot().patent.assets);
+        } catch (error) {
+          if (redo) history.undo(next);
+          else history.redo(next);
+          throw error;
+        }
+        const owner = designFrames.current.get(patentId);
+        if (owner?.sessionId === session.sessionId)
+          synchronizeDesignFrame(owner, { ...session, patent: queued.patent });
+      } finally {
+        if (resizeIds) switchingImageModes.current.delete(patentId);
+        boardBusy.current.delete(patentId);
+        setBoardEpoch((n) => n + 1);
+      }
+    },
+    [adoptDesignCaseSnapshot, ensureQueue, saveDesignEditorEdits],
+  );
+  const removeDesignBoardView = useCallback(
+    async (patentId: string, viewId: string) => {
+      if (boardBusy.current.has(patentId)) return;
+      await saveDesignEditorEdits(patentId, [viewId]);
+      const session = stateRef.current.sessions.find((s) => s.patentId === patentId);
+      if (!session) throw new Error("外观设计会话已关闭。");
+      const queue = ensureQueue(session);
+      await queue.flush();
+      const d = queue.snapshot().patent.designPatent;
+      if (!d) return;
+      updateDesignPatent(
+        patentId,
+        {
+          ...d,
+          views: d.views.filter((v) => v.viewId !== viewId),
+          representativeViewId: d.representativeViewId === viewId ? null : d.representativeViewId,
+          dimensionReferenceViewId:
+            d.dimensionReferenceViewId === viewId ? null : d.dimensionReferenceViewId,
+        },
+        queue.snapshot().patent.assets,
+      );
+    },
+    [ensureQueue, saveDesignEditorEdits, updateDesignPatent],
+  );
+  const switchDesignImageMode = useCallback(
+    async (patentId: string, mode: DesignImageMode) => {
+      if (boardBusy.current.has(patentId)) throw new Error("图片操作正在进行，请稍后重试。");
+      const session = stateRef.current.sessions.find((item) => item.patentId === patentId);
+      if (!session || session.patent.patentType !== "design")
+        throw new Error("外观设计会话已关闭。");
+      boardBusy.current.add(patentId);
+      switchingImageModes.current.add(patentId);
+      setBoardEpoch((n) => n + 1);
+      try {
+        // Save only case documents. Independent temporary files remain open and untouched.
+        await saveDesignEditorEdits(patentId);
+        const commit = async () => {
+          const queue = ensureQueue(session);
+          await queue.flush();
+          if (!stateRef.current.sessions.some((item) => item.sessionId === session.sessionId))
+            throw new Error("外观设计会话已改变。");
+          const current = queue.snapshot().patent,
+            design = current.designPatent;
+          if (!design || (design.imageMode ?? "six-view") === mode) return;
+          const next = resetDesignImageMode(design, mode);
+          // Do not optimistically clear the UI: a failed write must retain all current material.
+          const result = await window.patentApi.patents.updateDesignPatent?.({
+            patentId,
+            sessionId: session.sessionId,
+            expectedRevision: current.revision,
+            designPatent: next,
+            assets: current.assets,
+          });
+          if (!result || !result.ok)
+            throw new Error(
+              result && !result.ok ? result.error.message : "当前平台不支持保存外观设计。",
+            );
+          const snapshot = queue.adoptPersistedPatent(
+            {
+              ...current,
+              designPatent: next,
+              revision: result.value.revision,
+              modifiedAt: result.value.savedAt,
+            },
+            result.value.savedAt,
+          );
+          const action = { type: "SESSION_PERSISTED_PATENT_ADOPTED", snapshot } as const;
+          stateRef.current = patentReducer(stateRef.current, action);
+          dispatch(action);
+          boardHistories.current.get(session.sessionId)?.clear();
+          const owner = designFrames.current.get(patentId);
+          if (owner?.sessionId === session.sessionId)
+            synchronizeDesignFrame(owner, { ...session, patent: snapshot.patent });
+        };
+        const owner = designFrames.current.get(patentId);
+        if (owner) await runDesignFrameWrite(owner, commit);
+        else await commit();
+      } finally {
+        boardBusy.current.delete(patentId);
+        switchingImageModes.current.delete(patentId);
+        setBoardEpoch((n) => n + 1);
+      }
+    },
+    [ensureQueue, saveDesignEditorEdits],
+  );
+  const assignDesignPatentView = useCallback(
+    async (patentId: string, viewId: string, kind: DesignPatentPrimarySlot | "unassigned") => {
+      const session = stateRef.current.sessions.find(
+        (candidate) => candidate.patentId === patentId,
+      );
+      if (!session) throw new Error("外观设计会话已关闭。");
+      const queue = ensureQueue(session);
+      const current = () => {
+        if (
+          !stateRef.current.sessions.some(
+            (candidate) =>
+              candidate.patentId === patentId && candidate.sessionId === session.sessionId,
+          )
+        )
+          throw new Error("外观设计会话已改变。");
+        return queue.snapshot().patent.designPatent;
+      };
+      await saveAndAssignDesignView(viewId, kind, {
+        read: current,
+        save: async (ids) => {
+          await saveDesignEditorEdits(patentId, ids);
+          await queue.flush();
+        },
+        commit: async (design) => {
+          current();
+          updateDesignPatent(patentId, design, queue.snapshot().patent.assets);
+          await queue.flush();
+        },
+      });
+    },
+    [ensureQueue, saveDesignEditorEdits, updateDesignPatent],
+  );
+
   const applyDesignEditorImages = useCallback(
     (patentId: string, viewIds?: string[], expectedRevision?: number, signal?: AbortSignal) => {
       const owner = designFrames.current.get(patentId);
@@ -2677,6 +3005,7 @@ export function PatentProvider({
 
   const closePatent = useCallback(
     async (patentId: string, options: { allowDiscardOnSaveFailure?: boolean } = {}) => {
+      if (switchingImageModes.current.has(patentId)) return false;
       if (!stateRef.current.sessions.some((item) => item.patentId === patentId)) return true;
       const guard = leaveGuards.current.get(patentId);
       if (guard && !(await guard())) return false;
@@ -2774,6 +3103,7 @@ export function PatentProvider({
   const prepareDesignEditorsForClose = useCallback(async (): Promise<
     boolean | ApplicationClosePreparation
   > => {
+    if (switchingImageModes.current.size) return false;
     const plans: ApplicationClosePreparation[] = [];
     const cancel = async () => {
       const results = await Promise.allSettled(plans.map((plan) => plan.cancel()));
@@ -3103,12 +3433,18 @@ export function PatentProvider({
       updatePatentFigures,
       appendImportedPatentFigures,
       updateDesignPatent,
+      switchDesignImageMode,
+      designBoardHistory,
+      stepDesignBoardHistory,
+      resizeDesignBoardViews,
+      removeDesignBoardView,
       commitDesignEditorCheckpoint,
       saveDesignEditorProject,
       saveDesignEditorFrame,
       checkpointDesignEditor,
       applyDesignEditorImages,
       saveDesignEditorEdits,
+      assignDesignPatentView,
       prepareDesignEditorRecoveryDiscard,
       attachDesignEditorFrame,
       releaseDesignEditorFrame,
@@ -3164,12 +3500,19 @@ export function PatentProvider({
       updatePatentFigures,
       appendImportedPatentFigures,
       updateDesignPatent,
+      switchDesignImageMode,
+      designBoardHistory,
+      stepDesignBoardHistory,
+      resizeDesignBoardViews,
+      removeDesignBoardView,
+      boardEpoch,
       commitDesignEditorCheckpoint,
       saveDesignEditorProject,
       saveDesignEditorFrame,
       checkpointDesignEditor,
       applyDesignEditorImages,
       saveDesignEditorEdits,
+      assignDesignPatentView,
       prepareDesignEditorRecoveryDiscard,
       attachDesignEditorFrame,
       releaseDesignEditorFrame,

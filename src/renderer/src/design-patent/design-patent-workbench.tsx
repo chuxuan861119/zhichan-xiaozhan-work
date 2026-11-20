@@ -1,52 +1,82 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type MutableRefObject, type ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { AssetDescriptor } from "../../../shared/document/model";
+import {
+  type DesignImageMode,
+  renameDesignImage,
+  reorderDesignImages,
+  resetDesignImageMode,
+  swapDesignImages,
+} from "../../../shared/patent/design-image-modes";
 import {
   type DesignPatent,
   type DesignPatentImageOperation,
-  inspectDesignPatent,
+  type DesignPatentPrimarySlot,
+  isAssignedDesignView,
   MAX_DESIGN_IMAGE_SOURCE_EDGE_PX,
   MAX_DESIGN_IMAGE_SOURCE_PIXELS,
-  renderDesignPatentBriefLines,
 } from "../../../shared/patent/design-patent";
 import { resolveDesignViewImage } from "../../../shared/patent/design-view-image";
+import { setViewOmission } from "../../../shared/patent/design-view-omissions";
 import type { CanonicalPatent } from "../../../shared/patent/model";
 import type { PatentSession } from "../patents/patent-reducer";
 import { confirmAppAction } from "../shared/app-dialog";
-import { KlecksCorrectionWorkspace } from "./correction/klecks-correction-workspace";
+import { mergeDesignBriefEdit } from "./brief/design-brief-edit";
+import { DesignBriefForm } from "./brief/design-brief-form";
+import { CorrectionUnsavedDialog } from "./correction/correction-unsaved-dialog";
+import {
+  DesignImageCorrectionStep,
+  type DesignImageCorrectionStepHandle,
+} from "./correction/design-image-correction-step";
+import { TemporaryFrameDialog } from "./correction/klecks-temporary-dialogs";
+import type { SixViewResizeRequest } from "./design-six-view-resize";
+import { getDesignWorkflowStatuses } from "./design-workflow";
+import { DesignWorkspaceShell } from "./design-workspace-shell";
+import { DESIGN_ASSIGNMENT_LABELS, suggestDesignAssignments } from "./import/design-assignment";
+import { applyDesignViewAssignment } from "./import/design-assignment-save";
+import { type DesignImportedAsset, importDroppedDesignFiles } from "./import/design-file-drop";
+import { DesignImageModeDialog } from "./import/design-image-mode-dialog";
+import { DesignImagePreviewDialog } from "./import/design-image-preview-dialog";
+import { DesignImportStep } from "./import/design-import-step";
+import { DesignMultiImageGrid } from "./import/design-multi-image-grid";
+import { DesignExportReview } from "./review/design-export-review";
+import { SixViewPreviewProvider } from "./six-view-preview";
+import {
+  type DesignPixelSize,
+  resolveDesignViewPixelSize,
+  useProcessedDesignSizes,
+} from "./six-view-preview-context";
 
 export type PreparedDesignExport = { previewRevision: number; revision: number };
 
 type Props = {
+  briefZoomPercent?: number;
+  defaultExportFormat?: "docx" | "pdf" | undefined;
+  folderNavigation?: { step: "images" | "brief" | "review" } | undefined;
   session: PatentSession;
-  active?: boolean;
   onUpdate(designPatent: DesignPatent, assets: AssetDescriptor[]): void;
-  onPrepareExport?(): Promise<number | null>;
+  onAssignView?(viewId: string, kind: DesignPatentPrimarySlot | "unassigned"): Promise<void>;
+  onRemoveView?(viewId: string): Promise<void>;
+  onSwitchImageMode?(mode: DesignImageMode): Promise<void>;
+  boardHistory?: {
+    canUndo: boolean;
+    canRedo: boolean;
+    busy: boolean;
+    undoResize?: boolean;
+    redoResize?: boolean;
+    step(redo: boolean): Promise<void>;
+  };
+  onResizeSixViews?(request: SixViewResizeRequest): Promise<number>;
+  onPrepareExport?(
+    previewRevision: number,
+    signal: AbortSignal,
+  ): Promise<PreparedDesignExport | null>;
   onExportCommitted?(patent: CanonicalPatent, savedAt: string): boolean;
+  registerPatentLeaveGuard?(patentId: string, guard: () => Promise<boolean>): () => void;
+  renderCorrection?(options: { onAddImages(): void; initialViewId: string | undefined }): ReactNode;
 };
 
-const VIEW_SLOTS = ["perspective", "front", "rear", "left", "right", "top", "bottom"] as const;
 const ORTHOGRAPHIC_VIEW_SLOTS = ["front", "rear", "left", "right", "top", "bottom"] as const;
-const SUPPLEMENTAL_VIEW_SLOTS = ["reference", "enlarged", "section", "other"] as const;
-const VIEW_LABELS: Record<(typeof VIEW_SLOTS)[number], string> = {
-  perspective: "立体图",
-  front: "主视图",
-  rear: "后视图",
-  left: "左视图",
-  right: "右视图",
-  top: "俯视图",
-  bottom: "仰视图",
-};
-const EXPRESSION_LABELS = {
-  "line-drawing": "线稿",
-  photo: "实物照片",
-  "cad-render": "CAD 渲染图",
-} as const;
-const SUPPLEMENTAL_VIEW_LABELS = {
-  reference: "参考图",
-  enlarged: "局部放大图",
-  section: "剖视图",
-  other: "其他视图",
-} as const;
 
 function sameImageRecipe(
   left: readonly DesignPatentImageOperation[],
@@ -55,24 +85,144 @@ function sameImageRecipe(
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-export function DesignPatentWorkbench({
+const emptyDesignPreviews = { urls: {}, processedSizes: {} };
+function useDesignPreviews(session: PatentSession) {
+  const sessionId = session.sessionId;
+  const sourceKey = JSON.stringify(
+    (session.patent.designPatent?.views ?? []).map((view) => ({
+      viewId: view.viewId,
+      ...resolveDesignViewImage(view),
+    })),
+  );
+  const [loaded, setLoaded] = useState<{
+    sessionId: string;
+    sourceKey: string;
+    urls: Record<string, string>;
+    processedSizes: Record<string, DesignPixelSize>;
+  } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const createdUrls: string[] = [];
+    const sources = JSON.parse(sourceKey) as Array<{
+      viewId: string;
+      assetId: string;
+      operations: DesignPatentImageOperation[];
+    }>;
+    const load = async () => {
+      const urls: Record<string, string> = {},
+        processedSizes: Record<string, DesignPixelSize> = {};
+      await Promise.all(
+        sources.map(async ({ viewId, assetId, operations }) => {
+          try {
+            const api = window.patentApi.assets;
+            let bytes: Uint8Array;
+            if (operations.length && typeof api.processDesignImage === "function") {
+              const result = await api.processDesignImage({ sessionId, assetId, operations });
+              if (!result.ok) return;
+              bytes = result.value.bytes;
+              processedSizes[viewId] = {
+                widthPx: result.value.widthPx,
+                heightPx: result.value.heightPx,
+              };
+            } else {
+              const result = await api.getPreview(sessionId, assetId);
+              if (!result.ok) return;
+              bytes = result.value;
+            }
+            const url = URL.createObjectURL(new Blob([Uint8Array.from(bytes)]));
+            if (cancelled) URL.revokeObjectURL(url);
+            else {
+              createdUrls.push(url);
+              urls[viewId] = url;
+            }
+          } catch {
+            // One unavailable asset must not prevent every other preview from loading.
+          }
+        }),
+      );
+      if (!cancelled) setLoaded({ sessionId, sourceKey, urls, processedSizes });
+    };
+    void load();
+    return () => {
+      cancelled = true;
+      for (const url of createdUrls) URL.revokeObjectURL(url);
+    };
+  }, [sessionId, sourceKey]);
+  // Do not pair new size metadata with the previous, revoked image version.
+  return loaded?.sessionId === sessionId && loaded.sourceKey === sourceKey
+    ? loaded
+    : emptyDesignPreviews;
+}
+
+function DesignPatentWorkbenchContent({
   session,
-  active = true,
+  briefZoomPercent = 100,
+  defaultExportFormat = "docx",
   onUpdate,
   onPrepareExport,
   onExportCommitted,
-}: Props) {
-  const [tab, setTab] = useState<"images" | "retouch" | "brief">("images");
-  const [retouchOpened, setRetouchOpened] = useState(false);
-  const [showChecks, setShowChecks] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"docx" | "pdf">("docx");
-  const [confirmWarnings, setConfirmWarnings] = useState(false);
+  onAssignView,
+  onRemoveView,
+  boardHistory,
+  onSwitchImageMode,
+  onResizeSixViews,
+  activeTab,
+  onNavigate,
+  exportLockRef,
+  previewUrls,
+}: Props & {
+  activeTab: "images" | "brief" | "checks";
+  onNavigate(tab: "brief" | "checks" | "correction"): void;
+  exportLockRef: MutableRefObject<boolean>;
+  previewUrls: Record<string, string>;
+}) {
+  const processedSizes = useProcessedDesignSizes();
+  const [formatOverride, setExportFormat] = useState<"docx" | "pdf">();
+  const exportFormat = formatOverride ?? defaultExportFormat;
   const [zip, setZip] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<{
+    outputDirectory: string;
+    documentPath: string;
+    imagePaths: string[];
+    zipPath: string | null;
+  } | null>(null);
   const [imageMessage, setImageMessage] = useState<string | null>(null);
+  const [imageImportErrors, setImageImportErrors] = useState<
+    Array<{ originalName: string; message: string }>
+  >([]);
+  const [importingImages, setImportingImages] = useState(false);
+  const [importFrame, setImportFrame] = useState<{
+    name: string;
+    count: number;
+    resolve(page: number | null): void;
+  } | null>(null);
+  const frameResolver = useRef<((page: number | null) => void) | null>(null);
+  const [pendingImageMode, setPendingImageMode] = useState<DesignImageMode | null>(null);
+  const [switchingMode, setSwitchingMode] = useState(false);
+  const switchingRef = useRef(false);
+  const [imagePreviewId, setImagePreviewId] = useState<string | null>(null);
+  const importRequestRef = useRef(0);
+  const importingImagesRef = useRef(false);
+  const droppedFilesQueue = useRef<Array<readonly File[]>>([]);
+  const activeSessionId = useRef<string | null>(session.sessionId);
+  useEffect(() => {
+    activeSessionId.current = session.sessionId;
+    return () => {
+      activeSessionId.current = null;
+      importRequestRef.current++;
+      frameResolver.current?.(null);
+      frameResolver.current = null;
+      droppedFilesQueue.current = [];
+      importingImagesRef.current = false;
+    };
+  }, [session.sessionId]);
+  const assigningRef = useRef(false);
   const [exporting, setExporting] = useState(false);
-  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
-  const exportingRef = useRef(false);
+  const exportingRef = exportLockRef;
+  const exportAbort = useRef<AbortController | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Abort an in-flight export when its case session is replaced or unmounted.
+  useEffect(() => () => exportAbort.current?.abort(), [session.sessionId]);
   const design = session.patent.designPatent;
   const designRef = useRef(design);
   const assetsRef = useRef(session.patent.assets);
@@ -80,41 +230,42 @@ export function DesignPatentWorkbench({
     designRef.current = design;
     assetsRef.current = session.patent.assets;
   }, [design, session.patent.assets]);
-  const issues = useMemo(() => (design ? inspectDesignPatent(design) : []), [design]);
-  const views = design?.views;
-  useEffect(() => {
-    let cancelled = false;
-    const createdUrls: string[] = [];
-    const load = async () => {
-      const entries = await Promise.all(
-        (views ?? []).map(async (view) => {
-          const bytes =
-            (view.editor?.applied || view.operations.length === 0)
-              ? await window.patentApi.assets
-                  .getPreview(session.sessionId, resolveDesignViewImage(view).assetId)
-                  .then((result) => (result.ok ? result.value : null))
-              : await window.patentApi.assets
-                  .processDesignImage({
-                    sessionId: session.sessionId,
-                    assetId: view.assetId,
-                    operations: view.operations,
-                  })
-                  .then((result) => (result.ok ? result.value.bytes : null));
-          if (!bytes) return [view.viewId, ""] as const;
-          const url = URL.createObjectURL(new Blob([Uint8Array.from(bytes)]));
-          createdUrls.push(url);
-          return [view.viewId, url] as const;
-        }),
-      );
-      if (!cancelled) setPreviewUrls(Object.fromEntries(entries));
-    };
-    void load();
-    return () => {
-      cancelled = true;
-      for (const url of createdUrls) URL.revokeObjectURL(url);
-    };
-  }, [session.sessionId, views]);
   if (!design) return <main className="editor-workspace">外观设计数据不可用。</main>;
+  const assignedViews = design.views.filter(isAssignedDesignView);
+  const multiMode = design.imageMode === "multi-image";
+  const switchMode = async (mode: DesignImageMode) => {
+    if (switchingRef.current || importingImagesRef.current || exportingRef.current) return;
+    switchingRef.current = true;
+    setSwitchingMode(true);
+    setImageMessage(null);
+    try {
+      if (onSwitchImageMode) await onSwitchImageMode(mode);
+      else {
+        const current = designRef.current;
+        if (current) onUpdate(resetDesignImageMode(current, mode), assetsRef.current);
+      }
+      setPendingImageMode(null);
+      setImagePreviewId(null);
+    } catch (error) {
+      setImageMessage(error instanceof Error ? error.message : "保存或切换失败，当前图片已保留。");
+    } finally {
+      switchingRef.current = false;
+      setSwitchingMode(false);
+    }
+  };
+  const requestMode = (mode: DesignImageMode) => {
+    const current = designRef.current;
+    if (
+      !current ||
+      (current.imageMode ?? "six-view") === mode ||
+      importingImagesRef.current ||
+      switchingRef.current ||
+      boardHistory?.busy
+    )
+      return;
+    if (current.views.length || current.brief.omissions.length) setPendingImageMode(mode);
+    else void switchMode(mode);
+  };
   const commitDesign = (next: DesignPatent, assets = assetsRef.current) => {
     if (exportingRef.current) return;
     designRef.current = next;
@@ -132,25 +283,11 @@ export function DesignPatentWorkbench({
   ) => {
     const current = designRef.current;
     if (!current) return;
-    const remaining = current.brief.omissions.filter((item) => item.viewKind !== viewKind);
-    updateBrief({
-      omissions:
-        reason === null
-          ? remaining
-          : [...remaining, { viewKind, reason, otherReason: reason === "other" ? "" : null }],
-    });
-  };
-  const updateOmissionOtherReason = (
-    viewKind: (typeof ORTHOGRAPHIC_VIEW_SLOTS)[number],
-    otherReason: string,
-  ) => {
-    const current = designRef.current;
-    if (!current) return;
-    updateBrief({
-      omissions: current.brief.omissions.map((item) =>
-        item.viewKind === viewKind ? { ...item, otherReason } : item,
-      ),
-    });
+    if (reason !== null && current.views.some((view) => view.kind === viewKind)) {
+      setImageMessage("该视图已有真实图片，请先将图片移回暂存区再设置省略。");
+      return;
+    }
+    updateBrief({ omissions: setViewOmission(current, viewKind, reason).brief.omissions });
   };
   const updateDesign = (patch: Partial<DesignPatent>) => {
     const current = designRef.current;
@@ -160,165 +297,115 @@ export function DesignPatentWorkbench({
   const removeView = async (viewId: string) => {
     const current = designRef.current;
     if (!current) return;
+    const target = current.views.find((view) => view.viewId === viewId);
+    if (!target) return;
     const isRepresentative = current.representativeViewId === viewId;
     const isDimensionReference = current.dimensionReferenceViewId === viewId;
+    const roleWarning =
+      isRepresentative || isDimensionReference
+        ? `，且当前用作${
+            isRepresentative && isDimensionReference
+              ? "代表图和尺寸比例参考"
+              : isRepresentative
+                ? "代表图"
+                : "尺寸比例参考"
+          }，删除后相应选择将变为缺项`
+        : "";
+    const confirmed = await confirmAppAction(
+      `删除“${target.label}”${roleWarning}？此操作会将图片移出本申请。`,
+    );
+    if (!confirmed) return;
+    const latest = designRef.current;
     if (
-      (isRepresentative || isDimensionReference) &&
-      !(await confirmAppAction(
-        `该图片当前用作${
-          isRepresentative && isDimensionReference
-            ? "代表图和尺寸比例参考"
-            : isRepresentative
-              ? "代表图"
-              : "尺寸比例参考"
-        }。移除后相应选择将变为缺项，确认移除吗？`,
-      ))
-    ) {
+      activeSessionId.current !== session.sessionId ||
+      !latest?.views.some((view) => view.viewId === viewId && view.assetId === target.assetId) ||
+      (latest.representativeViewId === viewId) !== isRepresentative ||
+      (latest.dimensionReferenceViewId === viewId) !== isDimensionReference
+    )
+      return;
+    if (onRemoveView) {
+      void onRemoveView(viewId).catch((e) =>
+        setImageMessage(e instanceof Error ? e.message : "图片保存或删除失败，请重试。"),
+      );
       return;
     }
     updateDesign({
-      views: current.views.filter((view) => view.viewId !== viewId),
+      views: latest.views.filter((view) => view.viewId !== viewId),
       representativeViewId:
-        current.representativeViewId === viewId ? null : current.representativeViewId,
+        latest.representativeViewId === viewId ? null : latest.representativeViewId,
       dimensionReferenceViewId:
-        current.dimensionReferenceViewId === viewId ? null : current.dimensionReferenceViewId,
+        latest.dimensionReferenceViewId === viewId ? null : latest.dimensionReferenceViewId,
     });
   };
-  const moveView = (viewId: string, kind: (typeof VIEW_SLOTS)[number]) => {
+  const assignView = async (viewId: string, kind: DesignPatentPrimarySlot | "unassigned") => {
     const current = designRef.current;
-    if (!current) return;
-    updateDesign({
-      views: current.views.map((view) => {
-        const movedView = current.views.find((candidate) => candidate.viewId === viewId);
-        if (!movedView) return view;
-        if (view.viewId === viewId) return { ...view, kind, label: VIEW_LABELS[kind] };
-        if (view.kind === kind && (VIEW_SLOTS as readonly string[]).includes(movedView.kind)) {
-          const previousKind = movedView.kind as (typeof VIEW_SLOTS)[number];
-          return { ...view, kind: previousKind, label: VIEW_LABELS[previousKind] };
-        }
-        return view;
-      }),
-    });
+    if (!current || assigningRef.current || exportingRef.current) return;
+    if (!onAssignView) {
+      commitDesign(applyDesignViewAssignment(current, viewId, kind));
+      return;
+    }
+    assigningRef.current = true;
+    setImageMessage("正在保存图片编辑并更新分配…");
+    try {
+      await onAssignView(viewId, kind);
+      setImageMessage(null);
+    } catch (error) {
+      setImageMessage(
+        error instanceof Error ? error.message : "图片保存或分配更新失败，请检查后重试。",
+      );
+    } finally {
+      assigningRef.current = false;
+    }
   };
-  const updateSupplementalViewKind = (
-    viewId: string,
-    kind: (typeof SUPPLEMENTAL_VIEW_SLOTS)[number],
-  ) => {
+  const confirmAutoSuggestions = () => {
     const current = designRef.current;
     if (!current) return;
-    updateDesign({
+    commitDesign({
+      ...current,
       views: current.views.map((view) =>
-        view.viewId === viewId ? { ...view, kind, label: SUPPLEMENTAL_VIEW_LABELS[kind] } : view,
-      ),
-    });
-  };
-  const updateViewExpression = (
-    viewId: string,
-    expression: DesignPatent["views"][number]["expression"],
-  ) => {
-    const current = designRef.current;
-    if (!current) return;
-    updateDesign({
-      views: current.views.map((view) => (view.viewId === viewId ? { ...view, expression } : view)),
-    });
-  };
-  const updateViewLabel = (viewId: string, label: string) => {
-    const normalized = label.trim();
-    if (!normalized) return;
-    const current = designRef.current;
-    if (!current) return;
-    updateDesign({
-      views: current.views.map((view) =>
-        view.viewId === viewId ? { ...view, label: normalized } : view,
-      ),
-    });
-  };
-  const applyViewOperation = async (viewId: string, operation: DesignPatentImageOperation) => {
-    const view = designRef.current?.views.find((candidate) => candidate.viewId === viewId);
-    if (!view) return;
-    const baseOperations = view.operations;
-    const operations = [...baseOperations, operation];
-    const processed = await window.patentApi.assets.processDesignImage({
-      sessionId: session.sessionId,
-      assetId: view.assetId,
-      operations,
-    });
-    if (!processed.ok) {
-      setImageMessage(processed.error.message);
-      return;
-    }
-    const current = designRef.current;
-    const currentView = current?.views.find((candidate) => candidate.viewId === viewId);
-    if (
-      !current ||
-      !currentView ||
-      currentView.assetId !== view.assetId ||
-      !sameImageRecipe(currentView.operations, baseOperations)
-    ) {
-      setImageMessage("图片在处理期间已发生变化，本次结果未应用，请重试。");
-      return;
-    }
-    setImageMessage(null);
-    updateDesign({
-      views: current.views.map((candidate) =>
-        candidate.viewId === viewId
-          ? { ...candidate, operations, subjectBounds: processed.value.subjectBounds }
-          : candidate,
-      ),
-    });
-  };
-  const undoViewOperation = async (viewId: string) => {
-    const view = designRef.current?.views.find((candidate) => candidate.viewId === viewId);
-    if (!view || view.operations.length === 0) return;
-    const baseOperations = view.operations;
-    const operations = view.operations.slice(0, -1);
-    const processed = await window.patentApi.assets.processDesignImage({
-      sessionId: session.sessionId,
-      assetId: view.assetId,
-      operations,
-    });
-    if (!processed.ok) {
-      setImageMessage(processed.error.message);
-      return;
-    }
-    const current = designRef.current;
-    const currentView = current?.views.find((candidate) => candidate.viewId === viewId);
-    if (
-      !current ||
-      !currentView ||
-      currentView.assetId !== view.assetId ||
-      !sameImageRecipe(currentView.operations, baseOperations)
-    ) {
-      setImageMessage("图片在处理期间已发生变化，本次结果未应用，请重试。");
-      return;
-    }
-    setImageMessage(null);
-    updateDesign({
-      views: current.views.map((candidate) =>
-        candidate.viewId === viewId
-          ? { ...candidate, operations, subjectBounds: processed.value.subjectBounds }
-          : candidate,
+        view.assignmentStatus === "pending-auto"
+          ? { ...view, assignmentStatus: "confirmed" as const, assignmentEvidence: null }
+          : view,
       ),
     });
   };
   const exportBundle = async () => {
-    if (issues.length > 0 && !confirmWarnings) return;
+    if (exportingRef.current) return;
     exportingRef.current = true;
     setExporting(true);
     setExportError(null);
+    setExportSuccess(null);
+    const operation = new AbortController();
+    exportAbort.current = operation;
     try {
-      const expectedRevision = onPrepareExport
-        ? await onPrepareExport()
-        : session.persistedRevision;
-      if (expectedRevision === null) return;
-      const result = await window.patentApi.exports.designPatent({
+      const api = window.patentApi.exports;
+      if (!api.chooseDesignPatentDestination)
+        throw new Error("当前环境不支持选择外观设计导出位置。");
+      const destination = await api.chooseDesignPatentDestination({
         sessionId: session.sessionId,
         patentId: session.patentId,
-        expectedRevision,
+      });
+      if (!destination.ok) throw new Error(destination.error.message);
+      if (!destination.value || operation.signal.aborted) return;
+      const prepared = onPrepareExport
+        ? await onPrepareExport(session.localRevision, operation.signal)
+        : { previewRevision: session.persistedRevision, revision: session.persistedRevision };
+      if (!prepared || operation.signal.aborted) return;
+      if (prepared.previewRevision !== session.localRevision) {
+        setExportError("材料已更新，请确认当前预览后重试。");
+        return;
+      }
+      const result = await api.designPatent({
+        sessionId: session.sessionId,
+        patentId: session.patentId,
+        expectedRevision: prepared.revision,
+        destinationToken: destination.value,
         format: exportFormat,
-        confirmWarnings,
+        // Existing export protocol: warnings do not block the export step.
+        confirmWarnings: true,
         zip,
       });
+      if (operation.signal.aborted) return;
       if (!result.ok) {
         setExportError(result.error.message);
         return;
@@ -329,697 +416,753 @@ export function DesignPatentWorkbench({
           return;
         }
         designRef.current = result.value.patent.designPatent;
-        setShowChecks(false);
+        setExportSuccess({
+          outputDirectory: result.value.outputDirectory,
+          documentPath: result.value.documentPath,
+          imagePaths: result.value.imagePaths,
+          zipPath: result.value.zipPath,
+        });
       }
+    } catch (error) {
+      if (!operation.signal.aborted)
+        setExportError(error instanceof Error ? error.message : "导出失败，请重试。");
     } finally {
+      exportAbort.current = null;
       exportingRef.current = false;
       setExporting(false);
     }
   };
-  const importImages = async () => {
-    const result = await window.patentApi.assets.chooseAndImportMany(session.sessionId);
-    if (!result.ok) {
-      setImageMessage(result.error.message);
+  const importImages = async (files?: readonly File[]) => {
+    if (switchingRef.current || pendingImageMode || exportingRef.current) return;
+    if (importingImagesRef.current) {
+      if (files?.length) droppedFilesQueue.current.push(files);
       return;
     }
-    if (result.value.length === 0) return;
-    const supportedFormat = result.value.filter(
-      (asset) =>
-        asset.descriptor.mediaType === "image/jpeg" || asset.descriptor.mediaType === "image/png",
-    );
-    const oversized = supportedFormat.filter((asset) => {
-      const width = asset.descriptor.widthPx ?? 0;
-      const height = asset.descriptor.heightPx ?? 0;
-      return (
-        width <= 0 ||
-        height <= 0 ||
-        width > MAX_DESIGN_IMAGE_SOURCE_EDGE_PX ||
-        height > MAX_DESIGN_IMAGE_SOURCE_EDGE_PX ||
-        width * height > MAX_DESIGN_IMAGE_SOURCE_PIXELS
+    importingImagesRef.current = true;
+    const requestId = ++importRequestRef.current;
+    setImportingImages(true);
+    setImageMessage(null);
+    setImageImportErrors([]);
+    try {
+      let chosenFiles = files;
+      if (!chosenFiles && window.patentApi.assets.chooseDesignFiles) {
+        const selection = await window.patentApi.assets.chooseDesignFiles(session.sessionId);
+        if (!selection.ok) throw selection.error;
+        if (requestId !== importRequestRef.current) return;
+        chosenFiles = selection.value.map(
+          (file) => new File([Uint8Array.from(file.bytes)], file.name),
+        );
+      }
+      const dropped = chosenFiles
+        ? await importDroppedDesignFiles(chosenFiles, session.sessionId, window.patentApi.assets, {
+            decoder: window.patentApi.imageEditor,
+            selectPage: (name, count) =>
+              new Promise((resolve) => {
+                frameResolver.current = resolve;
+                setImportFrame({ name, count, resolve });
+              }),
+          })
+        : null;
+      const result = dropped
+        ? { ok: true as const, value: dropped.assets }
+        : await window.patentApi.assets.chooseAndImportMany(session.sessionId);
+      if (requestId !== importRequestRef.current) return;
+      if (!result.ok) {
+        setImageMessage(result.error.message);
+        setImageImportErrors([]);
+        return;
+      }
+      const importErrors: Array<{ originalName: string; message: string }> = dropped?.errors ?? [];
+      if (result.value.length === 0) {
+        setImageImportErrors(importErrors);
+        if (importErrors.length)
+          setImageMessage(`${importErrors.length} 个文件未导入；请查看逐项原因。`);
+        return;
+      }
+      const supportedFormat = result.value.filter(
+        (asset) =>
+          asset.descriptor.mediaType === "image/jpeg" || asset.descriptor.mediaType === "image/png",
       );
-    });
-    const oversizedIds = new Set(oversized.map((asset) => asset.descriptor.assetId));
-    const accepted = supportedFormat.filter((asset) => !oversizedIds.has(asset.descriptor.assetId));
-    const rejectedFormatCount = result.value.length - supportedFormat.length;
-    if (accepted.length === 0) {
-      setImageMessage(
-        [
-          oversized.length > 0
-            ? `已忽略 ${oversized.length} 张超过 10000 像素边长或 4000 万总像素的图片。`
-            : "",
-          rejectedFormatCount > 0
-            ? `已忽略 ${rejectedFormatCount} 个非 JPG、JPEG 或 PNG 文件。`
-            : "",
-        ]
-          .filter(Boolean)
-          .join(" "),
+      const oversized = supportedFormat.filter((asset) => {
+        const width = asset.descriptor.widthPx ?? 0;
+        const height = asset.descriptor.heightPx ?? 0;
+        return (
+          width <= 0 ||
+          height <= 0 ||
+          width > MAX_DESIGN_IMAGE_SOURCE_EDGE_PX ||
+          height > MAX_DESIGN_IMAGE_SOURCE_EDGE_PX ||
+          width * height > MAX_DESIGN_IMAGE_SOURCE_PIXELS
+        );
+      });
+      const oversizedIds = new Set(oversized.map((asset) => asset.descriptor.assetId));
+      const accepted = supportedFormat
+        .filter((asset) => !oversizedIds.has(asset.descriptor.assetId))
+        .map((asset) => asset as DesignImportedAsset);
+      const rejectedFormatCount = result.value.length - supportedFormat.length;
+      for (const asset of oversized)
+        importErrors.push({
+          originalName: asset.descriptor.originalName,
+          message: "图片尺寸超过 10000 像素边长或 4000 万总像素限制。",
+        });
+      for (const asset of result.value.filter((asset) => !supportedFormat.includes(asset)))
+        importErrors.push({
+          originalName: asset.descriptor.originalName,
+          message: "仅支持 JPG、JPEG 或 PNG 图片。",
+        });
+      if (accepted.length === 0) {
+        setImageMessage(
+          [
+            oversized.length > 0
+              ? `已忽略 ${oversized.length} 张超过 10000 像素边长或 4000 万总像素的图片。`
+              : "",
+            rejectedFormatCount > 0
+              ? `已忽略 ${rejectedFormatCount} 个非 JPG、JPEG 或 PNG 文件。`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        );
+        setImageImportErrors(importErrors);
+        return;
+      }
+      const analyses = [];
+      for (const asset of accepted) {
+        const analysis = await window.patentApi.assets.processDesignImage({
+          sessionId: session.sessionId,
+          assetId: asset.descriptor.assetId,
+          operations: [],
+        });
+        if (requestId !== importRequestRef.current) return;
+        if (!analysis.ok) {
+          importErrors.push({
+            originalName: asset.descriptor.originalName,
+            message: analysis.error.message,
+          });
+          continue;
+        }
+        analyses.push({
+          asset,
+          subjectBounds: analysis.value.subjectBounds,
+          viewId: crypto.randomUUID(),
+        });
+      }
+      if (analyses.length === 0) {
+        setImageMessage(
+          [
+            importErrors.length > 0 ? `${importErrors.length} 张图片未导入；请查看逐项原因。` : "",
+            oversized.length > 0
+              ? `已忽略 ${oversized.length} 张超过 10000 像素边长或 4000 万总像素的图片。`
+              : "",
+            rejectedFormatCount > 0
+              ? `已忽略 ${rejectedFormatCount} 个非 JPG、JPEG 或 PNG 文件。`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        );
+        setImageImportErrors(importErrors);
+        return;
+      }
+      const current = designRef.current;
+      if (!current) return;
+      const occupied = new Set(
+        current.views
+          .filter((view) => view.kind in DESIGN_ASSIGNMENT_LABELS)
+          .map((view) => view.kind as DesignPatentPrimarySlot),
       );
-      return;
-    }
-    const analyses = [];
-    let analysisFailed = false;
-    for (const asset of accepted) {
-      const analysis = await window.patentApi.assets.processDesignImage({
-        sessionId: session.sessionId,
-        assetId: asset.descriptor.assetId,
-        operations: [],
-      });
-      if (!analysis.ok) analysisFailed = true;
-      analyses.push({ asset, subjectBounds: analysis.ok ? analysis.value.subjectBounds : null });
-    }
-    const current = designRef.current;
-    if (!current) return;
-    const availableKinds = VIEW_SLOTS.filter(
-      (kind) => !current.views.some((view) => view.kind === kind),
-    );
-    const nextViews = [...current.views];
-    for (const [index, { asset, subjectBounds }] of analyses.entries()) {
-      const kind = availableKinds[index] ?? "other";
-      nextViews.push({
-        viewId: crypto.randomUUID(),
-        kind,
-        label: VIEW_LABELS[kind as keyof typeof VIEW_LABELS] ?? "补充视图",
-        assetId: asset.descriptor.assetId,
-        expression: current.primaryExpression ?? "line-drawing",
-        subjectBounds,
-        operations: [],
-        note: null,
-      });
-    }
-    const assets = [
-      ...assetsRef.current,
-      ...accepted
-        .map((asset) => asset.descriptor)
-        .filter(
+      const suggestions = new Map(
+        suggestDesignAssignments(
+          analyses.map(({ asset, viewId }) => ({
+            id: viewId,
+            originalName: asset.importedName ?? asset.descriptor.originalName,
+          })),
+          occupied,
+        ).map((suggestion) => [suggestion.id, suggestion]),
+      );
+      const nextViews = [...current.views];
+      for (const { asset, subjectBounds, viewId } of analyses) {
+        const suggestion = suggestions.get(viewId);
+        const multi = current.imageMode === "multi-image";
+        const kind = multi
+          ? "multi-image"
+          : suggestion?.status === "suggested"
+            ? suggestion.kind
+            : "unassigned";
+        nextViews.push({
+          viewId,
+          kind,
+          label:
+            kind === "multi-image"
+              ? (asset.importedName ?? asset.descriptor.originalName)
+                  .replace(/\.[^.]+$/u, "")
+                  .trim()
+                  .slice(0, 100) || `图片${nextViews.length + 1}`
+              : kind === "unassigned"
+                ? asset.descriptor.originalName
+                : DESIGN_ASSIGNMENT_LABELS[kind],
+          assetId: asset.descriptor.assetId,
+          expression: current.primaryExpression ?? "line-drawing",
+          subjectBounds,
+          subjectBoundsSource: subjectBounds === null ? null : "automatic",
+          subjectBoundsConfirmed: false,
+          assignmentStatus:
+            !multi && suggestion?.status === "suggested" ? "pending-auto" : "confirmed",
+          assignmentEvidence:
+            !multi && suggestion?.status === "suggested" ? suggestion.evidence : null,
+          operations: [],
+          ...(asset.editor ? { editor: asset.editor } : {}),
+          note: null,
+        });
+      }
+      const assets = [
+        ...assetsRef.current,
+        ...[
+          ...new Map(
+            analyses.flatMap(({ asset }) =>
+              [asset.descriptor, ...(asset.projectAsset ? [asset.projectAsset] : [])].map(
+                (descriptor) => [descriptor.assetId, descriptor] as const,
+              ),
+            ),
+          ).values(),
+        ].filter(
           (descriptor) =>
             !assetsRef.current.some((existing) => existing.assetId === descriptor.assetId),
         ),
-    ];
-    const dimensionReferenceViewId =
-      current.dimensionReferenceViewId ??
-      nextViews.find((view) => view.kind === "front")?.viewId ??
-      nextViews.find((view) => (ORTHOGRAPHIC_VIEW_SLOTS as readonly string[]).includes(view.kind))
-        ?.viewId ??
-      null;
-    commitDesign(
-      {
-        ...current,
-        primaryExpression: current.primaryExpression ?? "line-drawing",
-        dimensionReferenceViewId,
-        views: nextViews,
-      },
-      assets,
-    );
-    const messages = [
-      analysisFailed ? "部分图片无法识别产品主体，仍已导入；请检查图片后再导出。" : "",
-      oversized.length > 0
-        ? `已忽略 ${oversized.length} 张超过 10000 像素边长或 4000 万总像素的图片。`
-        : "",
-      rejectedFormatCount > 0 ? `已忽略 ${rejectedFormatCount} 个非 JPG、JPEG 或 PNG 文件。` : "",
-    ].filter(Boolean);
-    setImageMessage(messages.length > 0 ? messages.join(" ") : null);
+      ];
+      const dimensionReferenceViewId =
+        current.imageMode === "multi-image"
+          ? null
+          : (current.dimensionReferenceViewId ??
+            nextViews.find((view) => view.kind === "front")?.viewId ??
+            nextViews.find((view) =>
+              (ORTHOGRAPHIC_VIEW_SLOTS as readonly string[]).includes(view.kind),
+            )?.viewId ??
+            null);
+      commitDesign(
+        {
+          ...current,
+          primaryExpression: current.primaryExpression ?? "line-drawing",
+          dimensionReferenceViewId,
+          views: nextViews,
+          brief: {
+            ...current.brief,
+            omissions: current.brief.omissions.filter(
+              (item) => !nextViews.some((view) => view.kind === item.viewKind),
+            ),
+          },
+        },
+        assets,
+      );
+      const messages = [
+        importErrors.length > 0 ? `${importErrors.length} 张图片未导入；其余图片已正常导入。` : "",
+        oversized.length > 0
+          ? `已忽略 ${oversized.length} 张超过 10000 像素边长或 4000 万总像素的图片。`
+          : "",
+        rejectedFormatCount > 0 ? `已忽略 ${rejectedFormatCount} 个非 JPG、JPEG 或 PNG 文件。` : "",
+      ].filter(Boolean);
+      setImageMessage(messages.length > 0 ? messages.join(" ") : null);
+      setImageImportErrors(importErrors);
+    } catch {
+      if (requestId === importRequestRef.current)
+        setImageMessage("图片导入失败，请检查文件后重试。");
+    } finally {
+      if (requestId === importRequestRef.current) {
+        importingImagesRef.current = false;
+        setImportingImages(false);
+        const next = droppedFilesQueue.current.shift();
+        if (next) void importImages(next);
+      }
+    }
   };
-  const renderImageOperations = (view: DesignPatent["views"][number]) => (
-    <div className="design-patent-workbench__operations">
-      <button
-        type="button"
-        disabled={view.subjectBounds === null}
-        onClick={() => {
-          const bounds = view.subjectBounds;
-          if (!bounds) return;
-          void applyViewOperation(view.viewId, {
-            kind: "trim",
-            left: bounds.leftPx,
-            top: bounds.topPx,
-            width: bounds.widthPx,
-            height: bounds.heightPx,
-          });
-        }}
-      >
-        裁剪空白边
-      </button>
-      <button
-        type="button"
-        onClick={() => void applyViewOperation(view.viewId, { kind: "rotate", degrees: 90 })}
-      >
-        顺时针旋转 90°
-      </button>
-      <button
-        type="button"
-        title="用于轻度水平透视或倾斜，可重复应用并随时撤销"
-        onClick={() =>
-          void applyViewOperation(view.viewId, { kind: "affine", xSkew: -0.06, ySkew: 0 })
-        }
-      >
-        透视向左校正
-      </button>
-      <button
-        type="button"
-        title="用于轻度水平透视或倾斜，可重复应用并随时撤销"
-        onClick={() =>
-          void applyViewOperation(view.viewId, { kind: "affine", xSkew: 0.06, ySkew: 0 })
-        }
-      >
-        透视向右校正
-      </button>
-      <button
-        type="button"
-        onClick={() =>
-          void applyViewOperation(view.viewId, {
-            kind: "canvas",
-            width: 1600,
-            height: 1600,
-            fit: "contain",
-          })
-        }
-      >
-        统一画布
-      </button>
-      <button
-        type="button"
-        onClick={async () => {
-          if (
-            await confirmAppAction("单轴尺寸校准会拉伸产品比例，可能改变外观表达。确认仍要应用吗？")
-          ) {
-            void applyViewOperation(view.viewId, {
-              kind: "canvas",
-              width: 1600,
-              height: 1600,
-              fit: "fill",
-            });
+  const previewView = design.views.find((view) => view.viewId === imagePreviewId);
+  const imagePreviewUrl = previewView ? previewUrls[previewView.viewId] : undefined;
+  const previewSize = previewView
+    ? resolveDesignViewPixelSize(
+        previewView,
+        session.patent.assets.find((asset) => asset.assetId === previewView.assetId),
+        processedSizes,
+      )
+    : null;
+  return (
+    <div
+      className="design-patent-workbench__content"
+      onDragOverCapture={(event) => {
+        if (Array.from(event.dataTransfer.types ?? []).includes("application/x-design-view-id"))
+          return;
+        if (activeTab !== "images" || !Array.from(event.dataTransfer.types ?? []).includes("Files"))
+          return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+      }}
+      onDropCapture={(event) => {
+        if (Array.from(event.dataTransfer.types ?? []).includes("application/x-design-view-id"))
+          return;
+        if (activeTab !== "images" || !event.dataTransfer.files?.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        void importImages(Array.from(event.dataTransfer.files));
+      }}
+    >
+      {importFrame
+        ? createPortal(
+            <TemporaryFrameDialog
+              name={importFrame.name}
+              count={importFrame.count}
+              onFinish={(page) => {
+                importFrame.resolve(page);
+                frameResolver.current = null;
+                setImportFrame(null);
+              }}
+            />,
+            document.body,
+          )
+        : null}
+      {activeTab === "images" ? (
+        <section className="design-patent-workbench__images" aria-label="图片整理工作区">
+          <div className="design-image-mode-bar">
+            <fieldset className="design-image-mode-bar__switch" aria-label="图片组织模式">
+              <button
+                type="button"
+                aria-pressed={!multiMode}
+                disabled={importingImages || switchingMode || !!boardHistory?.busy}
+                onClick={() => requestMode("six-view")}
+              >
+                六视图模式
+              </button>
+              <button
+                type="button"
+                aria-pressed={multiMode}
+                disabled={importingImages || switchingMode || !!boardHistory?.busy}
+                onClick={() => requestMode("multi-image")}
+              >
+                多图模式
+              </button>
+            </fieldset>
+            {multiMode ? <span>按顺序整理图片，可修改名称或拖动排序</span> : null}
+            {boardHistory && (
+              <fieldset
+                aria-label="视图板历史"
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                  gridColumn: "1 / -1",
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={boardHistory.busy || importingImages || !boardHistory.canUndo}
+                  onClick={() =>
+                    void boardHistory
+                      .step(false)
+                      .catch((e) =>
+                        setImageMessage(e instanceof Error ? e.message : "撤销失败，请重试。"),
+                      )
+                  }
+                >
+                  {boardHistory.undoResize ? "撤销尺寸调整" : "撤销分配"}
+                </button>
+                <button
+                  type="button"
+                  disabled={boardHistory.busy || importingImages || !boardHistory.canRedo}
+                  onClick={() =>
+                    void boardHistory
+                      .step(true)
+                      .catch((e) =>
+                        setImageMessage(e instanceof Error ? e.message : "重做失败，请重试。"),
+                      )
+                  }
+                >
+                  {boardHistory.redoResize ? "重做尺寸调整" : "重做分配"}
+                </button>
+              </fieldset>
+            )}
+          </div>
+          {imageMessage && !pendingImageMode ? (
+            <p className="design-patent-workbench__images-message" role="alert">
+              {imageMessage}
+            </p>
+          ) : null}
+          {imageImportErrors.length > 0 ? (
+            <section
+              className="design-patent-workbench__images-import-result"
+              role="status"
+              aria-label="导入结果"
+            >
+              <h3>导入结果</h3>
+              <ul>
+                {imageImportErrors.map((item) => (
+                  <li key={`${item.originalName}-${item.message}`}>
+                    <strong>{item.originalName}</strong>：{item.message}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          {multiMode ? (
+            <DesignMultiImageGrid
+              design={design}
+              assets={session.patent.assets}
+              previewUrls={previewUrls}
+              disabled={importingImages || switchingMode || !!boardHistory?.busy}
+              onImport={() => void importImages()}
+              onPreview={setImagePreviewId}
+              onRemove={removeView}
+              onRename={(id, name) => {
+                if (designRef.current) commitDesign(renameDesignImage(designRef.current, id, name));
+              }}
+              onReorder={(id, before, swap) => {
+                if (designRef.current)
+                  commitDesign(
+                    swap && before
+                      ? swapDesignImages(designRef.current, id, before)
+                      : reorderDesignImages(designRef.current, id, before),
+                  );
+              }}
+            />
+          ) : (
+            <DesignImportStep
+              design={design}
+              assets={session.patent.assets}
+              previewUrls={previewUrls}
+              importing={importingImages || !!boardHistory?.busy}
+              onResizeSixViews={onResizeSixViews}
+              onCorrection={() => onNavigate("correction")}
+              autoSuggested={Object.fromEntries(
+                design.views
+                  .filter(
+                    (view) =>
+                      view.kind !== "unassigned" &&
+                      view.assignmentStatus === "pending-auto" &&
+                      view.assignmentEvidence !== null,
+                  )
+                  .flatMap((view) => {
+                    const evidence = view.assignmentEvidence;
+                    if (evidence == null) return [];
+                    return [
+                      [
+                        view.viewId,
+                        {
+                          kind: view.kind as DesignPatentPrimarySlot,
+                          evidence,
+                        },
+                      ] as const,
+                    ];
+                  }),
+              )}
+              onConfirmAll={confirmAutoSuggestions}
+              onImport={() => void importImages()}
+              onAssign={assignView}
+              onRemove={removeView}
+              onOmission={updateOmission}
+            />
+          )}
+          {pendingImageMode ? (
+            <DesignImageModeDialog
+              mode={pendingImageMode}
+              count={design.views.length}
+              busy={switchingMode}
+              error={imageMessage}
+              onCancel={() => setPendingImageMode(null)}
+              onConfirm={() => void switchMode(pendingImageMode)}
+            />
+          ) : null}
+        </section>
+      ) : activeTab === "brief" ? (
+        <DesignBriefForm
+          design={design}
+          productName={session.patent.name}
+          previewUrls={previewUrls}
+          zoomPercent={briefZoomPercent}
+          onChange={(next) => {
+            const current = designRef.current;
+            if (current) commitDesign(mergeDesignBriefEdit(current, design, next));
+          }}
+          onPreviewImage={setImagePreviewId}
+          onReview={() => onNavigate("checks")}
+        />
+      ) : null}
+      {previewView && imagePreviewUrl ? (
+        <DesignImagePreviewDialog
+          key={previewView.viewId}
+          label={previewView.label}
+          resolution={
+            previewSize ? `${previewSize.widthPx} × ${previewSize.heightPx} px` : "分辨率未知"
           }
-        }}
-      >
-        单轴尺寸校准（高风险）
-      </button>
-      {view.operations.length > 0 ? (
-        <button type="button" onClick={() => void undoViewOperation(view.viewId)}>
-          撤销上一步
-        </button>
+          previewUrl={imagePreviewUrl}
+          onClose={() => setImagePreviewId(null)}
+        />
+      ) : null}
+      {activeTab === "checks" ? (
+        <DesignExportReview
+          patent={session.patent}
+          previewUrls={previewUrls}
+          format={exportFormat}
+          zip={zip}
+          busy={exporting}
+          error={exportError}
+          success={exportSuccess}
+          onFormat={setExportFormat}
+          onZip={setZip}
+          onExport={() => void exportBundle()}
+          onBrief={() => onNavigate("brief")}
+        />
       ) : null}
     </div>
   );
+}
 
+export function DesignPatentWorkbench(props: Props) {
+  const design = props.session.patent.designPatent;
+  const { urls: previewUrls, processedSizes } = useDesignPreviews(props.session);
+  const [activeStep, setActiveStep] = useState<"images" | "correction" | "brief" | "review">(
+    props.folderNavigation?.step ?? "images",
+  );
+  const exportLockRef = useRef(false);
+  const correctionRef = useRef<DesignImageCorrectionStepHandle>(null);
+  const latestDesignRef = useRef(design);
+  const [correctionDirty, setCorrectionDirty] = useState(false);
+  const [pendingCorrectionStep, setPendingCorrectionStep] = useState<
+    "images" | "correction" | "brief" | "review" | null
+  >(null);
+  const [correctionMessage, setCorrectionMessage] = useState<string | null>(null);
+  const [correctionSessionKey, setCorrectionSessionKey] = useState(0);
+  const [boardError, setBoardError] = useState<string | null>(null);
+  const handledFolderNavigation = useRef(props.folderNavigation);
+  useEffect(() => {
+    const request = props.folderNavigation;
+    if (!request || handledFolderNavigation.current === request) return;
+    if (props.boardHistory?.busy) return;
+    handledFolderNavigation.current = request;
+    if (activeStep === "correction" && correctionDirty) setPendingCorrectionStep(request.step);
+    else setActiveStep(request.step);
+  }, [props.folderNavigation, props.boardHistory?.busy, activeStep, correctionDirty]);
+  useEffect(() => {
+    const listener = (event: Event) => {
+      const e = event as CustomEvent<{
+        patentId: string;
+        command: "undo" | "redo";
+        handled: boolean;
+      }>;
+      if (e.detail.patentId !== props.session.patentId || activeStep === "correction") return;
+      e.detail.handled = true;
+      if (
+        activeStep !== "images" ||
+        !props.boardHistory ||
+        props.boardHistory.busy ||
+        exportLockRef.current
+      )
+        return;
+      const redo = e.detail.command === "redo";
+      if (redo ? !props.boardHistory.canRedo : !props.boardHistory.canUndo) return;
+      void props.boardHistory
+        .step(redo)
+        .catch((err) =>
+          setBoardError(err instanceof Error ? err.message : "视图板恢复失败，请重试。"),
+        );
+    };
+    window.addEventListener("design-board-history", listener);
+    return () => window.removeEventListener("design-board-history", listener);
+  }, [props.session.patentId, props.boardHistory, activeStep]);
+  const [pendingCorrectionClose, setPendingCorrectionClose] = useState(false);
+  const closeResolver = useRef<((allow: boolean) => void) | null>(null);
+  useEffect(() => {
+    latestDesignRef.current = design;
+  }, [design]);
+  useEffect(
+    () =>
+      props.registerPatentLeaveGuard?.(props.session.patentId, async () => {
+        if (!correctionDirty) return true;
+        setPendingCorrectionClose(true);
+        return new Promise((resolve) => {
+          closeResolver.current = resolve;
+        });
+      }),
+    [props.registerPatentLeaveGuard, props.session.patentId, correctionDirty],
+  );
+  if (!design) return <main className="editor-workspace">外观设计数据不可用。</main>;
+  const statuses = getDesignWorkflowStatuses(design, props.session.patent.name);
+  const navigateContent = (tab: "brief" | "checks" | "correction") => {
+    setActiveStep(tab === "checks" ? "review" : tab);
+  };
+  const applyCorrection = (
+    viewId: string,
+    committed: readonly DesignPatentImageOperation[],
+    draft: readonly DesignPatentImageOperation[],
+  ) => {
+    if (exportLockRef.current) {
+      setCorrectionMessage("导出进行中，暂不能保存图片修改。");
+      return false;
+    }
+    const latest = latestDesignRef.current;
+    const current = latest?.views.find((view) => view.viewId === viewId);
+    if (!latest || !current || !sameImageRecipe(current.operations, committed)) {
+      setCorrectionMessage("图片已在其他位置更新，请重新加载后再应用修改。");
+      return false;
+    }
+    props.onUpdate(
+      {
+        ...latest,
+        views: latest.views.map((view) =>
+          view.viewId === viewId
+            ? {
+                ...view,
+                operations: [...draft],
+                subjectBoundsSource: view.subjectBounds === null ? null : "automatic",
+                subjectBoundsConfirmed: false,
+              }
+            : view,
+        ),
+      },
+      props.session.patent.assets,
+    );
+    return true;
+  };
+  const loadCorrectionPreview = async (
+    _viewId: string,
+    assetId: string,
+    operations: readonly DesignPatentImageOperation[],
+  ) => {
+    const bytes =
+      operations.length === 0
+        ? await window.patentApi.assets
+            .getPreview(props.session.sessionId, assetId)
+            .then((result) => (result.ok ? result.value : null))
+        : await window.patentApi.assets
+            .processDesignImage({
+              sessionId: props.session.sessionId,
+              assetId,
+              operations: [...operations],
+            })
+            .then((result) => (result.ok ? result.value.bytes : null));
+    return bytes;
+  };
+  const beforeStepChange = (nextStep: "images" | "correction" | "brief" | "review") => {
+    if (props.boardHistory?.busy) return false;
+    if (activeStep === "correction" && correctionDirty) {
+      setPendingCorrectionStep(nextStep);
+      return false;
+    }
+    return true;
+  };
   return (
-    <main className="design-patent-workbench" aria-label="外观设计工作台">
-      <header className="design-patent-workbench__header">
-        <div>
-          <h1>{session.patent.name ?? "未命名外观设计"}</h1>
-          <p>图片整理和简要说明均会自动保存；检查结果仅作申报前提示。</p>
-        </div>
-        <button className="primary-button" type="button" onClick={() => setShowChecks(true)}>
-          检查并导出
-        </button>
-      </header>
-      <div className="design-patent-workbench__tabs" role="tablist" aria-label="外观设计工作台">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "images"}
-          onClick={() => setTab("images")}
-        >
-          图片或照片
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "retouch"}
-          onClick={() => {
-            setRetouchOpened(true);
-            setTab("retouch");
-          }}
-        >
-          小栈修图
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "brief"}
-          onClick={() => setTab("brief")}
-        >
-          简要说明
-        </button>
-      </div>
-      {retouchOpened ? (
-        <section hidden={tab !== "retouch"} aria-label="小栈修图">
-          <KlecksCorrectionWorkspace
-            session={session}
-            active={active && tab === "retouch"}
-            onAddImages={() => setTab("images")}
-          />
-        </section>
-      ) : null}
-      {tab === "images" ? (
-        <section className="design-patent-workbench__images" aria-label="图片或照片">
-          <p>导入 JPG、JPEG 或 PNG 后，将图片分配到对应视图；局部设计请导入已完成标记的图片。</p>
-          <label>
-            主表现方式
-            <select
-              value={design.primaryExpression ?? ""}
-              onChange={(event) =>
-                updateDesign({
-                  primaryExpression: event.currentTarget.value
-                    ? (event.currentTarget.value as DesignPatent["primaryExpression"])
-                    : null,
-                })
-              }
-            >
-              <option value="">导入后选择</option>
-              {Object.entries(EXPRESSION_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="button" onClick={() => void importImages()}>
-            导入图片
-          </button>
-          {imageMessage ? <p role="alert">{imageMessage}</p> : null}
-          <label>
-            尺寸比例参考视图
-            <select
-              value={design.dimensionReferenceViewId ?? ""}
-              onChange={(event) =>
-                updateDesign({ dimensionReferenceViewId: event.currentTarget.value || null })
-              }
-            >
-              <option value="">自动选择主视图或首个六视图</option>
-              {design.views
-                .filter((view) =>
-                  (ORTHOGRAPHIC_VIEW_SLOTS as readonly string[]).includes(view.kind),
-                )
-                .map((view) => (
-                  <option key={view.viewId} value={view.viewId}>
-                    {view.label}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <div className="design-patent-workbench__view-grid">
-            {VIEW_SLOTS.map((kind) => {
-              const view = design.views.find((candidate) => candidate.kind === kind);
-              return (
-                <div className="design-patent-workbench__view-slot" key={kind}>
-                  <strong>{VIEW_LABELS[kind]}</strong>
-                  {view ? (
-                    <>
-                      {previewUrls[view.viewId] ? (
-                        <img src={previewUrls[view.viewId]} alt={`${view.label}预览`} />
-                      ) : null}
-                      <span>{view.label}</span>
-                      <label>
-                        {view.label}名称
-                        <input
-                          defaultValue={view.label}
-                          maxLength={100}
-                          onBlur={(event) =>
-                            updateViewLabel(view.viewId, event.currentTarget.value)
-                          }
-                        />
-                      </label>
-                      <label>
-                        {view.label}表现方式
-                        <select
-                          value={view.expression}
-                          onChange={(event) =>
-                            updateViewExpression(
-                              view.viewId,
-                              event.currentTarget
-                                .value as DesignPatent["views"][number]["expression"],
-                            )
-                          }
-                        >
-                          {Object.entries(EXPRESSION_LABELS).map(([value, label]) => (
-                            <option key={value} value={value}>
-                              {label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <select
-                        aria-label={`${VIEW_LABELS[kind]}视图类型`}
-                        value={view.kind}
-                        onChange={(event) =>
-                          moveView(
-                            view.viewId,
-                            event.currentTarget.value as (typeof VIEW_SLOTS)[number],
-                          )
-                        }
-                      >
-                        {VIEW_SLOTS.map((candidate) => (
-                          <option key={candidate} value={candidate}>
-                            {VIEW_LABELS[candidate]}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => updateDesign({ representativeViewId: view.viewId })}
-                      >
-                        {design.representativeViewId === view.viewId ? "已选代表图" : "设为代表图"}
-                      </button>
-                      <button type="button" onClick={() => void removeView(view.viewId)}>
-                        移除
-                      </button>
-                      {view.editor?.applied ? null : renderImageOperations(view)}
-                    </>
-                  ) : (
-                    <span>待分配图片</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {design.views.some((view) => !(VIEW_SLOTS as readonly string[]).includes(view.kind)) ? (
-            <section className="design-patent-workbench__supplemental" aria-label="补充视图">
-              <h2>补充视图</h2>
-              {design.views
-                .filter((view) => !(VIEW_SLOTS as readonly string[]).includes(view.kind))
-                .map((view) => (
-                  <div className="design-patent-workbench__view-slot" key={view.viewId}>
-                    <strong>
-                      {SUPPLEMENTAL_VIEW_LABELS[
-                        view.kind as keyof typeof SUPPLEMENTAL_VIEW_LABELS
-                      ] ?? "补充视图"}
-                    </strong>
-                    {previewUrls[view.viewId] ? (
-                      <img src={previewUrls[view.viewId]} alt={`${view.label}预览`} />
-                    ) : null}
-                    <span>{view.label}</span>
-                    <label>
-                      {view.label}名称
-                      <input
-                        defaultValue={view.label}
-                        maxLength={100}
-                        onBlur={(event) => updateViewLabel(view.viewId, event.currentTarget.value)}
-                      />
-                    </label>
-                    <label>
-                      {view.label}表现方式
-                      <select
-                        value={view.expression}
-                        onChange={(event) =>
-                          updateViewExpression(
-                            view.viewId,
-                            event.currentTarget
-                              .value as DesignPatent["views"][number]["expression"],
-                          )
-                        }
-                      >
-                        {Object.entries(EXPRESSION_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      {view.label}视图类型
-                      <select
-                        value={view.kind}
-                        onChange={(event) =>
-                          updateSupplementalViewKind(
-                            view.viewId,
-                            event.currentTarget.value as (typeof SUPPLEMENTAL_VIEW_SLOTS)[number],
-                          )
-                        }
-                      >
-                        {SUPPLEMENTAL_VIEW_SLOTS.map((candidate) => (
-                          <option key={candidate} value={candidate}>
-                            {SUPPLEMENTAL_VIEW_LABELS[candidate]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => updateDesign({ representativeViewId: view.viewId })}
-                    >
-                      {design.representativeViewId === view.viewId ? "已选代表图" : "设为代表图"}
-                    </button>
-                    <button type="button" onClick={() => void removeView(view.viewId)}>
-                      移除
-                    </button>
-                    {view.editor?.applied ? null : renderImageOperations(view)}
-                  </div>
-                ))}
+    <SixViewPreviewProvider
+      design={design}
+      assets={props.session.patent.assets}
+      previewUrls={previewUrls}
+      processedSizes={processedSizes}
+    >
+      {boardError && <p role="alert">{boardError}</p>}
+      <DesignWorkspaceShell
+        retainCorrection={!!props.renderCorrection}
+        statuses={statuses}
+        target={null}
+        activeStep={activeStep}
+        onStepChange={setActiveStep}
+        onBeforeStepChange={beforeStepChange}
+        bodies={{
+          images: (
+            <DesignPatentWorkbenchContent
+              {...props}
+              activeTab="images"
+              onNavigate={navigateContent}
+              exportLockRef={exportLockRef}
+              previewUrls={previewUrls}
+            />
+          ),
+          correction: props.renderCorrection ? (
+            props.renderCorrection({
+              onAddImages: () => setActiveStep("images"),
+              initialViewId: undefined,
+            })
+          ) : (
+            <>
+              {correctionMessage ? <p role="alert">{correctionMessage}</p> : null}
+              <DesignImageCorrectionStep
+                key={correctionSessionKey}
+                ref={correctionRef}
+                design={design}
+                thumbnailUrls={previewUrls}
+                loadPreview={loadCorrectionPreview}
+                onApply={applyCorrection}
+                onDirtyChange={setCorrectionDirty}
+              />
+            </>
+          ),
+          brief: (
+            <section className="design-workspace-shell__content" aria-labelledby="brief-heading">
+              <h2
+                id="brief-heading"
+                className="design-workspace-shell__visually-hidden"
+                tabIndex={-1}
+              >
+                简要说明
+              </h2>
+              <DesignPatentWorkbenchContent
+                {...props}
+                activeTab="brief"
+                onNavigate={navigateContent}
+                exportLockRef={exportLockRef}
+                previewUrls={previewUrls}
+              />
             </section>
-          ) : null}
-          <aside className="design-patent-workbench__hint">
-            六视图检查以图片中产品主体的宽、高、深比例为依据；可先裁剪空白边、旋转/透视校正或进行尺寸校准，再由你确认应用。
-          </aside>
-        </section>
-      ) : tab === "brief" ? (
-        <section className="design-patent-workbench__brief" aria-label="简要说明">
-          <label>
-            产品名称
-            <input value={session.patent.name ?? ""} readOnly />
-          </label>
-          <label>
-            设计范围
-            <select
-              value={design.subject}
-              onChange={(event) =>
-                updateDesign({
-                  subject: event.currentTarget.value as DesignPatent["subject"],
-                })
-              }
-            >
-              <option value="whole-product">整体产品设计</option>
-              <option value="partial-design">产品的局部设计</option>
-            </select>
-          </label>
-          <label>
-            最能表明设计要点的图片或照片（必填）
-            <select
-              value={design.representativeViewId ?? ""}
-              onChange={(event) =>
-                updateDesign({ representativeViewId: event.currentTarget.value || null })
-              }
-            >
-              <option value="">请选择代表图</option>
-              {design.views.map((view) => (
-                <option key={view.viewId} value={view.viewId}>
-                  {view.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            产品用途（必填）
-            <textarea
-              value={design.brief.productUse}
-              onChange={(event) => updateBrief({ productUse: event.currentTarget.value })}
-            />
-          </label>
-          {design.subject === "partial-design" ? (
-            <label>
-              局部设计保护部分及表示方式（条件必填）
-              <textarea
-                value={design.brief.partialDesignDescription}
-                onChange={(event) =>
-                  updateBrief({ partialDesignDescription: event.currentTarget.value })
-                }
+          ),
+          review: (
+            <section className="design-workspace-shell__content" aria-labelledby="review-heading">
+              <DesignPatentWorkbenchContent
+                {...props}
+                activeTab="checks"
+                onNavigate={navigateContent}
+                exportLockRef={exportLockRef}
+                previewUrls={previewUrls}
               />
-            </label>
-          ) : null}
-          <fieldset>
-            <legend>设计要点（必填）</legend>
-            {(["shape", "pattern", "color"] as const).map((point) => (
-              <label key={point}>
-                <input
-                  type="checkbox"
-                  checked={design.brief.designPoints.includes(point)}
-                  onChange={(event) =>
-                    updateBrief({
-                      designPoints: event.currentTarget.checked
-                        ? [...design.brief.designPoints, point]
-                        : design.brief.designPoints.filter((item) => item !== point),
-                    })
-                  }
-                />
-                {{ shape: "形状", pattern: "图案", color: "色彩" }[point]}
-              </label>
-            ))}
-          </fieldset>
-          <label>
-            其他需要说明的内容（选填）
-            <textarea
-              value={design.brief.otherDescription}
-              onChange={(event) => updateBrief({ otherDescription: event.currentTarget.value })}
-            />
-          </label>
-          <label>
-            色彩保护
-            <input
-              type="checkbox"
-              checked={design.brief.colorProtectionRequested}
-              onChange={(event) =>
-                updateBrief({ colorProtectionRequested: event.currentTarget.checked })
-              }
-            />
-            请求保护色彩
-          </label>
-          <label>
-            连续变化的表面（选填）
-            <select
-              value={design.brief.continuousSurface ?? ""}
-              onChange={(event) =>
-                updateBrief({
-                  continuousSurface: event.currentTarget.value
-                    ? (event.currentTarget.value as NonNullable<
-                        DesignPatent["brief"]["continuousSurface"]
-                      >)
-                    : null,
-                })
-              }
-            >
-              <option value="">无</option>
-              <option value="up-down">上下连续</option>
-              <option value="left-right">左右连续</option>
-              <option value="all-sides">四周连续</option>
-            </select>
-          </label>
-          <fieldset>
-            <legend>视图省略说明（选填）</legend>
-            {ORTHOGRAPHIC_VIEW_SLOTS.map((viewKind) => {
-              const omission = design.brief.omissions.find((item) => item.viewKind === viewKind);
-              return (
-                <div key={viewKind}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={omission !== undefined}
-                      onChange={(event) =>
-                        updateOmission(
-                          viewKind,
-                          event.currentTarget.checked ? "same-or-symmetric" : null,
-                        )
-                      }
-                    />
-                    省略{VIEW_LABELS[viewKind]}
-                  </label>
-                  {omission ? (
-                    <>
-                      <select
-                        aria-label={`${VIEW_LABELS[viewKind]}省略原因`}
-                        value={omission.reason}
-                        onChange={(event) =>
-                          updateOmission(
-                            viewKind,
-                            event.currentTarget
-                              .value as DesignPatent["brief"]["omissions"][number]["reason"],
-                          )
-                        }
-                      >
-                        <option value="same-or-symmetric">与主视图相同或对称</option>
-                        <option value="rotationally-identical">旋转后与其他视图相同</option>
-                        <option value="flat-or-thin">该方向无设计要点</option>
-                        <option value="not-visible-during-use">使用时不容易看到</option>
-                        <option value="other">其他原因</option>
-                      </select>
-                      {omission.reason === "other" ? (
-                        <label>
-                          {VIEW_LABELS[viewKind]}其他省略原因（条件必填）
-                          <input
-                            value={omission.otherReason ?? ""}
-                            onChange={(event) =>
-                              updateOmissionOtherReason(viewKind, event.currentTarget.value)
-                            }
-                          />
-                        </label>
-                      ) : null}
-                    </>
-                  ) : null}
-                </div>
-              );
-            })}
-          </fieldset>
-          <label>
-            <input
-              type="checkbox"
-              checked={design.brief.elongatedObjectLengthOmitted}
-              onChange={(event) =>
-                updateBrief({ elongatedObjectLengthOmitted: event.currentTarget.checked })
-              }
-            />
-            细长物品省略长度
-          </label>
-          <label>
-            材料说明（选填）
-            <textarea
-              value={design.brief.materialDescription}
-              onChange={(event) => updateBrief({ materialDescription: event.currentTarget.value })}
-            />
-          </label>
-          <label>
-            不属于保护范围的内部结构说明（选填）
-            <textarea
-              value={design.brief.excludedInteriorDescription}
-              onChange={(event) =>
-                updateBrief({ excludedInteriorDescription: event.currentTarget.value })
-              }
-            />
-          </label>
-          <section aria-label="简要说明实时预览">
-            <h2>简要说明预览</h2>
-            {renderDesignPatentBriefLines(session.patent.name, design).map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </section>
-        </section>
+            </section>
+          ),
+        }}
+      />
+      {pendingCorrectionStep ? (
+        <CorrectionUnsavedDialog
+          onStay={() => setPendingCorrectionStep(null)}
+          onDiscard={() => {
+            correctionRef.current?.discard();
+            setCorrectionSessionKey((value) => value + 1);
+            setCorrectionDirty(false);
+            setActiveStep(pendingCorrectionStep);
+            setPendingCorrectionStep(null);
+          }}
+          onApply={() => {
+            if (correctionRef.current?.apply()) {
+              setCorrectionDirty(false);
+              setActiveStep(pendingCorrectionStep);
+              setPendingCorrectionStep(null);
+            }
+          }}
+        />
       ) : null}
-      {showChecks ? (
-        <aside className="design-patent-workbench__checks" role="dialog" aria-label="导出前检查">
-          <h2>导出前检查</h2>
-          <p>以下为软件提示；可修改后重新检查，或确认风险后继续导出。</p>
-          <ul>
-            {issues.map((issue) => (
-              <li key={issue.code}>{issue.message}</li>
-            ))}
-          </ul>
-          <label>
-            简要说明文档格式
-            <select
-              value={exportFormat}
-              onChange={(event) => setExportFormat(event.currentTarget.value as "docx" | "pdf")}
-            >
-              <option value="docx">DOCX</option>
-              <option value="pdf">PDF</option>
-            </select>
-          </label>
-          {issues.length > 0 ? (
-            <label>
-              <input
-                type="checkbox"
-                checked={confirmWarnings}
-                onChange={(event) => setConfirmWarnings(event.currentTarget.checked)}
-              />
-              我已了解上述提示，确认继续导出
-            </label>
-          ) : null}
-          <label>
-            <input
-              type="checkbox"
-              checked={zip}
-              onChange={(event) => setZip(event.currentTarget.checked)}
-            />
-            同时生成 ZIP 压缩包（选填）
-          </label>
-          {exportError ? <p role="alert">{exportError}</p> : null}
-          <button
-            type="button"
-            disabled={exporting || (issues.length > 0 && !confirmWarnings)}
-            onClick={() => void exportBundle()}
-          >
-            {exporting ? "正在导出…" : "选择位置并导出"}
-          </button>
-          <button type="button" onClick={() => setShowChecks(false)}>
-            关闭
-          </button>
-        </aside>
+      {pendingCorrectionClose ? (
+        <CorrectionUnsavedDialog
+          onStay={() => {
+            closeResolver.current?.(false);
+            closeResolver.current = null;
+            setPendingCorrectionClose(false);
+          }}
+          onDiscard={() => {
+            correctionRef.current?.discard();
+            closeResolver.current?.(true);
+            closeResolver.current = null;
+            setCorrectionDirty(false);
+            setPendingCorrectionClose(false);
+          }}
+          onApply={() => {
+            if (correctionRef.current?.apply()) {
+              closeResolver.current?.(true);
+              closeResolver.current = null;
+              setCorrectionDirty(false);
+              setPendingCorrectionClose(false);
+            }
+          }}
+        />
       ) : null}
-    </main>
+    </SixViewPreviewProvider>
   );
 }

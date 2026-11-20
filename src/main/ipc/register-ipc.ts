@@ -60,6 +60,7 @@ import {
   ClipboardTextWriteRequestSchema,
   CopyImagesRequestSchema,
   DesignImageProcessRequestSchema,
+  DesignPatentExportDestinationRequestSchema,
   DesignPatentExportRequestSchema,
   DirectPrintRequestSchema,
   DiscardImportedAssetsRequestSchema,
@@ -3445,6 +3446,40 @@ export function registerIpcHandlers(
     }
   });
   // One short-lived, single-use destination per session. Never accept a renderer-provided path.
+  const designDestinations = new Map<
+    string,
+    { token: string; patentId: string; path: string; expires: number }
+  >();
+  const pickDesignDirectory = () =>
+    dialog.showOpenDialog({
+      title: "选择外观设计导出位置",
+      properties: ["openDirectory", "createDirectory"],
+    });
+  register(IPC_CHANNELS.exportsChooseDesignPatentDestination, async (_event, requestInput) => {
+    try {
+      const { sessionId, patentId } =
+        DesignPatentExportDestinationRequestSchema.parse(requestInput);
+      sessions.requireActive(sessionId, patentId);
+      return await operations.run(sessionId, "export-design-patent", async (operation) => {
+        designDestinations.delete(sessionId);
+        const selection = await pickDesignDirectory();
+        const path = selection.filePaths[0];
+        if (selection.canceled || !path || operation.signal.aborted)
+          return { ok: true, value: null };
+        sessions.requireActive(sessionId, patentId);
+        const token = randomUUID();
+        const now = Date.now();
+        for (const [id, destination] of designDestinations)
+          if (destination.expires <= now) designDestinations.delete(id);
+        if (designDestinations.size >= 64)
+          designDestinations.delete(designDestinations.keys().next().value!);
+        designDestinations.set(sessionId, { token, patentId, path, expires: now + 30 * 60_000 });
+        return { ok: true, value: token };
+      });
+    } catch (error) {
+      return ipcFailure(error, logger, "export.failed");
+    }
+  });
   register(IPC_CHANNELS.exportsDesignPatent, async (_event, requestInput) => {
     try {
       const request = DesignPatentExportRequestSchema.parse(requestInput);
@@ -3460,17 +3495,23 @@ export function registerIpcHandlers(
         if (patent.patentType !== "design" || patent.designPatent === null) {
           return appFailure("INVALID_INPUT", { message: "当前文件不是外观设计专利。" });
         }
-        const warningCodes = inspectDesignPatent(patent.designPatent).map((issue) => issue.code);
+        const warningCodes = inspectDesignPatent(patent.designPatent, patent.name).map(
+          (issue) => issue.code,
+        );
         if (!request.confirmWarnings && warningCodes.length > 0) {
           return appFailure("INVALID_INPUT", { message: "请先确认导出前提示。" });
         }
-        const selection = await dialog.showOpenDialog({
-          title: "选择外观设计导出位置",
-          properties: ["openDirectory", "createDirectory"],
-        });
-        if (selection.canceled || !selection.filePaths[0] || operation.signal.aborted) {
-          return { ok: true, value: null };
-        }
+        const destination = designDestinations.get(request.sessionId);
+        if (
+          !destination ||
+          destination.token !== request.destinationToken ||
+          destination.patentId !== request.patentId ||
+          destination.expires <= Date.now()
+        )
+          return appFailure("INVALID_INPUT", { message: "导出位置已失效，请重新选择。" });
+        designDestinations.delete(request.sessionId);
+        const outputRoot = destination.path;
+        if (operation.signal.aborted) return { ok: true, value: null };
         const assetBytes = async (assetId: string) => {
           const asset = await assetStore.getOrLoad(request.sessionId, assetId);
           if (!asset) throw new Error("外观设计图片资源不可用。");
@@ -3480,14 +3521,14 @@ export function registerIpcHandlers(
           request.format === "docx"
             ? await exportDesignPatentDocx({
                 patent,
-                outputRoot: selection.filePaths[0],
+                outputRoot,
                 assetBytes,
                 zip: request.zip,
                 confirmWarnings: request.confirmWarnings,
               })
             : await exportDesignPatentPdf({
                 patent,
-                outputRoot: selection.filePaths[0],
+                outputRoot,
                 assetBytes,
                 zip: request.zip,
                 confirmWarnings: request.confirmWarnings,
@@ -3769,6 +3810,7 @@ export function registerIpcHandlers(
           retiredPatentId = patentId;
           openPatentSessions.delete(sessionId);
           designPatentSessions.delete(sessionId);
+          designDestinations.delete(sessionId);
           const owner = patentSessionOwners.get(sessionId);
           patentSessionOwners.delete(sessionId);
           if (owner) ownerPatentSessions.get(owner)?.delete(sessionId);

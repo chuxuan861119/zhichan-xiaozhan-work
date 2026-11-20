@@ -3,10 +3,13 @@ import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { mkdir, mkdtemp, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Packer, Paragraph, TextRun } from "docx";
+import sharp from "sharp";
 import yazl from "yazl";
 import {
+  type DesignPatentViewKind,
   inspectDesignPatent,
+  isAssignedDesignView,
   renderDesignPatentBriefLines,
 } from "../../shared/patent/design-patent.js";
 import { resolveDesignViewImage } from "../../shared/patent/design-view-image.js";
@@ -20,8 +23,10 @@ export type DesignPatentDocxExport = {
   zipPath: string | null;
 };
 
-const DESIGN_VIEW_EXPORT_ORDER = [
+const DESIGN_VIEW_EXPORT_ORDER: readonly DesignPatentViewKind[] = [
   "perspective",
+  "perspective-2",
+  "perspective-3",
   "front",
   "rear",
   "left",
@@ -32,7 +37,7 @@ const DESIGN_VIEW_EXPORT_ORDER = [
   "enlarged",
   "section",
   "other",
-] as const;
+];
 
 export async function exportDesignPatentPdf(input: {
   patent: CanonicalPatent;
@@ -68,7 +73,7 @@ async function exportDesignPatentBundle(input: {
     throw new Error("Only design patents can use the design-patent exporter.");
   }
   const design = input.patent.designPatent;
-  if (inspectDesignPatent(design).length > 0 && !input.confirmWarnings) {
+  if (inspectDesignPatent(design, input.patent.name).length > 0 && !input.confirmWarnings) {
     throw new Error("存在导出前提示，请确认风险后继续导出。");
   }
   const assets = new Map(input.patent.assets.map((asset) => [asset.assetId, asset]));
@@ -84,33 +89,74 @@ async function exportDesignPatentBundle(input: {
     const imagesDirectory = join(temporaryDirectory, "图片");
     await mkdir(imagesDirectory);
     const temporaryImagePaths: string[] = [];
-    const orderedViews = [...design.views].sort(
-      (left, right) =>
-        DESIGN_VIEW_EXPORT_ORDER.indexOf(left.kind) - DESIGN_VIEW_EXPORT_ORDER.indexOf(right.kind),
-    );
+    const orderedViews = design.views
+      .filter(isAssignedDesignView)
+      .sort((left, right) =>
+        design.imageMode === "multi-image"
+          ? 0
+          : DESIGN_VIEW_EXPORT_ORDER.indexOf(left.kind) -
+            DESIGN_VIEW_EXPORT_ORDER.indexOf(right.kind),
+      );
     for (const [index, view] of orderedViews.entries()) {
-      const asset = assets.get(resolveDesignViewImage(view).assetId);
+      const resolved = resolveDesignViewImage(view);
+      const asset = assets.get(resolved.assetId);
       if (!asset) throw new Error(`Design view ${view.viewId} references a missing asset.`);
       const processed = await processDesignImage(
         await input.assetBytes(asset.assetId),
-        resolveDesignViewImage(view).operations,
+        resolved.operations,
       );
-      const filename = `${String(index + 1).padStart(2, "0")}-${safeName(view.label)}.${asset.mediaType === "image/jpeg" ? "jpg" : "png"}`;
+      const filename = `${String(index + 1).padStart(2, "0")}-${safeName(view.label)}.jpg`;
       const imagePath = join(imagesDirectory, filename);
-      await writeFile(imagePath, processed.bytes);
+      await writeFile(
+        imagePath,
+        await sharp(processed.bytes)
+          .flatten({ background: "#ffffff" })
+          .jpeg({ quality: 100, chromaSubsampling: "4:4:4" })
+          .toBuffer(),
+      );
       temporaryImagePaths.push(imagePath);
     }
     const documentFilename = `外观设计简要说明.${input.format}`;
     const temporaryDocumentPath = join(temporaryDirectory, documentFilename);
     if (input.format === "docx") {
+      const font = { ascii: "SimSun", hAnsi: "SimSun", cs: "SimSun", eastAsia: "宋体" };
       const docx = new Document({
+        styles: {
+          default: {
+            document: {
+              run: { font, size: 24 },
+              paragraph: { spacing: { line: 384, after: 120 } },
+            },
+          },
+        },
         sections: [
           {
+            properties: {
+              page: {
+                size: { width: 11906, height: 16838 },
+                margin: { top: 1361, right: 1361, bottom: 1361, left: 1361 },
+              },
+            },
             children: [
               new Paragraph({
-                children: [new TextRun({ text: "外观设计简要说明", bold: true })],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 360 },
+                children: [new TextRun({ text: "外观设计简要说明", bold: true, size: 32, font })],
               }),
-              ...renderDesignPatentBrief(input.patent).map((text) => new Paragraph({ text })),
+              ...renderDesignPatentBrief(input.patent).map(
+                (text, index) =>
+                  new Paragraph({
+                    children: `${index + 1}. ${text}`.split(/\r?\n/).map(
+                      (line, i) =>
+                        new TextRun({
+                          text: line,
+                          ...(i ? { break: 1 } : {}),
+                          font,
+                          size: 24,
+                        }),
+                    ),
+                  }),
+              ),
             ],
           },
         ],
@@ -159,9 +205,9 @@ export function renderDesignPatentBrief(patent: CanonicalPatent): string[] {
 
 export function renderDesignPatentBriefHtml(patent: CanonicalPatent): string {
   const paragraphs = renderDesignPatentBrief(patent)
-    .map((sentence) => `<p>${escapeHtml(sentence)}</p>`)
+    .map((sentence, index) => `<p>${index + 1}. ${escapeHtml(sentence)}</p>`)
     .join("");
-  return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><style>body{font-family:SimSun,serif;font-size:12pt;line-height:1.6;padding:24mm}h1{text-align:center;font-size:16pt}</style><body><h1>外观设计简要说明</h1>${paragraphs}</body></html>`;
+  return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><style>@page{size:A4;margin:24mm}body{font-family:SimSun,"宋体",serif;font-size:12pt;line-height:1.6;margin:0}h1{text-align:center;font-size:16pt;margin:0 0 18pt}p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 6pt;orphans:2;widows:2}</style><body><h1>外观设计简要说明</h1>${paragraphs}</body></html>`;
 }
 
 function safeName(value: string): string {

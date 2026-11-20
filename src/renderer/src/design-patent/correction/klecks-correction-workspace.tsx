@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { isAssignedDesignView } from "../../../../shared/patent/design-patent";
 import type { AutoTrimOptions } from "../../../../shared/settings/design-auto-trim";
 import { usePatents } from "../../patents/patent-context";
 import type { PatentSession } from "../../patents/patent-reducer";
+import { SixViewPreview } from "../six-view-preview";
 import { activateKlecksView } from "./klecks-activate-view";
 import type { KlecksCaseDocuments } from "./klecks-case-documents";
 import { KlecksEditorPanels } from "./klecks-editor-panels";
@@ -229,6 +231,7 @@ export function KlecksCorrectionWorkspace({
         setError(failure instanceof Error ? failure.message : "图片加载失败。");
     });
   };
+  const previewHost = frame?.canvasOverlayHost ?? container?.closest(".klecks-panels__canvas");
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: This wrapper delegates file drops; the import button is the keyboard-accessible alternative.
     <div
@@ -373,6 +376,20 @@ export function KlecksCorrectionWorkspace({
           (snapshot?.requestedId ? (snapshot.errors[snapshot.requestedId] ?? null) : null)
         }
       />
+      {active &&
+      previewHost &&
+      session.patent.designPatent?.imageMode !== "multi-image" &&
+      !(state?.activeId && controller?.isTemporary(state.activeId))
+        ? createPortal(
+            <div className="six-view-canvas-overlay">
+              <SixViewPreview
+                activeViewId={state?.activeId ?? null}
+                onActivate={(id) => activateView(id, true)}
+              />
+            </div>,
+            previewHost,
+          )
+        : null}
     </div>
   );
 }

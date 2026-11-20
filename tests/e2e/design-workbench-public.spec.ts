@@ -39,18 +39,17 @@ test("creates, saves, reopens and exports a design patent from the desktop workb
   await create.getByRole("textbox", { name: "专利名称" }).fill(name);
   await create.getByRole("radio", { name: "外观设计" }).check();
   await create.getByRole("button", { name: "创建专利" }).click();
-  let design = page.getByRole("main", { name: "外观设计工作台" });
-  await expect(design.getByRole("heading", { name })).toBeVisible();
+  let design = page.getByRole("main", { name: "外观设计工作区" });
+  await expect(design).toBeVisible();
   await design.getByRole("button", { name: "导入图片" }).click();
-  await expect(design.getByRole("button", { name: /^(设为|已选)代表图$/ })).toBeVisible();
-  const representative = design.getByRole("button", { name: "设为代表图", exact: true });
-  if (await representative.isVisible()) await representative.click();
+  await expect(design.getByRole("img", { name: /缩略图$/u })).toHaveCount(1);
   await design.getByRole("tab", { name: "简要说明" }).click();
   await design.getByLabel("产品用途（必填）").fill(productUse);
+  await design.getByRole("checkbox", { name: "形状", exact: true }).check();
+  await design.getByRole("button", { name: "简要说明预览" }).click();
   await expect(design.getByRole("region", { name: "简要说明实时预览" })).toContainText(productUse);
-  await design.getByRole("button", { name: "检查并导出" }).click();
-  const review = design.getByRole("dialog", { name: "导出前检查" });
-  await review.getByLabel("我已了解上述提示，确认继续导出").check();
+  await design.getByRole("button", { name: "前往导出" }).click();
+  const review = design.getByRole("tabpanel", { name: "导出" });
   await review.getByRole("button", { name: "选择位置并导出" }).click();
   try {
     await expect
@@ -69,7 +68,7 @@ test("creates, saves, reopens and exports a design patent from the desktop workb
   await reopened.getByRole("tab", { name: "专利库", exact: true }).click();
   await reopened.getByRole("button", { name: "外观设计", exact: true }).click();
   await reopened.getByText(name, { exact: true }).first().dblclick();
-  design = reopened.getByRole("main", { name: "外观设计工作台" });
+  design = reopened.getByRole("main", { name: "外观设计工作区" });
   await design.getByRole("tab", { name: "简要说明" }).click();
   await expect(design.getByLabel("产品用途（必填）")).toHaveValue(productUse);
   if (process.env.WORK_OPEN_SOURCE_DESIGN_SCREENSHOT) {

@@ -1,0 +1,101 @@
+.six-view-preview {
+  position: relative;
+  aspect-ratio: 1 / 1.09;
+  width: 360px;
+  max-width: 100%;
+  user-select: none;
+  pointer-events: none;
+}
+.six-view-preview[data-expanded="true"] {
+  z-index: 5;
+}
+.six-view-preview[data-collapsed="true"] {
+  width: 140px;
+  height: 32px;
+  aspect-ratio: auto;
+  justify-self: end;
+  margin-left: auto;
+}
+.six-view-preview[data-collapsed="true"] .six-view-preview__model {
+  display: none;
+}
+.six-view-preview__surface {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  transform-origin: top right;
+  will-change: transform;
+}
+.six-view-preview__caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: max-content;
+  margin: 0 auto 4px;
+  padding: 2px 4px 2px 10px;
+  background: #f5f9f8ee;
+  border: 1px solid #dce8e4;
+  border-radius: 7px;
+  color: #516e67;
+  font-size: 12px;
+  pointer-events: auto;
+}
+.six-view-preview .six-view-preview__caption button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #27796b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.six-view-preview .six-view-preview__caption button:hover {
+  background: #e1eee8;
+}
+.six-view-preview .six-view-preview__caption button:focus-visible {
+  outline: 2px solid #27796b;
+  outline-offset: 1px;
+}
+.six-view-preview__model {
+  display: block;
+  width: 100%;
+  touch-action: none;
+  cursor: grab;
+  pointer-events: auto;
+}
+.six-view-preview__model:active {
+  cursor: grabbing;
+}
+.six-view-preview__model,
+.six-view-preview__model g[role="button"] {
+  outline: none;
+}
+.six-view-preview__model:focus-visible {
+  filter: drop-shadow(0 0 2px #237f7580);
+}
+.six-view-preview__model g[role="button"]:focus-visible > polygon {
+  stroke: #237f75;
+  stroke-width: 4;
+}
+.six-view-canvas-overlay {
+  position: absolute;
+  z-index: 4;
+  right: 12px;
+  top: 12px;
+  width: clamp(240px, 30%, 360px);
+  max-width: calc(100% - 24px);
+  pointer-events: none;
+}
+.design-import-step__slot[data-model-selected="true"] {
+  outline: 2px solid #2d9d8a;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #dff3ec;
+}

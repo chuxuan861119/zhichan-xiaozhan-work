@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, test, vi } from "vitest";
 import { AI_PROVIDER_PRESETS, type AiModelProfile } from "../ai-correction/model.js";
-import { type AppSettings, DEFAULT_APP_SETTINGS } from "../settings/model.js";
+import { type AppSettings, AppSettingsSchema, DEFAULT_APP_SETTINGS } from "../settings/model.js";
 import {
   mergePortableSettings,
   type PortableSettings,
@@ -18,7 +18,7 @@ const MISSING_ID = "00000000-0000-4000-8000-000000000105";
 test("all settings are classified and all portable fields are projected", () => {
   const portable = projectPortableSettings(DEFAULT_APP_SETTINGS);
   expect(Object.keys(SETTING_TRANSFER_POLICY).sort()).toEqual(
-    Object.keys(DEFAULT_APP_SETTINGS).sort(),
+    [...AppSettingsSchema.keyof().options].sort(),
   );
   for (const [key, policy] of Object.entries(SETTING_TRANSFER_POLICY)) {
     if (policy === "portable" || policy === "mixed") expect(portable).toHaveProperty(key);

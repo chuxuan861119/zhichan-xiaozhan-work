@@ -82,6 +82,7 @@ import {
 } from "../../../shared/settings/custom-dual-view";
 import { DEFAULT_APP_SETTINGS } from "../../../shared/settings/model";
 import type { PageMargins } from "../../../shared/settings/page-margins";
+import { KlecksCorrectionWorkspace } from "../design-patent/correction/klecks-correction-workspace";
 import { DesignPatentWorkbench } from "../design-patent/design-patent-workbench";
 import { DocumentProvider, useDocuments } from "../documents/document-context";
 import { CloseDecisionDialog, DocumentTabs } from "../documents/document-tabs";
@@ -5660,24 +5661,54 @@ function WorkbenchWindow() {
                   .map((session) => {
                     const visible = activePatentSession?.sessionId === session.sessionId;
                     return (
-                      <div key={session.sessionId} hidden={!visible}>
+                      <div
+                        key={session.sessionId}
+                        className="design-workbench-stage"
+                        hidden={!visible}
+                        style={{ minHeight: 0, overflow: "hidden" }}
+                      >
                         <DesignPatentWorkbench
                           session={session}
-                          active={visible && library.view !== "library"}
-                          onUpdate={(designPatent, assets) =>
-                            patents.updateDesignPatent(session.patentId, designPatent, assets)
+                          defaultExportFormat={documents.settings.designBriefExportFormat}
+
+                          briefZoomPercent={documents.settings.zoomPercent}
+                          onUpdate={(design, assets) =>
+                            patents.updateDesignPatent(session.patentId, design, assets)
                           }
-                          onPrepareExport={async () => {
-                            const result = await patents.prepareDesignPatentExport(
+                          onAssignView={(viewId, kind) =>
+                            patents.assignDesignPatentView(session.patentId, viewId, kind)
+                          }
+                          onRemoveView={(viewId) =>
+                            patents.removeDesignBoardView(session.patentId, viewId)
+                          }
+                          onSwitchImageMode={(mode) =>
+                            patents.switchDesignImageMode(session.patentId, mode)
+                          }
+                          onResizeSixViews={(request) =>
+                            patents.resizeDesignBoardViews(
                               session.patentId,
                               session.localRevision,
-                              new AbortController().signal,
-                            );
-                            return result?.revision ?? null;
+                              request,
+                            )
+                          }
+                          boardHistory={{
+                            ...patents.designBoardHistory(session.patentId),
+                            step: (redo) => patents.stepDesignBoardHistory(session.patentId, redo),
                           }}
+                          onPrepareExport={(revision, signal) =>
+                            patents.prepareDesignPatentExport(session.patentId, revision, signal)
+                          }
                           onExportCommitted={(patent, savedAt) =>
                             patents.adoptDesignPatentExport(session.patentId, patent, savedAt)
                           }
+                          renderCorrection={(options) => (
+                            <KlecksCorrectionWorkspace
+                              session={session}
+                              autoTrimDefaults={documents.settings.designAutoTrimDefaults}
+                              active={visible && library.view !== "library"}
+                              {...options}
+                            />
+                          )}
                         />
                       </div>
                     );

@@ -7,6 +7,7 @@ import { DrawingProjectsSchema } from "../../shared/drawing-markup/model.js";
 import { FLOWCHART_MAX_SOURCE_XML_BYTES } from "../../shared/flowcharts/limits.js";
 import { FlowchartProjectDescriptorSchema } from "../../shared/flowcharts/model.js";
 import { JsonObjectSchema } from "../../shared/ipc/primitives.js";
+import { normalizeDesignPatentMeasurementStatus } from "../../shared/patent/design-patent.js";
 import { migrateCanonicalPatent } from "../../shared/patent/migrations.js";
 import {
   AuxiliaryDocumentSchema,
@@ -609,13 +610,28 @@ export async function readPatdoc<T extends PatdocPayload | PatentPatdocPayload =
     formatVersion: archiveFormatVersion,
     ...patentMetadata
   } = metadata;
+  // The exterior-design branch used canonical versions 12–14 for its own state
+  // before joining main; only the legacy design archive has that meaning.
+  const legacyDesign =
+    archiveFormatVersion <= 7 &&
+    metadata.patentType === "design" &&
+    canonicalPatentFormatVersion !== undefined &&
+    canonicalPatentFormatVersion >= 12 &&
+    canonicalPatentFormatVersion <= 14;
   const migrated = migrateCanonicalPatent({
     ...patentMetadata,
+    ...(metadata.patentType === "design"
+      ? {
+          designPatent: normalizeDesignPatentMeasurementStatus(patentMetadata.designPatent),
+        }
+      : {}),
     flowchartProjects: metadata.flowchartProjects ?? [],
 
     auxiliaryDocuments: metadata.auxiliaryDocuments ?? [],
     docxImportReport: null,
-    formatVersion: canonicalPatentFormatVersion ?? archiveFormatVersion,
+    formatVersion: legacyDesign
+      ? CANONICAL_PATENT_FORMAT_VERSION
+      : (canonicalPatentFormatVersion ?? archiveFormatVersion),
     books: metadata.books.map((book) => {
       return { ...book, document: bookDocuments.get(book.kind) };
     }),

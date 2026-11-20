@@ -79,6 +79,7 @@ export const SETTING_TRANSFER_POLICY = {
   autoCheckUpdates: "local",
   designEditorPreferences: "local",
   designAutoTrimDefaults: "local",
+  designBriefExportFormat: "local",
   contentSearchEnabled: "portable",
   drawingDetailDefaultRatio: "portable",
   drawingAutoAdjustLabelSize: "local",
