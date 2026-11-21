@@ -14,7 +14,7 @@ function auditHeader(header, target) {
       else {
         entries.add(path);
         if (
-          (path.startsWith("out/") && !/^out\/(main|preload|renderer)\//u.test(path)) ||
+          (path.startsWith("out/") && !/^out\/(main|preload|renderer|design-editor)\//u.test(path)) ||
           path.endsWith(".map") ||
           path.includes(".hidden-test-") ||
           /(^|\/)(user-data|Cache_Data)(\/|$)/u.test(path)

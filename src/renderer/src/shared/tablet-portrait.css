@@ -1,0 +1,362 @@
+/* Native full-window orientation keeps this layout stable when the IME opens.
+   Only tablet chrome changes: document formatting, zoom and desktop geometry stay intact. */
+:root[data-device-form="tablet"][data-tablet-orientation="portrait"] {
+  .window-shell:not(.is-library-active):has(> .patent-tabs) {
+    grid-template-rows: 30px 60px auto minmax(0, 1fr) 24px;
+
+    > .menu-bar {
+      display: grid;
+      grid-template-columns: repeat(8, max-content) minmax(0, 1fr);
+      grid-template-rows: 30px 30px;
+      align-items: stretch;
+    }
+    .menu-bar__book-navigation {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      margin-left: 0;
+    }
+    .menu-bar__book-navigation-separator,
+    .patent-split-controls__separator {
+      display: none;
+    }
+    .patent-split-controls {
+      grid-column: 9;
+      grid-row: 1;
+      justify-self: end;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .patent-split-controls__buttons {
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .patent-split-controls__buttons > button {
+      flex: none;
+    }
+    .menu-bar__flowchart-tab-group {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-self: end;
+      margin: 0;
+    }
+    .menu-bar:has(.menu-bar__flowchart-tab-group) .menu-bar__book-navigation {
+      margin-right: 110px;
+    }
+    .menu-bar:has(.menu-bar__flowchart-tab-group ~ .menu-bar__flowchart-tab-group)
+      .menu-bar__book-navigation {
+      margin-right: 220px;
+    }
+    .menu-bar__flowchart-tab-group:has(~ .menu-bar__flowchart-tab-group) {
+      margin-right: 110px;
+    }
+    > .tool-bar {
+      flex-wrap: wrap;
+      align-content: start;
+      min-height: 34px;
+      padding-block: 3px;
+    }
+  }
+  .window-shell.is-flowchart-active:not(.is-library-active):has(> .patent-tabs) {
+    grid-template-rows: 30px 60px minmax(0, 1fr);
+  }
+  .window-shell:not(.is-library-active):has(> .patent-tabs),
+  .window-shell.is-library-active:has(.library-shell) {
+    .ipc-data-center-trigger {
+      width: 28px;
+      padding-inline: 0;
+      justify-content: center;
+      gap: 0;
+      font-size: 0;
+    }
+    .patent-tabs__patent-tab-shell {
+      flex-basis: 150px;
+      min-width: 96px;
+    }
+  }
+  .window-shell.is-library-active:has(.library-shell) {
+    .library-header {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .library-header-actions,
+    .library-selection-actions {
+      flex-wrap: wrap;
+    }
+    .patent-library-filters {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .patent-library-search {
+      flex: 1 0 100%;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .library-filter-select {
+      flex: 1 1 90px;
+      min-width: 0;
+    }
+    .library-filter-select select {
+      width: 100%;
+      min-width: 0;
+    }
+    .library-desktop-view {
+      padding: 10px;
+    }
+  }
+  .application-settings-dialog__body--workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .application-settings-dialog .settings-workspace-navigation {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 8px;
+    gap: 12px;
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+    scrollbar-gutter: auto;
+  }
+  .settings-workspace-navigation__group {
+    display: flex;
+    gap: 4px;
+    flex: none;
+    align-items: center;
+  }
+  .settings-workspace-navigation__group-title {
+    padding: 0 4px;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+  .settings-workspace-navigation__item {
+    width: auto;
+    flex: none;
+    white-space: nowrap;
+  }
+  .settings-workspace-content {
+    padding: 8px;
+  }
+  .snapshot-manager__version-row {
+    --snapshot-version-columns: 44px minmax(0, 1fr) max-content max-content;
+    --snapshot-version-action-align: flex-start;
+  }
+  .snapshot-manager__version-actions {
+    grid-column: 1 / -1;
+  }
+  .snapshot-manager__version-actions button {
+    white-space: nowrap;
+  }
+  .application-settings-dialog .page-margin-dialog--embedded .page-margin-dialog__layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .application-settings-dialog .shortcut-settings-dialog__custom-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .docx-import-dialog__metadata {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .docx-import-dialog__metadata > :first-child {
+    grid-column: 1 / -1;
+  }
+  .docx-import-dialog__header,
+  .docx-import-dialog__footer {
+    padding: 8px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .docx-import-dialog__columns {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(64px, auto) minmax(140px, 1fr) minmax(64px, auto);
+    overflow: auto;
+  }
+  .docx-import-sources,
+  .docx-import-settings {
+    max-height: 150px;
+    border: 0;
+  }
+  .docx-import-preview {
+    min-height: 140px;
+  }
+  .snapshot-content-preview__standard-body .snapshot-content-preview__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .snapshot-content-preview__standard-body .snapshot-content-preview__rail {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    gap: 6px;
+    max-height: 82px;
+    padding: 6px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid #cbd5e1;
+  }
+  .snapshot-content-preview__rail button {
+    flex: 0 0 140px;
+    width: 140px;
+    min-width: 140px;
+    margin: 0;
+    padding: 6px;
+  }
+  .snapshot-content-preview__standard-body .snapshot-content-preview__workspace {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .snapshot-content-preview__standard-body .snapshot-content-preview__detail {
+    grid-row: 3;
+    max-height: 100px;
+    padding: 6px 8px;
+  }
+  .snapshot-content-preview__tabs,
+  .settings-storage-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .snapshot-content-preview__tabs > button,
+  .settings-storage-tabs > button {
+    flex: none;
+    white-space: nowrap;
+  }
+  .drawing-workspace-content,
+  .drawing-workspace-content.is-sources-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  }
+  .drawing-sources,
+  .is-sources-collapsed .drawing-sources {
+    grid-column: 1;
+    grid-row: 3;
+    padding: 0 8px;
+    max-height: 136px;
+    border-right: 0;
+    border-bottom: 1px solid #e5e5e8;
+    overflow: auto;
+  }
+  .drawing-source-header {
+    height: 32px;
+  }
+  .drawing-source-content {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    flex: none;
+    gap: 6px;
+    padding-bottom: 6px;
+    overflow: auto;
+    max-height: 96px;
+  }
+  .drawing-source-content > * {
+    flex: 0 0 160px;
+    min-width: 0;
+    max-height: 90px;
+    overflow: auto;
+  }
+  .drawing-source-content > .drawing-create-button,
+  .drawing-source-content > .drawing-import-row {
+    flex-basis: 100px;
+  }
+  .drawing-side-section-title {
+    flex-basis: 76px;
+  }
+  .drawing-source-content[hidden] {
+    display: none;
+  }
+  .drawing-import-row {
+    margin: 0;
+  }
+  .drawing-source-scroll {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    min-width: 0;
+  }
+  .drawing-source-scroll > * {
+    flex: 0 0 160px;
+    max-width: 160px;
+  }
+  .drawing-header {
+    grid-column: 1;
+    grid-row: 1;
+    flex-wrap: wrap;
+    padding-block: 5px;
+  }
+  .drawing-header-actions {
+    flex-wrap: wrap;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .drawing-toolbar {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 40px;
+  }
+  .drawing-layout,
+  .drawing-workspace-content > .patent-function-rail-scope {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .drawing-status {
+    grid-column: 1;
+    grid-row: 5;
+    flex-wrap: wrap;
+    min-height: 32px;
+    gap: 4px;
+    padding: 4px 8px;
+  }
+  .drawing-workspace-content:has(.drawing-import-warnings) {
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  }
+  .drawing-import-warnings {
+    grid-column: 1;
+    grid-row: 5;
+  }
+  .drawing-workspace-content:has(.drawing-import-warnings) > .drawing-status {
+    grid-row: 6;
+  }
+  .standard-dialog .patent-folder__file {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+  .patent-folder__file > small {
+    grid-column: 2;
+  }
+  .patent-folder__columns {
+    grid-template-columns: minmax(0, 1fr) 62px;
+  }
+  .patent-folder__columns > :nth-child(2) {
+    display: none;
+  }
+  .patent-folder__toolbar {
+    padding: 8px 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .status-bar {
+    min-width: 0;
+    gap: 8px;
+    padding-inline: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .status-bar > * {
+    flex-shrink: 0;
+  }
+}
+:root[data-device-form="tablet"][data-tablet-orientation="portrait"][data-tablet-tools="collapsed"]
+  .window-shell:not(.is-library-active):not(.is-flowchart-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 60px 0px minmax(0, 1fr) 24px;
+}
+:root[data-device-form="tablet"][data-tablet-orientation="portrait"][data-tablet-focus="true"]
+  .window-shell:not(.is-library-active):not(.is-flowchart-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 0px 0px minmax(0, 1fr) 24px;
+}
+:root[data-device-form="tablet"][data-tablet-orientation="portrait"][data-tablet-focus="true"]
+  .window-shell.is-flowchart-active:not(.is-library-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 0px minmax(0, 1fr);
+}

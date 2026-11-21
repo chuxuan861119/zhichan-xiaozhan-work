@@ -16,6 +16,8 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import writeFileAtomic from "write-file-atomic";
 import { z } from "zod";
+import { installNewFileWithoutClobber } from "../documents/file-service.js";
+import { usesHarmonyPublicFileCopy } from "../platform/harmony-public-files.js";
 
 const LocationSchema = z
   .object({
@@ -209,10 +211,14 @@ export class LibraryLocation {
         await mkdir(dirname(target), { recursive: true });
         const before = await hash(source);
         const info = await stat(source);
-        await copyFile(source, target, constants.COPYFILE_EXCL);
+        const publicHarmonyTarget = usesHarmonyPublicFileCopy(target);
+        if (publicHarmonyTarget) await installNewFileWithoutClobber(source, target);
+        else await copyFile(source, target, constants.COPYFILE_EXCL);
         if ((await hash(target)) !== before || (await hash(source)) !== before)
           throw new Error("文件复制校验失败");
-        await utimes(target, info.atime, info.mtime);
+        // Public storage cannot change file timestamps. The library's document
+        // dates remain in SQLite; its verified contents define migration safety.
+        if (!publicHarmonyTarget) await utimes(target, info.atime, info.mtime);
         const handle = await open(target, "r+");
         try {
           await handle.sync();

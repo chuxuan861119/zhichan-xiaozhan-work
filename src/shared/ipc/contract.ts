@@ -406,6 +406,8 @@ export const IPC_CHANNELS = {
   applicationLegislation: "application:legislation",
   applicationOpenThirdPartyNotices: "application:open-third-party-notices",
   applicationOpenThirdPartyLicensesFolder: "application:open-third-party-licenses-folder",
+  applicationReadTabletWindow: "application:read-tablet-window",
+  applicationSetTabletFocus: "application:set-tablet-focus",
   applicationGetWindowLayoutState: "application:get-window-layout-state",
   applicationPrepareRecovery: "application:prepare-recovery",
   applicationActivateRecovery: "application:activate-recovery",
@@ -640,6 +642,8 @@ export const PRELOAD_INVOKE_CHANNELS = [
   IPC_CHANNELS.applicationLegislation,
   IPC_CHANNELS.applicationOpenThirdPartyNotices,
   IPC_CHANNELS.applicationOpenThirdPartyLicensesFolder,
+  IPC_CHANNELS.applicationReadTabletWindow,
+  IPC_CHANNELS.applicationSetTabletFocus,
   IPC_CHANNELS.applicationGetWindowLayoutState,
   IPC_CHANNELS.applicationGetStartupRecoveryReport,
   IPC_CHANNELS.applicationMaximizeWindow,
@@ -2172,6 +2176,20 @@ export const FullDataImportCommitResultSchema = appResultSchema(
     .readonly(),
 );
 
+export const TabletWindowStateSchema = z
+  .object({
+    available: z.boolean(),
+    focusMode: z.boolean(),
+    windowed: z.boolean().default(false),
+    contentHeightPx: z.number().finite().min(0).max(20000).default(0),
+    portrait: z.boolean().optional(),
+    topInsetPx: z.number().finite().min(0).max(10000),
+    bottomInsetPx: z.number().finite().min(0).max(10000),
+  })
+  .strict();
+export type TabletWindowState = z.infer<typeof TabletWindowStateSchema>;
+export const TabletWindowStateResultSchema = appResultSchema(TabletWindowStateSchema);
+
 export interface PatentApi {
   tutorial?: {
     isSession: boolean;
@@ -2499,6 +2517,8 @@ export interface PatentApi {
     }): Promise<AppResult<void>>;
     openThirdPartyNotices?(): Promise<AppResult<void>>;
     openThirdPartyLicensesFolder?(): Promise<AppResult<void>>;
+    readTabletWindow?(): Promise<AppResult<TabletWindowState>>;
+    setTabletFocusMode?(enabled: boolean): Promise<AppResult<TabletWindowState>>;
     getWindowLayoutState(): Promise<AppResult<WindowLayoutState>>;
     prepareRecovery?(source: RecoverySource): Promise<AppResult<PreparedRecovery | null>>;
     activateRecovery?(token: string): Promise<AppResult<void>>;

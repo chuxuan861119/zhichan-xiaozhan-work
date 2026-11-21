@@ -3,6 +3,23 @@ const { app, safeStorage, systemPreferences } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 const configuration = require("./harmony-build.json");
+delete process.env.PATENT_HARMONY_APP_PACKAGE;
+if (
+  configuration.local === false &&
+  !configuration.smoke &&
+  !configuration.acceptance &&
+  !configuration.uiAcceptance &&
+  !configuration.hotReload
+)
+  process.env.PATENT_HARMONY_APP_PACKAGE = "1";
+if (configuration.hotReload) {
+  if (!configuration.local || configuration.smoke)
+    throw new Error("Hot reload requires a local interactive build");
+  process.env.PATENT_HARMONY_HOT_RELOAD_URL = "http://127.0.0.1:5179/";
+  process.env.ELECTRON_RENDERER_URL = process.env.PATENT_HARMONY_HOT_RELOAD_URL;
+  const inspector = require("node:inspector");
+  if (!inspector.url()) inspector.open(9229, "127.0.0.1");
+}
 if (configuration.uiAcceptance) {
   if (!configuration.local || !configuration.acceptance || !configuration.smoke)
     throw new Error("UI debugging requires an isolated local acceptance build");
@@ -76,11 +93,17 @@ app.on("browser-window-created", (_event, window) => {
     globalThis.__harmonyStartupError(error),
   );
   window.webContents.on("did-finish-load", () => {
-    if (!window.webContents.getURL().startsWith("patent-app:")) return;
+    if (
+      !window.webContents.getURL().startsWith("patent-app:") &&
+      !(
+        configuration.hotReload && window.webContents.getURL() === process.env.ELECTRON_RENDERER_URL
+      )
+    )
+      return;
     setTimeout(async () => {
       try {
         const page = await window.webContents.executeJavaScript(
-          '({title:document.title,api:typeof window.patentApi,fontPlatform:globalThis.documentFontPlatform,fonts:!!document.getElementById("document-fonts")})',
+          '({title:document.title,api:typeof window.patentApi,fontPlatform:globalThis.documentFontPlatform,fonts:!!document.getElementById("document-fonts"),viewport:{layoutHeight:innerHeight,visibleHeight:window.visualViewport?.height,ratio:devicePixelRatio,contentHeight:getComputedStyle(document.documentElement).getPropertyValue("--harmony-content-height")}})',
         );
         const record = {
           title: window.getTitle(),

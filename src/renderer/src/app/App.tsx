@@ -1,3 +1,7 @@
+import { TabletControls } from "../shared/tablet-controls";
+import { defaultDocumentZoom, useTabletDocumentZoom } from "../shared/use-tablet-document-zoom";
+import { isTabletPortrait } from "../shared/use-tablet-portrait";
+import { useDocumentTouchZoom } from "./use-document-touch-zoom";
 import { useExclusiveEditorRuntime } from "../shared/use-exclusive-editor-runtime";
 import { ActiveEditorSessionContext, EditorSessionScope, editorBelongsToSession } from "../shared/editor-session-scope";
 import { useSessionState } from "../shared/use-session-state";
@@ -831,6 +835,7 @@ function WorkbenchWindow() {
       retainedLayout?: PatentWorkspaceLayoutState,
       intentKey?: string,
     ): Promise<T | undefined> => {
+      if (direction === "enter-dual" && isTabletPortrait()) return undefined;
       if (
         workspaceLayoutSwitchPending.current?.direction === direction &&
         (!intentKey || workspaceLayoutSwitchPending.current.intentKey === intentKey)
@@ -1252,7 +1257,7 @@ function WorkbenchWindow() {
   const [findSession, setFindSession] = useState<FindRailSession | null>(null);
   const [findQuery, setFindQuery] = useState("");
   // Page zoom belongs to this software session; startup always uses 100%.
-  const [zoomPercent, setZoomPercent] = useState(DEFAULT_APP_SETTINGS.zoomPercent);
+  const [zoomPercent, setZoomPercent] = useTabletDocumentZoom();
   const [physicsFormulaTarget, setPhysicsFormulaTarget, physicsFormulaTargetSessions, setPhysicsFormulaTargetForSession] = useSessionState<
     string | { drawingsOnly: true; patentId: string; sessionId: string } | null
   >(activePatentSession?.sessionId, null, openAiCorrectionSessionIds);
@@ -2164,6 +2169,7 @@ function WorkbenchWindow() {
 
   const requestDualLayout = useCallback(
     async (transition?: WorkspaceLayoutTransition) => {
+      if (isTabletPortrait()) return null;
       // All entry points (quick pairs, presets and tab drops) leave column mode.
       if (columnsRequested) {
         const restored = await window.patentApi.application.setDualColumnWindow({
@@ -2177,7 +2183,7 @@ function WorkbenchWindow() {
         }
       }
       const result = await windowLayout.requestDualView();
-      if (transition?.cancelled) return null;
+      if (transition?.cancelled || isTabletPortrait()) return null;
       if (!result.ok) {
         showAppAlert(result.reason);
         return null;
@@ -2651,7 +2657,7 @@ function WorkbenchWindow() {
       );
       return;
     }
-    setZoomPercent(100);
+    setZoomPercent(defaultDocumentZoom());
   }, [workspaceLayout.mode, columnsActive, zoomLimits]);
 
   const activePaneState = workspaceLayout[workspaceLayout.activePane];
@@ -2680,6 +2686,7 @@ function WorkbenchWindow() {
   );
 
   useWorkspaceZoomInput(handleZoom, resetZoom);
+  useDocumentTouchZoom(handleZoom);
 
   const showError = (error: AppError) => {
     if (error.code !== "CANCELLED") setAppError(error);
@@ -5254,6 +5261,14 @@ function WorkbenchWindow() {
         )}
         {patentsAvailable ? (
           <PatentTabs
+            windowActions={
+              !isToolTutorial ? (
+                <TabletControls
+                  editorMode={library.view === "editor"}
+                  toolbarAvailable={!embeddedEditorActive || workspaceLayout.mode === "dual"}
+                />
+              ) : undefined
+            }
             tutorialMode={isToolTutorial}
             guidance={
               <WritingGuidance

@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import windowMetrics from "../../platforms/harmony/window-metrics.json" with { type: "json" };
 
 const anchor = [
   "      this.maximizable = this.maximizable && !this.hideTitleBar;",
@@ -10,7 +11,7 @@ const anchor = [
 const replacement = [
   "      // ZXW: retain system caption buttons over the document tab row.",
   "      if (this.hideTitleBar && !this.isPanel) {",
-  "        window.setWindowDecorHeight(38);",
+  `        window.setWindowDecorHeight(${windowMetrics.captionHeight});`,
   "      }",
 ].join("\n");
 
@@ -34,7 +35,7 @@ export function patchNativeFrameAdapter(source) {
     "      // ZXW: frame visibility and caption button permissions are independent.",
     "      let preferences = this.abilityManager.getProxy(id)?.getWindowPreferences();",
     "      windowClass?.setWindowTitleButtonVisible(preferences?.maximizable ?? true, preferences?.minimizable ?? true, preferences?.closable ?? true);",
-    "      if (!useNativeFrame) windowClass?.setWindowDecorHeight(38);",
+    `      if (!useNativeFrame) windowClass?.setWindowDecorHeight(${windowMetrics.captionHeight});`,
   ].join("\n");
   if (source.includes(patched) && !source.includes(original)) return source;
   if (source.split(original).length !== 2) throw new Error("Unsupported native frame adapter");

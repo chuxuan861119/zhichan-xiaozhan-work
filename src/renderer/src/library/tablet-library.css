@@ -1,0 +1,455 @@
+/* biome-ignore-all lint/style/noDescendingSpecificity: Nested rules share a tablet-library boundary; tab badges and collapsed navigation intentionally override general controls. */
+/* The tablet library owns this density; desktop and editor styles stay separate. */
+:root[data-device-form="tablet"] .window-shell.is-library-active:has(.library-shell) {
+  --tablet-library-nav-width: 132px;
+  grid-template-rows: 30px minmax(0, 1fr) 22px;
+
+  .patent-tabs {
+    grid-template-rows: 30px;
+  }
+  .patent-tabs__library-tab {
+    width: 88px;
+    min-width: 88px;
+    min-height: 30px;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+  .patent-tabs__brand-logo {
+    width: 18px;
+    height: 18px;
+    transform: none;
+  }
+  .patent-tabs__patent-tab-shell {
+    flex-basis: 192px;
+    width: 192px;
+    min-width: 128px;
+    max-width: 224px;
+  }
+  .patent-tabs__patent-title {
+    font-size: 12px;
+  }
+  .patent-tabs__state-badge {
+    flex: none;
+    font-size: 9px;
+  }
+  .patent-tabs__state-badge .patent-type-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+  }
+  .patent-tabs__new-patent,
+  .patent-tabs__close-patent,
+  .patent-tabs__overflow-trigger,
+  .tablet-controls > button {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+  }
+  .tablet-controls svg {
+    width: 16px;
+    height: 16px;
+  }
+  .ipc-data-center-trigger {
+    height: 24px;
+    margin-inline: 4px;
+    padding-inline: 7px;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .ipc-data-center-trigger svg {
+    width: 14px;
+    height: 14px;
+  }
+  .status-bar {
+    font-size: 11px;
+  }
+  .library-shell {
+    grid-template-columns: var(--tablet-library-nav-width) minmax(0, 1fr);
+  }
+  .library-sidebar {
+    padding: 12px 8px 8px;
+  }
+  .library-wordmark {
+    margin: 0 4px 14px;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .library-wordmark img {
+    width: 20px;
+    height: 20px;
+  }
+  .library-sidebar__label {
+    margin: 0 8px 6px;
+    font-size: 10px;
+  }
+  .library-sidebar nav {
+    gap: 3px;
+  }
+  .library-sidebar > nav > button,
+  .library-application-menu > button,
+  .library-application-menu .menu-bar__menu-group > button {
+    min-width: 0;
+    min-height: 32px;
+    padding-inline: 8px;
+    gap: 7px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .library-sidebar nav button > svg {
+    width: 16px;
+    height: 16px;
+  }
+  .library-sidebar__divider {
+    margin: 10px 8px 6px;
+  }
+  .library-sidebar__footer {
+    padding-top: 8px;
+  }
+  .library-sidebar__footer .tool-tutorial-entry {
+    min-height: 32px;
+    padding: 6px;
+    gap: 4px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    white-space: nowrap;
+    box-shadow: none;
+  }
+  .library-sidebar__footer .tool-tutorial-entry > svg {
+    width: 16px;
+    height: 16px;
+  }
+  .library-sidebar__footer .tool-tutorial-entry > svg:last-child {
+    width: 12px;
+    height: 12px;
+  }
+  .library-desktop-view {
+    padding: 14px 18px 16px;
+  }
+  .library-toolbar {
+    padding: 0 0 10px;
+  }
+  .library-header {
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+  .library-heading h1 {
+    font-size: 16px;
+    letter-spacing: 0;
+  }
+  .library-header-actions {
+    gap: 6px;
+  }
+  .library-header button {
+    min-height: 30px;
+    padding: 0 10px;
+    gap: 5px;
+    border-radius: 6px;
+    font-size: 12px;
+    box-shadow: none;
+  }
+  .library-header button svg {
+    width: 15px;
+    height: 15px;
+  }
+  .patent-library-filters {
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+  .patent-library-search {
+    height: 30px;
+    border-radius: 6px;
+  }
+  .patent-library-search input[type="search"] {
+    height: 28px;
+    font-size: 12px;
+  }
+  .patent-library-search__icon {
+    width: 16px;
+    height: 16px;
+  }
+  .patent-search-content-toggle {
+    gap: 5px;
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+  .library-filter-select select {
+    width: 106px;
+    min-width: 106px;
+    height: 30px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .patent-library-view-toggle {
+    min-height: 30px;
+    padding: 2px;
+    border-radius: 6px;
+  }
+  .patent-library-view-toggle button {
+    width: 28px;
+    min-height: 24px;
+    border-radius: 4px;
+  }
+  .patent-library-view-toggle button svg {
+    width: 16px;
+    height: 16px;
+  }
+  .library-list {
+    gap: 12px;
+  }
+  .library-selection-actions {
+    min-height: 44px;
+    margin-bottom: 10px;
+    padding: 6px 10px;
+    gap: 6px;
+    border-radius: 6px;
+  }
+  .library-selection-actions > button {
+    min-height: 30px;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+  .library-selection-count {
+    font-size: 12px;
+  }
+  .patent-list-columns {
+    min-height: 30px;
+    font-size: 11px;
+  }
+  .patent-library-month-heading {
+    min-height: 28px;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .patent-library-month-count {
+    font-size: 11px;
+  }
+  .library-month-collapse > .spatial-collapse__content > .patent-library-month-cards {
+    padding-top: 4px;
+  }
+  .library-card {
+    border-radius: 8px;
+  }
+  .patent-list-row {
+    min-height: 44px;
+    border-radius: 0;
+  }
+  .patent-list-row h2 {
+    font-size: 13px;
+  }
+  .patent-list-row .patent-card-title-button {
+    font-weight: 500;
+  }
+  .patent-list-row__customer,
+  .patent-list-row__date {
+    font-size: 11px;
+  }
+  .patent-type-badge {
+    padding: 1px 6px;
+    font-size: 10px;
+  }
+  .patent-list-select,
+  .patent-list-row .patent-export-checkbox,
+  .patent-list-columns .patent-export-checkbox {
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+  }
+  @container (min-width: 681px) {
+    .patent-list-columns,
+    .patent-list-row {
+      grid-template-columns: 24px minmax(160px, 1fr) minmax(70px, 0.4fr) 72px 120px 28px;
+      column-gap: 12px;
+      padding-inline: 8px;
+    }
+  }
+  @container (max-width: 680px) {
+    .patent-list-row {
+      padding: 8px 6px;
+      row-gap: 4px;
+    }
+  }
+}
+
+:root[data-device-form="tablet"][data-tablet-nav="collapsed"]
+  .window-shell.is-library-active:has(.library-shell) {
+  --tablet-library-nav-width: 48px;
+
+  .library-sidebar {
+    padding-inline: 6px;
+  }
+  .library-sidebar > nav > button,
+  .library-sidebar__footer
+    :is(
+      .tool-tutorial-entry,
+      .library-application-menu > button,
+      .library-application-menu > .menu-bar__menu-group > button
+    ) {
+    padding-inline: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+  .library-wordmark {
+    margin-inline: 0;
+  }
+}
+
+:root[data-device-form="tablet"]:has(.window-shell.is-library-active .library-shell)
+  .library-header-dropdown {
+  padding: 4px;
+  border-radius: 6px;
+
+  > button {
+    min-height: 30px;
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 680px) {
+  :root[data-device-form="tablet"] .window-shell.is-library-active:has(.library-shell) {
+    .library-desktop-view {
+      padding-inline: 12px;
+    }
+    .patent-library-filters {
+      gap: 6px;
+    }
+  }
+}
+
+:root[data-device-form="tablet"] .window-shell.is-library-active:has(.library-shell) {
+  .patent-tablet-card-title {
+    display: -webkit-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    touch-action: pan-y;
+  }
+  .patent-tablet-card-title:focus-visible {
+    outline: 2px solid #93bfff;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .patent-library-month-cards[data-view-mode="double"] {
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+
+    .library-card {
+      min-height: 132px;
+      padding: 12px 44px 12px 12px;
+    }
+    .library-card-title-content {
+      width: 100%;
+      gap: 6px;
+    }
+    h2 {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .library-card-meta {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      gap: 3px;
+      margin-top: 8px;
+      padding: 8px 0 0;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .library-card-meta > span {
+      grid-column: 1;
+      grid-row: auto;
+    }
+    .library-card-customer:empty {
+      display: none;
+    }
+    .patent-card-actions {
+      top: 8px;
+      right: 6px;
+      transform: none;
+    }
+    .patent-card-menu-trigger {
+      width: 32px;
+      min-height: 32px;
+    }
+  }
+  @container (min-width: 620px) {
+    .patent-library-month-cards[data-view-mode="double"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .patent-library-month-cards[data-view-mode="illustrated"] {
+    gap: 12px;
+  }
+  @container (min-width: 740px) {
+    .patent-library-month-cards[data-view-mode="illustrated"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .patent-illustrated-card.library-card {
+    grid-template-columns: minmax(0, 34%) minmax(0, 66%);
+    grid-template-rows: minmax(154px, auto) auto;
+    min-height: 208px;
+    max-height: none;
+    aspect-ratio: auto;
+    border-radius: 8px;
+  }
+  .patent-illustrated-card__media {
+    padding: 12px 8px 10px 12px;
+  }
+  .patent-illustrated-card__body {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    padding: 12px 12px 10px 8px;
+  }
+  .patent-illustrated-card__title-row {
+    min-height: 36px;
+    align-items: flex-start;
+    gap: 6px;
+    padding-right: 0;
+  }
+  .patent-illustrated-card__title-row h2 {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .patent-illustrated-card__customer {
+    margin-top: 6px;
+    font-size: 11px;
+  }
+  .patent-illustrated-card__abstract-hover,
+  .patent-illustrated-card__empty-abstract {
+    margin-top: 8px;
+  }
+  .patent-illustrated-card__abstract-hover > .patent-illustrated-hover__trigger > span {
+    font-size: 11px;
+    line-height: 1.65;
+  }
+  .patent-illustrated-card__footer {
+    min-height: 44px;
+    gap: 6px;
+    padding: 6px 8px 6px 12px;
+  }
+  .patent-illustrated-card__dates {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding-right: 0;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .patent-illustrated-card__actions .patent-card-menu-trigger {
+    width: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+}

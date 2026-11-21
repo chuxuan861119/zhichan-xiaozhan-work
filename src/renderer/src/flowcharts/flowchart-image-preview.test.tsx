@@ -192,3 +192,48 @@ test("rotated replacement previews keep the final figure's displayed width", () 
   expect(image.style.transform).toContain("rotate(90deg)");
   expect(screen.getByText("100%")).toBeTruthy();
 });
+
+test("tablet pinch keeps its midpoint anchored and resumes one-finger pan without jumping", () => {
+  render(<FlowchartImagePreview src="preview.svg" alt="平板预览" />);
+  const viewport = screen.getByTestId("flowchart-image-preview-viewport");
+  viewport.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 400 }) as DOMRect;
+  const pointer = (pointerId: number, clientX: number, clientY: number) => ({
+    pointerId,
+    clientX,
+    clientY,
+    pointerType: "touch",
+    button: 0,
+  });
+  fireEvent.pointerDown(viewport, pointer(1, 200, 200));
+  fireEvent.pointerDown(viewport, pointer(2, 300, 200));
+  fireEvent.pointerMove(viewport, pointer(2, 400, 200));
+  expect(screen.getByText("200%")).toBeTruthy();
+  const image = screen.getByAltText("平板预览");
+  expect(image.getAttribute("style")).toContain("translate(0px, 0px)");
+  fireEvent.pointerUp(viewport, pointer(2, 400, 200));
+  fireEvent.pointerMove(viewport, pointer(1, 220, 230));
+  expect(image.getAttribute("style")).toContain("translate(20px, 30px)");
+  fireEvent.pointerCancel(viewport, pointer(1, 220, 230));
+  fireEvent.pointerMove(viewport, pointer(1, 280, 290));
+  expect(image.getAttribute("style")).toContain("translate(20px, 30px)");
+});
+
+test("tablet pinch clamps zoom and ignores a third finger and lost capture", () => {
+  render(<FlowchartImagePreview src="preview.svg" alt="多指预览" />);
+  const viewport = screen.getByTestId("flowchart-image-preview-viewport");
+  const pointer = (pointerId: number, clientX: number) => ({
+    pointerId,
+    clientX,
+    clientY: 0,
+    pointerType: "touch",
+    button: 0,
+  });
+  fireEvent.pointerDown(viewport, pointer(1, 0));
+  fireEvent.pointerDown(viewport, pointer(2, 100));
+  fireEvent.pointerDown(viewport, pointer(3, 900));
+  fireEvent.pointerMove(viewport, pointer(2, 1000));
+  expect(screen.getByText("400%")).toBeTruthy();
+  fireEvent.lostPointerCapture(viewport, pointer(1, 0));
+  fireEvent.pointerMove(viewport, pointer(2, 20));
+  expect(screen.getByText("400%")).toBeTruthy();
+});

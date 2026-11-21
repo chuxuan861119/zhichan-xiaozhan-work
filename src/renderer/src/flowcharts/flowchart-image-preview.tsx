@@ -78,6 +78,13 @@ function FlowchartImagePreviewCanvas({
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
   const dragRef = useRef<{ pointerId: number; origin: Point; start: Point } | null>(null);
+  const touches = useRef(new Map<number, Point>());
+  const pinch = useRef<{
+    distance: number;
+    midpoint: Point;
+    scale: number;
+    position: Point;
+  } | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef({ scale: 1, position: { x: 0, y: 0 } });
   const wheelHandler = useRef<(event: WheelEvent) => void>(() => {});
@@ -104,7 +111,26 @@ function FlowchartImagePreviewCanvas({
     setScale(bounded);
   };
 
+  const cancelGesture = () => {
+    touches.current.clear();
+    pinch.current = null;
+    dragRef.current = null;
+  };
+  const finishPointer = (pointerId: number) => {
+    touches.current.delete(pointerId);
+    pinch.current = null;
+    dragRef.current = null;
+    const remaining = touches.current.entries().next().value;
+    if (remaining)
+      dragRef.current = {
+        pointerId: remaining[0],
+        start: remaining[1],
+        origin: viewRef.current.position,
+      };
+  };
+
   const reset = () => {
+    cancelGesture();
     autoFit.current = false;
     changeScale(1);
     changePosition({ x: 0, y: 0 });
@@ -148,7 +174,7 @@ function FlowchartImagePreviewCanvas({
     if (!imageAvailable) return;
     event.preventDefault();
     event.stopPropagation();
-    if (dragRef.current) return;
+    if (dragRef.current || touches.current.size) return;
     autoFit.current = false;
     const viewport = event.currentTarget as HTMLDivElement;
     const previous = viewRef.current;
@@ -221,15 +247,66 @@ function FlowchartImagePreviewCanvas({
         data-testid="flowchart-image-preview-viewport"
         onPointerDown={(event) => {
           if (!imageAvailable || event.button !== 0) return;
+          if (event.pointerType === "touch") {
+            if (touches.current.size >= 2) return;
+            touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          } else if (touches.current.size) return;
           autoFit.current = false;
           event.currentTarget.setPointerCapture?.(event.pointerId);
+          if (touches.current.size === 2) {
+            const [a, b] = [...touches.current.values()];
+            if (!a || !b) return;
+            pinch.current = {
+              distance: Math.hypot(b.x - a.x, b.y - a.y),
+              midpoint: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+              scale: viewRef.current.scale,
+              position: viewRef.current.position,
+            };
+            dragRef.current = null;
+            return;
+          }
           dragRef.current = {
             pointerId: event.pointerId,
-            origin: position,
+            origin: viewRef.current.position,
             start: { x: event.clientX, y: event.clientY },
           };
         }}
         onPointerMove={(event) => {
+          if (touches.current.has(event.pointerId)) {
+            touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            const start = pinch.current;
+            if (start && touches.current.size === 2) {
+              const [a, b] = [...touches.current.values()];
+              if (!a || !b) return;
+              // Coincident contacts cannot establish a stable scale baseline.
+              if (start.distance < 1) return;
+              const nextScale = Math.min(
+                MAX_SCALE,
+                Math.max(
+                  MIN_SCALE,
+                  (start.scale * Math.hypot(b.x - a.x, b.y - a.y)) / start.distance,
+                ),
+              );
+              const ratio = nextScale / start.scale;
+              const bounds = event.currentTarget.getBoundingClientRect();
+              const center = {
+                x: bounds.left + bounds.width / 2,
+                y: bounds.top + bounds.height / 2,
+              };
+              changeScale(nextScale);
+              changePosition({
+                x:
+                  (a.x + b.x) / 2 -
+                  center.x -
+                  (start.midpoint.x - center.x - start.position.x) * ratio,
+                y:
+                  (a.y + b.y) / 2 -
+                  center.y -
+                  (start.midpoint.y - center.y - start.position.y) * ratio,
+              });
+              return;
+            }
+          }
           const drag = dragRef.current;
           if (!drag || drag.pointerId !== event.pointerId) return;
           changePosition({
@@ -238,13 +315,19 @@ function FlowchartImagePreviewCanvas({
           });
         }}
         onPointerUp={(event) => {
-          if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+          if (
+            touches.current.has(event.pointerId) ||
+            dragRef.current?.pointerId === event.pointerId
+          )
+            finishPointer(event.pointerId);
         }}
-        onPointerCancel={() => {
-          dragRef.current = null;
-        }}
-        onLostPointerCapture={() => {
-          dragRef.current = null;
+        onPointerCancel={cancelGesture}
+        onLostPointerCapture={(event) => {
+          if (
+            touches.current.has(event.pointerId) ||
+            dragRef.current?.pointerId === event.pointerId
+          )
+            cancelGesture();
         }}
       >
         {src && !imageFailed ? (
@@ -263,7 +346,7 @@ function FlowchartImagePreviewCanvas({
               onLoad?.();
             }}
             onError={() => {
-              dragRef.current = null;
+              cancelGesture();
               setImageFailed(true);
               onError?.();
             }}

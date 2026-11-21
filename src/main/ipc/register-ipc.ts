@@ -625,6 +625,31 @@ export function registerIpcHandlers(
   const harmony = isHarmonyPlatform(process.platform)
     ? createHarmonySystem(systemPreferences as HarmonyBridge)
     : undefined;
+  const noTabletWindow = { available: false, focusMode: false, topInsetPx: 0, bottomInsetPx: 0 };
+  register(IPC_CHANNELS.applicationReadTabletWindow, async () => {
+    try {
+      return { ok: true, value: harmony ? await harmony.readTabletWindow() : noTabletWindow };
+    } catch (error) {
+      return ipcFailure(error, logger);
+    }
+  });
+  let tabletFocusOperation: Promise<unknown> = Promise.resolve();
+  register(IPC_CHANNELS.applicationSetTabletFocus, async (_event, input) => {
+    const enabled = z.boolean().safeParse(input);
+    if (!enabled.success) return appFailure("INVALID_INPUT");
+    const operation = tabletFocusOperation.then(async () => {
+      try {
+        return {
+          ok: true,
+          value: harmony ? await harmony.setTabletFocusMode(enabled.data) : noTabletWindow,
+        };
+      } catch (error) {
+        return ipcFailure(error, logger);
+      }
+    });
+    tabletFocusOperation = operation.catch(() => undefined);
+    return operation;
+  });
   const startupService = createStartupService(
     app,
     process.platform,

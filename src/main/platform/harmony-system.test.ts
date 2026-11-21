@@ -63,3 +63,29 @@ test("external grants are restored without treating partial failures as full suc
   });
   expect(await system.restoreFileAccess()).toEqual({ restored: 2, failed: 1 });
 });
+
+test("tablet window bridge validates native geometry and reports rejected focus transitions", async () => {
+  let response = JSON.stringify({
+    available: true,
+    focusMode: false,
+    windowed: false,
+    topInsetPx: 105,
+    bottomInsetPx: 0,
+  });
+  const call = vi.fn((_name: string, _type: string, args: unknown[]) => {
+    (args[args.length - 1] as (value: string) => void)(response);
+  });
+  const system = createHarmonySystem({ callArkTSFunction: call });
+  expect((await system.readTabletWindow()).topInsetPx).toBe(105);
+  response = JSON.stringify({ ...JSON.parse(response), portrait: true });
+  expect((await system.readTabletWindow()).portrait).toBe(true);
+  await system.setTabletFocusMode(true);
+  expect(call).toHaveBeenLastCalledWith("Workbench.SetTabletFocus", "void", [
+    true,
+    expect.any(Function),
+  ]);
+  response = '{"error":true}';
+  await expect(system.setTabletFocusMode(true)).rejects.toThrow("无法切换");
+  response = '{"available":true,"focusMode":false,"topInsetPx":-1,"bottomInsetPx":0}';
+  await expect(system.readTabletWindow()).rejects.toThrow();
+});

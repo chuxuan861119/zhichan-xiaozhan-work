@@ -1,5 +1,14 @@
 import { describe, expect, test } from "vitest";
-import { backupRelativeName, managedBackupIdentity } from "./backup-naming.js";
+import { backupRelativeName, managedBackupIdentity, managedBackupTime } from "./backup-naming.js";
+
+test("managed backup timestamps retain the displayed minute and reject malformed dates", () => {
+  const time = new Date(2026, 10, 6, 17, 40, 52);
+  const name = backupRelativeName(info, time);
+  expect(managedBackupTime(name)).toEqual(new Date(2026, 10, 6, 17, 40));
+  expect(managedBackupTime(backupRelativeName(info, time, undefined, true))).toEqual(time);
+  expect(managedBackupTime(name.replace("2026-11-06_", "2026-02-30_"))).toBeUndefined();
+  expect(managedBackupTime("unmanaged.patdoc")).toBeUndefined();
+});
 
 const info = {
   documentType: "patent" as const,

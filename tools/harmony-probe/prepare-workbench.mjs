@@ -25,10 +25,12 @@ const info = JSON.parse(await readFile(join(built, "main/build-info.json"), "utf
 await mkdir(join(app, "workbench/main"), { recursive: true });
 await mkdir(join(app, "workbench/main/assets"), { recursive: true });
 await cp(join(built, "renderer"), join(app, "workbench/renderer"), { recursive: true });
+await cp(join(built, "design-editor"), join(app, "workbench/design-editor"), { recursive: true });
 await cp(join(built, "preload"), join(app, "workbench/preload"), { recursive: true });
 await build({
   entryPoints: {
     index: join(source, "src/main/index.ts"),
+    "temporary-image-worker": join(source, "src/main/design-patent/temporary-image-worker.ts"),
     "print-font-worker": join(source, "src/main/exports/print-font-worker.ts"),
   },
   outdir: join(app, "workbench/main"),
@@ -57,6 +59,14 @@ await build({
         build.onResolve({ filter: /^(node:sqlite|write-file-atomic|sharp)$/ }, (args) => ({
           path: `../../${aliases[args.path]}`,
           external: true,
+        }));
+        build.onResolve({ filter: /temporary-image-worker\?nodeWorker$/u }, () => ({
+          path: "temporary-image-worker",
+          namespace: "harmony-node-worker",
+        }));
+        build.onLoad({ filter: /^temporary-image-worker$/u, namespace: "harmony-node-worker" }, () => ({
+          contents: 'module.exports = (options) => new (require("node:worker_threads").Worker)(require("node:path").join(__dirname, "temporary-image-worker.cjs"), options);',
+          loader: "js",
         }));
         build.onResolve({ filter: /\?asset$/ }, (args) => ({
           path: resolve(args.resolveDir, args.path.slice(0, -6)),

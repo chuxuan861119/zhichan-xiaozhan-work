@@ -1,0 +1,295 @@
+/* Shared by every book and transient tool. Keep desktop geometry and rail state intact. */
+:root[data-device-form="tablet"] {
+  .patent-editor-workspace,
+  .editor-workspace {
+    touch-action: pan-x pan-y;
+  }
+  .patent-global-function-rail,
+  .patent-global-function-rail__body {
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+  .patent-page-with-rail,
+  .patent-function-rail-edge-host {
+    --patent-function-rail-width: 196px;
+  }
+  .patent-global-function-rail {
+    --rail-inset: 8px;
+    --rail-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .patent-global-function-rail__body > * + * {
+    margin-block-start: 8px;
+  }
+  .patent-global-function-rail
+    :is(
+      .compact-tool-actions,
+      .reference-mark-panel,
+      .reference-mark-locator,
+      .drawing-explanation-rail,
+      .function-rail-transient-panel,
+      fieldset[aria-label="摘要附图工具"]
+    ) {
+    padding: 10px var(--rail-inset);
+    gap: 6px;
+    min-width: 0;
+  }
+  .patent-global-function-rail .function-rail-transient-panel {
+    --transient-panel-gap: 8px;
+  }
+  .patent-global-function-rail
+    :is(
+      .compact-tool-actions__label,
+      .reference-mark-panel__title strong,
+      .reference-mark-panel__toggle strong,
+      .reference-mark-locator__title,
+      .drawing-explanation-rail h2,
+      .function-rail-transient-panel > h3,
+      .function-rail-transient-panel > header > strong,
+      .find-replace-panel__title
+    ) {
+    font-size: 13px;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+  }
+  .patent-global-function-rail .compact-tool-actions__label--separated {
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+  .patent-global-function-rail button:not([role="switch"]):not(.reference-mark-locator__switch) {
+    min-height: 30px;
+    font-size: 11px;
+    line-height: 18px;
+    gap: 4px;
+  }
+  .patent-global-function-rail
+    :is(
+      .patent-book-tools.compact-tool-actions button,
+      .compact-drawing-actions > button,
+      .compact-drawing-import > button,
+      .reference-mark-panel__numbering-buttons button
+    ) {
+    padding-block: 4px;
+  }
+  .patent-global-function-rail
+    :is(
+      .compact-tool-actions button svg:not(.claims-description-tool__outline),
+      .compact-drawing-actions > button svg,
+      .compact-drawing-import > button svg,
+      .reference-mark-panel__numbering-buttons button svg
+    ) {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+  }
+  .patent-global-function-rail :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 30px;
+    height: 30px;
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+  .patent-global-function-rail textarea {
+    min-width: 0;
+    max-width: 100%;
+    padding: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .patent-global-function-rail
+    :is(
+      .reference-mark-panel__empty,
+      .reference-mark-locator__hint,
+      .claims-description-tool__panel p,
+      .find-replace-panel__hint,
+      .find-replace-panel__count,
+      .find-replace-panel__message
+    ) {
+    font-size: 11px;
+    line-height: 17px;
+    overflow-wrap: anywhere;
+  }
+  .patent-global-function-rail .reference-mark-panel__empty {
+    padding: 10px 4px;
+  }
+  .patent-global-function-rail
+    :is(.reference-mark-panel__actions, .drawing-explanation-rail__actions) {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .patent-global-function-rail
+    :is(.reference-mark-panel__columns, .reference-mark-panel__row-summary) {
+    min-height: 28px;
+    font-size: 11px;
+  }
+  .patent-global-function-rail
+    :is(.reference-mark-panel[data-collapsible="true"], .drawing-explanation-rail[data-collapsed]) {
+    padding: 0;
+    gap: 0;
+  }
+  .patent-global-function-rail
+    :is(.reference-mark-panel__toggle, .drawing-explanation-rail__toggle) {
+    min-height: 44px;
+    padding: 10px var(--rail-inset);
+  }
+  .patent-global-function-rail
+    :is(.reference-mark-panel__body, .drawing-explanation-cards):not([hidden]) {
+    padding-bottom: 10px;
+  }
+  .patent-global-function-rail
+    :is(
+      .table-rail-panel__buttons,
+      .figure-rail-panel__alignments,
+      .figure-rail-panel__actions,
+      .chemical-structure-tools,
+      .find-replace-panel__actions
+    ) {
+    gap: 5px;
+  }
+  .patent-global-function-rail .table-rail-panel__group-toggle {
+    min-height: 32px;
+    margin-bottom: 4px;
+  }
+  .patent-global-function-rail .table-rail-panel__group {
+    padding-top: 6px;
+  }
+  .patent-global-function-rail
+    :is(.figure-rail-panel__width, .table-rail-panel__dimension-field, .find-replace-panel__field) {
+    min-width: 0;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .patent-global-function-rail-slot[data-layout="overlay"]
+    .patent-global-function-rail
+    > .patent-global-function-rail__header {
+    margin: 5px 8px 0;
+  }
+  .patent-global-function-rail .patent-global-function-rail__header-action {
+    width: 28px;
+    min-width: 28px;
+    height: 30px;
+    padding: 4px;
+  }
+  .patent-global-function-rail[data-custom-header="true"] > .patent-global-function-rail__header {
+    margin: 0;
+    padding: 6px 8px;
+    gap: 4px;
+  }
+  /* The generic overlay header inset must not detach CAD's tab header from its card. */
+  .patent-global-function-rail-slot[data-layout="overlay"]
+    .patent-global-function-rail[data-custom-header="true"]
+    > .patent-global-function-rail__header {
+    margin: 0;
+    min-width: 0;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .patent-global-function-rail .cad-function-tabs__tabs button {
+    padding: 4px 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    font-size: 11px;
+  }
+  .patent-global-function-rail[data-custom-header="true"]
+    .patent-global-function-rail__header-actions {
+    gap: 2px;
+  }
+  .patent-global-function-rail[data-custom-header="true"] .cad-function-tabs__tabs {
+    gap: 2px;
+  }
+  .patent-global-function-rail :is(.cad-editing-panel, .cad-reference-mark-panel) {
+    padding: 10px;
+    gap: 6px;
+  }
+  .patent-global-function-rail .cad-editing-panel .cad-tool-settings {
+    padding: 8px;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .patent-global-function-rail :is(.cad-tool-settings__actions, .drawing-image-actions > div) {
+    gap: 5px;
+  }
+  .patent-global-function-rail
+    :is(.cad-tool-settings > header strong, .cad-tool-heading, .cad-pattern-panel legend) {
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .patent-global-function-rail .cad-tool-group > .cad-entity-tools button {
+    min-height: 44px;
+    padding: 4px;
+    gap: 3px;
+  }
+  .patent-global-function-rail .cad-tool-group > .cad-entity-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .patent-global-function-rail
+    .cad-tool-group
+    > .cad-entity-tools
+    .cad-split-tool
+    > button:first-child {
+    padding-inline: 2px 18px;
+  }
+  .patent-global-function-rail .cad-tool-group > .cad-entity-tools .cad-split-tool__arrow {
+    width: 18px;
+    min-height: 44px;
+    padding: 0;
+  }
+  .patent-global-function-rail
+    .cad-tool-group
+    > .cad-entity-tools
+    button:not(.cad-split-tool__arrow)
+    svg {
+    width: 18px;
+    height: 18px;
+  }
+  .patent-global-function-rail .cad-reference-mark-panel .reference-mark-panel__header h3 {
+    font-size: 13px;
+    line-height: 20px;
+  }
+  .patent-global-function-rail-slot[data-layout="overlay"]
+    :where(.patent-global-function-rail:not([data-custom-header="true"]))
+    > .patent-global-function-rail__body
+    > :first-child:not([data-function-rail-owner]),
+  .patent-global-function-rail-slot[data-layout="overlay"]
+    :where(.patent-global-function-rail:not([data-custom-header="true"]))
+    > .patent-global-function-rail__body
+    > [data-function-rail-owner]:first-child
+    > :first-child {
+    padding-top: 36px;
+  }
+  /* Reserve header space on the painted card, not its transparent animation wrapper. */
+  .patent-global-function-rail-slot[data-layout="overlay"]
+    .patent-global-function-rail:not([data-custom-header="true"])
+    > .patent-global-function-rail__body
+    > .function-rail-transient-slot:first-child {
+    padding-top: 0;
+  }
+  .patent-global-function-rail-slot[data-layout="overlay"]
+    .patent-global-function-rail:not([data-custom-header="true"])
+    > .patent-global-function-rail__body
+    > .function-rail-transient-slot:first-child
+    > .function-rail-transient-slot__content
+    > .function-rail-transient-panel {
+    padding-top: 36px;
+  }
+  .patent-global-function-rail-slot[data-layout="overlay"]
+    .patent-global-function-rail:not([data-custom-header="true"])
+    > .patent-global-function-rail__body
+    > .compact-drawing-actions:first-child::before {
+    margin-top: -36px;
+  }
+  .patent-global-function-rail__collapsed-toggle {
+    height: 104px;
+    min-height: 104px;
+    padding-block: 8px;
+  }
+  .patent-global-function-rail__collapsed-toggle > span:last-child {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+}

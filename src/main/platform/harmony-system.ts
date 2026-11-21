@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TabletWindowStateSchema } from "../../shared/ipc/contract.js";
 import { AppOperationError } from "../app-operation-error.js";
 
 export type HarmonyBridge = {
@@ -36,6 +37,16 @@ export function createHarmonySystem(bridge: HarmonyBridge, timeoutMs = 15_000) {
     });
   }
   return {
+    async readTabletWindow() {
+      const value = await response("Workbench.ReadTabletWindow", [], z.string());
+      return TabletWindowStateSchema.parse(JSON.parse(value));
+    },
+    async setTabletFocusMode(enabled: boolean) {
+      const value = await response("Workbench.SetTabletFocus", [enabled], z.string());
+      const result = JSON.parse(value);
+      if (result?.error) throw new Error("无法切换平板专注模式，请退出系统分屏后重试。");
+      return TabletWindowStateSchema.parse(result);
+    },
     async readUsageActivity() {
       const value = await response("Workbench.ReadUsageActivity", [], z.string());
       return z

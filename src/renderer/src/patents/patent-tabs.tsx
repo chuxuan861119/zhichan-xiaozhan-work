@@ -13,6 +13,7 @@ import type { WorkspaceTabDragBindings, WorkspaceTabDragSource } from "./patent-
 type PatentTabsProps = {
   tutorialMode?: boolean;
   guidance?: ReactNode;
+  windowActions?: ReactNode;
   sessions: PatentSession[];
   activePatentId: string;
   libraryActive: boolean;
@@ -49,6 +50,7 @@ function PatentTabStateBadge({ session }: { session: PatentSession }) {
 export function PatentTabs({
   tutorialMode = false,
   guidance,
+  windowActions,
   sessions,
   activePatentId,
   libraryActive,
@@ -203,6 +205,7 @@ export function PatentTabs({
             </span>
           </button>
         )}
+        {windowActions}
         <div ref={patentViewportRef} className="patent-tabs__patent-viewport">
           <div ref={tabListRef} className="patent-tabs__patent-list">
             {sessions.map((session, index) => {

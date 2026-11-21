@@ -262,6 +262,8 @@ const readOnlyOrTransferIndependentChannels = [
   IPC_CHANNELS.applicationStorageOverview,
   IPC_CHANNELS.applicationOpenStorageFolder,
   IPC_CHANNELS.applicationGetWindowLayoutState,
+  IPC_CHANNELS.applicationReadTabletWindow,
+  IPC_CHANNELS.applicationSetTabletFocus,
   IPC_CHANNELS.applicationGetStartupRecoveryReport,
   IPC_CHANNELS.applicationMaximizeWindow,
   IPC_CHANNELS.applicationWindowLayoutChanged,

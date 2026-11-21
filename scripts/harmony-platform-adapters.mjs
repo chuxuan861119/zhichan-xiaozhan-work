@@ -21,8 +21,53 @@ export function patchUsageActivityBinding(source) {
   );
 }
 
+export function patchTabletWindowBinding(source) {
+  source = replaceOnce(
+    source,
+    "import JsBindingUtils from '../utils/JsBindingUtils';",
+    "import { readTabletWindow, setTabletFocus } from '../adapter/WorkbenchTabletWindow';\nimport JsBindingUtils from '../utils/JsBindingUtils';",
+  );
+  return replaceOnce(
+    source,
+    "  static bind() {",
+    "  static bind() {\n    JsBindingUtils.bindFunction('Workbench.ReadTabletWindow', readTabletWindow);\n    JsBindingUtils.bindFunction('Workbench.SetTabletFocus', setTabletFocus);",
+  );
+}
+
 export function parseHarmonyConfig(source) {
   return JSON5.parse(source);
+}
+
+/** Entry and runtime modules must agree on the supported large-screen devices. */
+export function configureProductDevices(config) {
+  const result = structuredClone(config);
+  result.module.deviceTypes = ["2in1", "tablet"];
+  return result;
+}
+
+export function patchTabletOrientation(source) {
+  source = replaceOnce(
+    source,
+    "import window from '@ohos.window';",
+    "import deviceInfo from '@ohos.deviceInfo';\nimport window from '@ohos.window';",
+  );
+  return replaceOnce(
+    source,
+    "    super.onWindowStageCreate(windowStage);",
+    `    super.onWindowStageCreate(windowStage);
+    // Start tablets in landscape, then honor the user's system rotation policy.
+    // Orientation is best-effort: an unsupported mode must not prevent startup.
+    if (deviceInfo.deviceType === 'tablet') {
+      try {
+        windowStage.getMainWindowSync()
+          .setPreferredOrientation(window.Orientation.USER_ROTATION_LANDSCAPE)
+          .catch(() => {});
+        windowStage.getMainWindowSync().setWindowSystemBarProperties({
+          statusBarColor: '#e7ebf1', statusBarContentColor: '#202124'
+        }).catch(() => {});
+      } catch (_) {}
+    }`,
+  );
 }
 
 export function configureRuntimeBuild(config) {
@@ -44,6 +89,16 @@ export function configureProductLabels(config) {
     if (["app_name", "EntryAbility_label", "StatusBarEntryAbility_label"].includes(item.name))
       item.value = "知产小栈Work";
   }
+  return result;
+}
+
+export function configureProductWindowIcons(config) {
+  const result = structuredClone(config);
+  const entry = result.module.abilities.find((item) => item.name === "EntryAbility");
+  if (!entry) throw new Error("Missing Harmony EntryAbility");
+  // The vendor shell has a separate Electron splash resource. Reuse the
+  // product icon installed in AppScope for the system-owned launch window.
+  entry.startWindowIcon = "$media:app_icon";
   return result;
 }
 
@@ -257,7 +312,9 @@ export async function installPlatformAdapters(project, root, bundleName) {
   }
   const entryPath = join(project, "electron/src/main/module.json5");
   const { config, utd } = configureFileOpening(
-    parseHarmonyConfig(await readFile(entryPath, "utf8")),
+    configureProductDevices(
+      configureProductWindowIcons(parseHarmonyConfig(await readFile(entryPath, "utf8"))),
+    ),
     bundleName,
   );
   await writeFile(entryPath, JSON.stringify(config, null, 2));
@@ -271,7 +328,9 @@ export async function installPlatformAdapters(project, root, bundleName) {
   await writeFile(
     webModule,
     JSON.stringify(
-      configureProductPermissions(parseHarmonyConfig(await readFile(webModule, "utf8"))),
+      configureProductDevices(
+        configureProductPermissions(parseHarmonyConfig(await readFile(webModule, "utf8"))),
+      ),
       null,
       2,
     ),
@@ -285,10 +344,14 @@ export async function installPlatformAdapters(project, root, bundleName) {
     join(ets, "adapter/save-destination.ts"),
   );
   const entry = join(project, "electron/src/main/ets/entryability/EntryAbility.ets");
-  await writeFile(entry, patchFileWant(await readFile(entry, "utf8")));
+  await writeFile(entry, patchTabletOrientation(patchFileWant(await readFile(entry, "utf8"))));
   const picker = join(ets, "adapter/DialogAdapter.ets");
   await writeFile(picker, patchPickerAccess(await readFile(picker, "utf8")));
   const binding = join(ets, "jsbindings/EtsBridgeAdapterBind.ets");
+  await copyFile(
+    join(root, "platforms/harmony/arkts/WorkbenchTabletWindow.ets"),
+    join(ets, "adapter/WorkbenchTabletWindow.ets"),
+  );
   await copyFile(
     join(root, "platforms/harmony/arkts/WorkbenchUsageActivity.ets"),
     join(ets, "adapter/WorkbenchUsageActivity.ets"),
@@ -304,5 +367,5 @@ export async function installPlatformAdapters(project, root, bundleName) {
     "  static bind() {",
     "  static bind() {\n    JsBindingUtils.bindFunction('Workbench.RestoreFileAccess', restoreFileAccess);\n    JsBindingUtils.bindFunction('Workbench.PersistOpenedFile', persistOpenedFile);\n    JsBindingUtils.bindFunction('Workbench.ReadStartup', readStartup);\n    JsBindingUtils.bindFunction('Workbench.OpenStartupSettings', openStartupSettings);",
   );
-  await writeFile(binding, patchUsageActivityBinding(source));
+  await writeFile(binding, patchTabletWindowBinding(patchUsageActivityBinding(source)));
 }

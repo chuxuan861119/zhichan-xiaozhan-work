@@ -223,6 +223,7 @@ import {
   UsageStateResultSchema,
   VoidResultSchema,
   type WindowLayoutState,
+  TabletWindowStateResultSchema,
   WindowLayoutStateResultSchema,
   WindowLayoutStateSchema,
 } from "../shared/ipc/contract.js";
@@ -1559,6 +1560,15 @@ const api: PatentApi = {
       invokeWithoutInput(IPC_CHANNELS.applicationOpenThirdPartyNotices, VoidResultSchema),
     openThirdPartyLicensesFolder: () =>
       invokeWithoutInput(IPC_CHANNELS.applicationOpenThirdPartyLicensesFolder, VoidResultSchema),
+    readTabletWindow: () =>
+      invokeWithoutInput(IPC_CHANNELS.applicationReadTabletWindow, TabletWindowStateResultSchema),
+    setTabletFocusMode: (enabled) =>
+      invokeWithInput(
+        IPC_CHANNELS.applicationSetTabletFocus,
+        z.boolean(),
+        TabletWindowStateResultSchema,
+        enabled,
+      ),
     getWindowLayoutState: () =>
       invokeWithoutInput(
         IPC_CHANNELS.applicationGetWindowLayoutState,

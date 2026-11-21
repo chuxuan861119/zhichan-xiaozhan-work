@@ -2,15 +2,87 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   configureFileOpening,
+  configureProductDevices,
   configureProductLabels,
   configureProductPermissions,
+  configureProductWindowIcons,
   configureRuntimeBuild,
   parseHarmonyConfig,
   patchFileWant,
   patchNativeLogPrivacy,
   patchPickerAccess,
+  patchTabletOrientation,
   patchUsageActivityBinding,
 } from "./harmony-platform-adapters.mjs";
+
+test("tablet startup requests landscape once while preserving desktop and failure paths", async () => {
+  const { transformSync } = await import("esbuild");
+  const original =
+    "import window from '@ohos.window';\nexport default class EntryAbility extends WebAbility {\n  onWindowStageCreate(windowStage: window.WindowStage) {\n    super.onWindowStageCreate(windowStage);\n  }\n}";
+  const patched = patchTabletOrientation(original);
+  assert.equal(patchTabletOrientation(patched), patched);
+  const code = transformSync(patched.replace(/^import .*;\r?\n/gm, ""), {
+    loader: "ts",
+    format: "cjs",
+  }).code;
+  const events = [];
+  const deviceInfo = { deviceType: "tablet" };
+  const module = { exports: {} };
+  class WebAbility {
+    onWindowStageCreate() {
+      events.push("super");
+    }
+  }
+  new Function("deviceInfo", "window", "WebAbility", "module", "exports", code)(
+    deviceInfo,
+    { Orientation: { USER_ROTATION_LANDSCAPE: 14 } },
+    WebAbility,
+    module,
+    module.exports,
+  );
+  const entry = new module.exports.default();
+  const stage = {
+    getMainWindowSync: () => ({
+      setPreferredOrientation: async (value) => {
+        events.push(value);
+      },
+    }),
+  };
+  entry.onWindowStageCreate(stage);
+  assert.deepEqual(events, ["super", 14]);
+  events.length = 0;
+  deviceInfo.deviceType = "2in1";
+  entry.onWindowStageCreate(stage);
+  assert.deepEqual(events, ["super"]);
+  deviceInfo.deviceType = "tablet";
+  assert.doesNotThrow(() =>
+    entry.onWindowStageCreate({
+      getMainWindowSync: () => {
+        throw Error("unavailable");
+      },
+    }),
+  );
+  entry.onWindowStageCreate({
+    getMainWindowSync: () => ({
+      setPreferredOrientation: () => Promise.reject(Error("unsupported")),
+    }),
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.throws(() => patchTabletOrientation("changed vendor template"), /Unsupported Harmony/);
+});
+
+test("entry and runtime modules explicitly support computers and tablets without changing abilities", () => {
+  for (const type of ["entry", "har"]) {
+    const original = {
+      module: { type, deviceTypes: ["2in1"], abilities: [{ name: "EntryAbility" }] },
+    };
+    const result = configureProductDevices(original);
+    assert.deepEqual(result.module.deviceTypes, ["2in1", "tablet"]);
+    assert.deepEqual(result.module.abilities, original.module.abilities);
+    assert.deepEqual(original.module.deviceTypes, ["2in1"]);
+    assert.deepEqual(configureProductDevices(result), result);
+  }
+});
 
 test("release runtime preserves native bridge ABI without changing release or debug configuration", () => {
   const original = {
@@ -96,6 +168,23 @@ test("localized permission dialogs identify the actual product rather than Elect
   assert.equal(result.string[0].value, "知产小栈Work");
   assert.equal(result.string[1].value, "确定");
   assert.equal(input.string[0].value, "Electron");
+});
+
+test("the native launch screen uses the product icon instead of the vendor splash", () => {
+  const original = {
+    module: {
+      abilities: [
+        { name: "EntryAbility", icon: "$media:app_icon", startWindowIcon: "$media:startIcon" },
+        { name: "OtherAbility", startWindowIcon: "$media:other" },
+      ],
+    },
+  };
+  const result = configureProductWindowIcons(original);
+  assert.equal(result.module.abilities[0].startWindowIcon, "$media:app_icon");
+  assert.deepEqual(result.module.abilities[1], original.module.abilities[1]);
+  assert.equal(original.module.abilities[0].startWindowIcon, "$media:startIcon");
+  assert.deepEqual(configureProductWindowIcons(result), result);
+  assert.throws(() => configureProductWindowIcons({ module: { abilities: [] } }), /EntryAbility/);
 });
 
 test("runtime logging keeps categories while sensitive native message contents are private", () => {

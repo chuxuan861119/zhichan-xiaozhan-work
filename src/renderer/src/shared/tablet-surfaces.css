@@ -1,0 +1,503 @@
+/* Chrome density only. Document text, canvas coordinates and desktop layouts are untouched. */
+:root[data-device-form="tablet"] {
+  .standard-dialog-overlay {
+    --standard-dialog-viewport-height: min(100dvh, var(--harmony-content-height, 100dvh));
+    box-sizing: border-box;
+    --standard-dialog-safe-space: 12px;
+    --standard-dialog-header-padding: 8px 12px;
+    --standard-dialog-body-padding: 12px;
+    --standard-dialog-footer-padding: 8px 12px;
+    --standard-dialog-control-height: 30px;
+  }
+  .standard-dialog {
+    font-size: 13px;
+  }
+  .standard-dialog__header {
+    min-height: 42px;
+    gap: 10px;
+  }
+  .standard-dialog__title {
+    font-size: 15px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .standard-dialog__body {
+    min-width: 0;
+    overscroll-behavior: contain;
+  }
+  .standard-dialog__footer {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .standard-dialog__footer button {
+    min-height: 32px;
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+  .standard-dialog__close {
+    width: 30px;
+    height: 30px;
+    flex: none;
+  }
+  .standard-dialog :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 13px;
+  }
+  .standard-dialog :is(textarea, fieldset) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .standard-dialog :is(h2, h3) {
+    overflow-wrap: anywhere;
+  }
+  .patent-book-tabs {
+    --patent-book-tab-width: clamp(54px, 7vw, 76px);
+  }
+  .menu-bar__book-navigation {
+    min-width: 0;
+  }
+  .drawing-workspace {
+    font-size: 12px;
+  }
+  .drawing-workspace-content {
+    grid-template-columns: 172px minmax(0, 1fr);
+    grid-template-rows: 42px 42px minmax(0, 1fr) 32px;
+  }
+  .drawing-workspace-content.is-sources-collapsed {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .drawing-header {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+  .drawing-heading {
+    gap: 8px;
+  }
+  .drawing-heading strong {
+    font-size: 14px;
+  }
+  .drawing-heading > span {
+    font-size: 11px;
+  }
+  .drawing-header-actions {
+    gap: 4px;
+  }
+  .drawing-header-actions > button {
+    font-size: 12px;
+    min-height: 30px;
+    padding: 4px 7px;
+    margin-left: 0;
+  }
+  .drawing-toolbar {
+    gap: 6px;
+    padding: 5px 8px;
+  }
+  .drawing-workspace .drawing-tool-button {
+    font-size: 12px;
+    min-height: 30px;
+    padding: 3px 6px;
+  }
+  .drawing-source-content > .drawing-create-button,
+  .drawing-import-row > .drawing-import {
+    height: 30px;
+    min-height: 30px;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  .drawing-source-header {
+    padding-inline: 10px;
+  }
+  .drawing-source-header h3 {
+    font-size: 13px;
+  }
+}
+@media (max-width: 760px) {
+  :root[data-device-form="tablet"] .drawing-workspace-content {
+    grid-template-columns: 136px minmax(0, 1fr);
+  }
+  :root[data-device-form="tablet"] .drawing-workspace-content.is-sources-collapsed {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  :root[data-device-form="tablet"] .drawing-heading > span {
+    display: none;
+  }
+}
+:root[data-device-form="tablet"] {
+  .application-settings-dialog__surface {
+    width: min(1080px, calc(100vw - 24px));
+    max-height: calc(
+      min(var(--harmony-content-height, 100dvh), var(--standard-dialog-viewport-height, 100dvh)) -
+      24px
+    );
+    font-size: 13px;
+  }
+  .application-settings-dialog__body--workspace {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+  .settings-workspace-navigation__item {
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  .settings-workspace-content {
+    min-width: 0;
+    padding: 12px;
+  }
+  .settings-workspace-content__header {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .settings-workspace-content__title {
+    font-size: 16px;
+  }
+  .docx-import-dialog {
+    max-width: calc(100vw - 24px);
+    max-height: calc(
+      min(var(--harmony-content-height, 100dvh), var(--standard-dialog-viewport-height, 100dvh)) -
+      24px
+    );
+  }
+  .docx-import-dialog__columns {
+    grid-template-columns: 145px minmax(0, 1fr) 180px;
+  }
+  .docx-import-sources,
+  .docx-import-settings,
+  .docx-import-preview {
+    padding: 10px;
+  }
+  .other-formula-dialog,
+  .matrix-insert-dialog,
+  .chemistry-condition-modal,
+  .feedback-dialog {
+    box-sizing: border-box;
+    max-width: calc(100vw - 24px);
+    max-height: calc(
+      min(var(--harmony-content-height, 100dvh), var(--standard-dialog-viewport-height, 100dvh)) -
+      24px
+    );
+    overflow: auto;
+    font-size: 13px;
+  }
+  .dialog-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+@media (max-width: 760px) {
+  :root[data-device-form="tablet"] .docx-import-dialog__columns {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+  :root[data-device-form="tablet"] .docx-import-settings {
+    grid-column: 1 / -1;
+    max-height: 180px;
+  }
+  :root[data-device-form="tablet"] .application-settings-dialog__body--workspace {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+}
+:root[data-device-form="tablet"] {
+  .standard-dialog-overlay,
+  .application-settings-dialog,
+  .dialog-layer--formula,
+  .dialog-backdrop:has(> .formula-dialog),
+  .matrix-insert-backdrop {
+    inset: 0 0 auto;
+    height: min(100dvh, var(--harmony-content-height, 100dvh));
+  }
+  .application-settings-dialog__header {
+    min-height: 42px;
+    padding: 6px 12px;
+    gap: 10px;
+  }
+  .application-settings-dialog__header h2 {
+    font-size: 15px;
+  }
+  .settings-workspace-navigation {
+    gap: 10px;
+    padding: 10px 8px;
+  }
+}
+:root[data-device-form="tablet"] .dialog-backdrop:has(> .formula-dialog) {
+  container: tablet-formula / size;
+  padding: 12px;
+}
+:root[data-device-form="tablet"] .formula-dialog {
+  box-sizing: border-box;
+  max-height: calc(min(100dvh, var(--harmony-content-height, 100dvh)) - 24px);
+  padding: 0 12px 12px;
+  font-size: 13px;
+  overscroll-behavior: contain;
+}
+:root[data-device-form="tablet"] .formula-dialog > header {
+  min-height: 42px;
+  margin-inline: -12px;
+  padding: 8px 12px;
+}
+:root[data-device-form="tablet"] .formula-dialog > footer {
+  position: sticky;
+  bottom: -12px;
+  z-index: 3;
+  margin-top: 10px;
+  padding-block: 8px;
+  background: #fff;
+}
+:root[data-device-form="tablet"] .chemistry-dialog-fixed-top {
+  margin-inline: -12px;
+}
+:root[data-device-form="tablet"] .chemistry-dialog-fixed-top > header {
+  min-height: 42px;
+  padding: 8px 12px;
+}
+/* Native IME can shrink only the drawable area, leaving window.innerHeight unchanged. */
+@container tablet-formula (max-height: 420px) {
+  :root[data-device-form="tablet"] .formula-dialog.dialog-surface--floating {
+    position: absolute;
+    top: 8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    translate: none !important;
+    max-height: calc(100cqh - 16px);
+  }
+}
+:root[data-device-form="tablet"] .application-settings-dialog {
+  .settings-workspace-content__header {
+    padding-bottom: 10px;
+  }
+  .page-margin-dialog--embedded .page-margin-dialog__fields > label {
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .page-margin-dialog--embedded .page-margin-dialog__fields input {
+    height: 30px !important;
+    width: 80px !important;
+    padding-inline: 8px !important;
+  }
+  .page-margin-dialog--embedded .page-margin-dialog__preset {
+    padding: 10px;
+  }
+  .page-margin-dialog--embedded .page-margin-dialog__fields {
+    margin-bottom: 12px !important;
+  }
+}
+:root[data-device-form="tablet"] .menu-bar {
+  .patent-book-tabs__tab {
+    padding-inline: 4px;
+    white-space: nowrap;
+  }
+  .patent-book-tabs__tab > span {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .patent-book-tabs__tab-shell {
+    width: calc(var(--patent-book-tab-width) + 16px);
+    flex: none;
+  }
+  .patent-book-tabs__tab-shell .patent-book-tabs__tab {
+    padding-right: 20px;
+  }
+}
+
+/* Data safety surfaces use tablet space without changing stored document settings. */
+:root[data-device-form="tablet"] .application-settings-dialog {
+  .settings-workspace-content__header {
+    padding: 10px 12px;
+  }
+  h3.settings-workspace-content__title {
+    font-size: 16px;
+  }
+  .settings-storage-tabs {
+    margin-top: 8px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .settings-storage-tabs button {
+    min-height: 30px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .settings-workspace-content__route--standard > div:not([hidden]) {
+    padding: 10px 12px 12px;
+  }
+  .snapshot-manager__card > header {
+    padding-bottom: 0;
+  }
+  .snapshot-manager__card h2 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 14px !important;
+  }
+  .snapshot-manager__patent-row {
+    padding: 8px 10px !important;
+  }
+  .snapshot-manager__version-row {
+    padding: 8px !important;
+  }
+  .data-safety-dialog--embedded .data-safety-dialog__section-header,
+  .data-safety-dialog--embedded .data-safety-dialog__field,
+  .data-safety-dialog--embedded .data-safety-dialog__note,
+  .data-safety-dialog--embedded .data-safety-dialog__retention {
+    padding: 8px 10px;
+  }
+  .data-safety-dialog--embedded .data-safety-dialog__backup-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: 8px 10px;
+    background: #fff;
+    border-top: 1px solid #dfe6ef;
+  }
+}
+:root[data-device-form="tablet"] .standard-dialog.snapshot-content-preview__surface {
+  width: calc(100vw - 24px);
+  height: calc(
+    min(var(--harmony-content-height, 100dvh), var(--standard-dialog-viewport-height, 100dvh)) -
+    24px
+  );
+  max-height: calc(
+    min(var(--harmony-content-height, 100dvh), var(--standard-dialog-viewport-height, 100dvh)) -
+    24px
+  );
+}
+:root[data-device-form="tablet"] .snapshot-content-preview__tabs button {
+  padding: 6px;
+  font-size: 12px;
+}
+:root[data-device-form="tablet"]
+  .snapshot-content-preview__standard-body
+  .snapshot-content-preview__body {
+  grid-template-columns: 140px minmax(0, 1fr);
+}
+:root[data-device-form="tablet"]
+  .snapshot-content-preview__standard-body
+  .snapshot-content-preview__workspace {
+  padding: 8px;
+}
+:root[data-device-form="tablet"]
+  .application-settings-dialog
+  .data-safety-dialog__section:has(.data-safety-dialog__backup-actions) {
+  overflow: visible;
+}
+:root[data-device-form="tablet"] .application-settings-dialog .shortcut-settings-dialog--embedded {
+  .shortcut-settings-dialog__header {
+    gap: 6px;
+  }
+  .shortcut-settings-dialog__toolbar {
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .shortcut-settings-dialog__guidance {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .shortcut-settings-dialog__body {
+    margin-top: 10px;
+    padding-bottom: 12px;
+  }
+  .shortcut-settings-dialog__group {
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+  .shortcut-settings-dialog__custom-row,
+  .shortcut-settings-dialog__fixed-row {
+    min-height: 40px;
+    padding: 6px 10px;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .shortcut-settings-dialog__shortcut-input {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .shortcut-settings-dialog__fixed-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tablet-shortcut-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .tablet-shortcut-actions button {
+    min-height: 30px;
+    padding: 4px 8px;
+  }
+}
+
+:root[data-device-form="tablet"] .patent-folder {
+  .patent-folder__body {
+    min-height: 0;
+  }
+  .patent-folder__row {
+    grid-template-columns: 28px minmax(0, 1fr) 62px;
+    gap: 4px;
+  }
+  .patent-folder__row-select {
+    display: grid;
+    place-items: center;
+    align-self: stretch;
+    min-height: 34px;
+  }
+  .patent-folder__row-select input {
+    width: 16px;
+    height: 16px;
+    min-height: 0;
+  }
+  .patent-folder__file {
+    grid-template-columns: 22px minmax(0, 1fr) 86px;
+    gap: 8px;
+    padding: 6px;
+    min-height: 36px;
+  }
+  .patent-folder__columns {
+    grid-template-columns: minmax(0, 1fr) 86px 62px;
+    padding-left: 76px;
+    gap: 8px;
+  }
+  .patent-folder__name {
+    font-size: 12px;
+  }
+  .patent-folder__row-export {
+    margin-right: 2px;
+    min-height: 32px;
+    padding-inline: 4px;
+  }
+}
+
+/* Modeless inspection stays usable while editing behind it with the native IME. */
+:root[data-device-form="tablet"] .assistant-side-panel {
+  --tablet-assistant-top: min(
+    var(--assistant-panel-top, 104px),
+    max(8px, calc(var(--harmony-content-height, 100dvh) - 120px))
+  );
+  top: var(--tablet-assistant-top);
+  bottom: auto;
+  right: 8px;
+  width: min(340px, calc(100vw - 16px));
+  height: calc(var(--harmony-content-height, 100dvh) - var(--tablet-assistant-top) - 8px);
+  font-size: 12px;
+
+  .assistant-side-panel__header {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .assistant-side-panel__header h2 {
+    font-size: 15px;
+  }
+  .assistant-side-panel__body {
+    min-height: 0;
+    padding: 10px;
+    overscroll-behavior: contain;
+  }
+  .patent-check-panel__launch {
+    padding-top: 12px;
+    gap: 8px;
+  }
+  .patent-check-panel__launch-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+}

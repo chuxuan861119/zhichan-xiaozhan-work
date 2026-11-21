@@ -29,6 +29,8 @@ import type {
 import { APPLICATION_NAME } from "../../shared/branding.js";
 import type { AppSettings } from "../../shared/settings/model.js";
 import { AppOperationError } from "../app-operation-error.js";
+import { installNewFileWithoutClobber } from "../documents/file-service.js";
+import { usesHarmonyPublicFileCopy } from "../platform/harmony-public-files.js";
 import type { SettingsService } from "../settings/settings-service.js";
 import { backupFileError } from "./backup-errors.js";
 import {
@@ -36,6 +38,7 @@ import {
   backupNameToken,
   backupRelativeName,
   managedBackupIdentity,
+  managedBackupTime,
 } from "./backup-naming.js";
 
 export type DocumentModifiedInfo = BackupNameInfo & {
@@ -51,6 +54,7 @@ export type BackupInspection = {
   documentId: string;
   displayName: string;
   revision: number;
+  createdAt?: string | undefined;
 };
 
 export type BackupDelegate = {
@@ -80,6 +84,29 @@ type HealthyBackupBaseline = {
   filePath: string;
   verifiedFileState?: string;
 };
+
+async function copyBackupExclusive(source: string, target: string): Promise<void> {
+  if (usesHarmonyPublicFileCopy(target)) {
+    await installNewFileWithoutClobber(source, target);
+  } else {
+    await copyFile(source, target, constants.COPYFILE_EXCL);
+  }
+}
+
+function backupModifiedAt(path: string, fallback: Date): Date {
+  return (usesHarmonyPublicFileCopy(path) ? managedBackupTime(path) : undefined) ?? fallback;
+}
+
+function backupFileName(folder: string, info: BackupNameInfo, time: Date, token?: string): string {
+  return backupRelativeName(info, time, token, usesHarmonyPublicFileCopy(folder));
+}
+
+async function preserveBackupTimes(path: string, atime: Date, mtime: Date): Promise<void> {
+  // Public storage rejects both utime and futime. The managed filename carries
+  // the backup time used by the UI; other filesystems retain their exact times.
+  if (usesHarmonyPublicFileCopy(path) && managedBackupTime(path)) return;
+  await utimes(path, atime, mtime);
+}
 
 async function backupFileState(filePath: string): Promise<string> {
   const value = await lstat(filePath, { bigint: true });
@@ -488,7 +515,7 @@ export class BackupService {
           documentId: inspected.documentId,
           revision: inspected.revision,
           sizeBytes: fileStat.size,
-          backedUpAt: fileStat.mtime.toISOString(),
+          backedUpAt: backupModifiedAt(filePath, fileStat.mtime).toISOString(),
           managed: managedBackupIdentity(file, inspected),
           status: "healthy",
           errorMessage: null,
@@ -502,7 +529,7 @@ export class BackupService {
           documentId: null,
           revision: null,
           sizeBytes: fileStat.size,
-          backedUpAt: fileStat.mtime.toISOString(),
+          backedUpAt: backupModifiedAt(filePath, fileStat.mtime).toISOString(),
           managed,
           status: "damaged",
           errorMessage: this.#errorMessage(error),
@@ -780,7 +807,7 @@ export class BackupService {
       }
       this.#operationStatus = { ...this.#operationStatus, currentDisplayName: info.displayName };
       const backupTime = new Date();
-      const fileName = backupRelativeName(info, backupTime);
+      const fileName = backupFileName(appSettings.backup.folder, info, backupTime);
       let finalPath = join(appSettings.backup.folder, fileName);
       const partialPath = `${finalPath}.partial-${randomUUID()}`;
       try {
@@ -805,12 +832,12 @@ export class BackupService {
         finalPath = await this.#publishExclusive(
           partialPath,
           appSettings.backup.folder,
-          backupRelativeName(captured, backupTime),
+          backupFileName(appSettings.backup.folder, captured, backupTime),
           captured,
           backupTime,
           input.guard,
         );
-        await utimes(finalPath, backupTime, backupTime);
+        await preserveBackupTimes(finalPath, backupTime, backupTime);
         await unlink(partialPath);
         if (!input.cancelRequested) {
           await this.#organizeManagedBackups(captured, appSettings.backup.folder, input.guard);
@@ -992,20 +1019,25 @@ export class BackupService {
       }
       const hash = await this.#fileHash(source);
       const sourceStat = await stat(source);
+      const sourceTime = backupModifiedAt(source, sourceStat.mtime);
       let targetName = name;
+      if (usesHarmonyPublicFileCopy(targetRoot) && !managedBackupTime(name)) {
+        if (!inspected.createdAt) throw new Error("无法取得旧备份的创建时间，原备份已保留。");
+        targetName = backupFileName(targetRoot, inspected, sourceTime);
+      }
       let copied = false;
       for (let attempt = 0; attempt < 5; attempt++) {
         guard?.assertAuthorized();
         const target = await this.#safePath(targetRoot, targetName, true);
         try {
           guard?.assertAuthorized();
-          await copyFile(source, target, constants.COPYFILE_EXCL);
+          await copyBackupExclusive(source, target);
           copied = true;
-          await utimes(target, sourceStat.atime, sourceStat.mtime);
+          await preserveBackupTimes(target, sourceStat.atime, sourceTime);
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
           if ((await this.#fileHash(target)) !== hash) {
-            targetName = name.replace(
+            targetName = targetName.replace(
               /-[0-9a-f-]+\.patdoc$/iu,
               `-${backupNameToken(name) ? randomUUID().slice(0, 8) : randomUUID()}.patdoc`,
             );
@@ -1103,9 +1135,11 @@ export class BackupService {
       )
         continue;
       const sourceStat = await stat(source);
-      const targetName = backupRelativeName(
+      const sourceTime = backupModifiedAt(source, sourceStat.mtime);
+      const targetName = backupFileName(
+        folder,
         { ...info, revision: inspected.revision },
-        sourceStat.mtime,
+        sourceTime,
         backupNameToken(name),
       );
       if (targetName === name) continue;
@@ -1114,7 +1148,7 @@ export class BackupService {
         folder,
         targetName,
         { ...info, revision: inspected.revision },
-        sourceStat.mtime,
+        sourceTime,
         guard,
       );
       const verified = await this.#delegate.inspect(target);
@@ -1125,7 +1159,7 @@ export class BackupService {
       ) {
         throw new Error("整理后的备份校验失败，未删除原文件");
       }
-      await utimes(target, sourceStat.atime, sourceStat.mtime);
+      await preserveBackupTimes(target, sourceStat.atime, sourceTime);
       guard?.assertAuthorized();
       await unlink(source);
       const key = `${info.documentType}:${info.documentId}`;
@@ -1152,7 +1186,7 @@ export class BackupService {
       let copied = false;
       try {
         guard?.assertAuthorized();
-        await copyFile(source, target, constants.COPYFILE_EXCL);
+        await copyBackupExclusive(source, target);
         copied = true;
         const handle = await open(target, "r+");
         try {
@@ -1170,7 +1204,7 @@ export class BackupService {
           throw error;
         }
         if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-        candidate = backupRelativeName(info, time);
+        candidate = backupFileName(folder, info, time);
       } finally {
         this.#publishingFiles.delete(target);
       }
@@ -1199,7 +1233,11 @@ export class BackupService {
           inspected.documentId === info.documentId &&
           managedBackupIdentity(file, inspected)
         ) {
-          matching.push({ filePath, revision: inspected.revision, modifiedMs: fileStat.mtimeMs });
+          matching.push({
+            filePath,
+            revision: inspected.revision,
+            modifiedMs: backupModifiedAt(filePath, fileStat.mtime).getTime(),
+          });
         }
       } catch {
         // Never delete an entry whose ownership or integrity cannot be proven.

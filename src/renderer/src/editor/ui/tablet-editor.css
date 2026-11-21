@@ -1,0 +1,164 @@
+/* Only the Harmony tablet editor uses this density. */
+:root[data-device-form="tablet"] .window-shell:not(.is-library-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 30px 34px minmax(0, 1fr) 24px;
+
+  .patent-tabs {
+    grid-template-rows: 30px;
+  }
+  .patent-tabs__library-tab {
+    width: 88px;
+    min-width: 88px;
+    min-height: 30px;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+  .patent-tabs__brand-logo {
+    width: 18px;
+    height: 18px;
+    transform: none;
+  }
+  .patent-tabs__patent-tab-shell {
+    flex-basis: 192px;
+    width: 192px;
+    min-width: 128px;
+    max-width: 224px;
+  }
+  .patent-tabs__patent-title {
+    font-size: 12px;
+  }
+  .patent-tabs__state-badge {
+    flex: none;
+    font-size: 9px;
+  }
+  .patent-tabs__state-badge .patent-type-badge {
+    padding: 1px 5px;
+    font-size: 9px;
+  }
+  .patent-tabs__new-patent,
+  .patent-tabs__close-patent,
+  .patent-tabs__overflow-trigger {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .tablet-controls > button {
+    min-width: 28px;
+    min-height: 28px;
+    height: 28px;
+    padding-inline: 6px;
+    font-size: 11px;
+  }
+  .tablet-controls svg {
+    width: 16px;
+    height: 16px;
+  }
+  .ipc-data-center-trigger {
+    height: 24px;
+    padding-inline: 7px;
+    margin-inline: 4px;
+    font-size: 11px;
+    gap: 5px;
+  }
+  .ipc-data-center-trigger svg {
+    width: 14px;
+    height: 14px;
+  }
+  .writing-guidance-trigger {
+    font-size: 11px;
+  }
+  > .menu-bar {
+    padding-inline: 4px;
+    gap: 0;
+  }
+  > .menu-bar > button,
+  > .menu-bar > .menu-bar__menu-group > button {
+    min-width: 36px;
+    min-height: 30px;
+    padding-inline: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .menu-bar__book-navigation {
+    margin-left: 4px;
+  }
+  .menu-bar__book-navigation-separator {
+    margin-left: 6px;
+    height: 18px;
+  }
+  .patent-book-tabs__tab {
+    font-size: 11px;
+  }
+  .patent-split-controls__buttons {
+    height: 26px;
+  }
+  .patent-split-controls__buttons button {
+    height: 24px;
+    padding-inline: 7px;
+    font-size: 11px;
+  }
+  > .tool-bar {
+    padding: 2px 8px;
+    gap: 4px;
+  }
+  .tool-group {
+    gap: 2px;
+  }
+  .tool-bar .tool-button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    border-radius: 5px;
+  }
+  .tool-bar .toolbar-import-picker > .tool-button {
+    width: 36px;
+  }
+  .tool-bar .tool-button svg {
+    width: 16px;
+    height: 16px;
+  }
+  .tool-bar .style-select,
+  .tool-bar select {
+    min-width: 0;
+    height: 28px;
+    min-height: 28px;
+    width: 64px;
+    padding-inline: 6px 8px;
+    font-size: 12px;
+  }
+  .tool-bar .color-picker-split {
+    height: 28px;
+  }
+  .tool-bar .color-picker-main {
+    width: 26px;
+  }
+  .tool-bar .color-picker-dropdown {
+    width: 16px;
+  }
+  .tool-separator {
+    height: 18px;
+  }
+  .status-bar {
+    font-size: 11px;
+  }
+}
+:root[data-device-form="tablet"]
+  .window-shell.is-flowchart-active:not(.is-library-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 30px minmax(0, 1fr);
+}
+:root[data-device-form="tablet"][data-tablet-tools="collapsed"]
+  .window-shell:not(.is-library-active):not(.is-flowchart-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 30px 0px minmax(0, 1fr) 24px;
+}
+:root[data-device-form="tablet"][data-tablet-focus="true"]
+  .window-shell:not(.is-library-active):not(.is-flowchart-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 0px 0px minmax(0, 1fr) 24px;
+}
+:root[data-device-form="tablet"][data-tablet-focus="true"]
+  .window-shell.is-flowchart-active:not(.is-library-active):has(> .patent-tabs) {
+  grid-template-rows: 30px 0px minmax(0, 1fr);
+}
+:root[data-device-form="tablet"] .patent-text-selection-gutter {
+  touch-action: pan-x pan-y;
+}

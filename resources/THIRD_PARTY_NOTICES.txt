@@ -6830,7 +6830,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-dompurify 3.4.16
+dompurify 3.4.17
 License: (MPL-2.0 OR Apache-2.0)
 Repository: git://github.com/cure53/DOMPurify.git
 DOMPurify license selection: Apache-2.0
@@ -15501,7 +15501,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ================================================================================
-zod 4.4.3
+zod 4.6.7
 License: MIT
 Repository: git+https://github.com/colinhacks/zod.git
 --------------------------------------------------------------------------------
@@ -22397,7 +22397,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 BUNDLED RESOURCE NOTICES
 
 Original bundled resource notices supplement the npm dependency inventory.
-Electron/Chromium runtime notices: resources/licenses/electron/LICENSES.chromium.html.gz (lossless gzip of original HTML; extract to read). Original HTML SHA-256: c971fa90cb787337e9df73773f3b43cd5621f035e53cded439bd927b3b759e0c. Source: https://github.com/electron/electron/releases/tag/v43.7.7
+Electron/Chromium runtime notices: resources/licenses/electron/LICENSES.chromium.html.gz (lossless gzip of original HTML; extract to read). Original HTML SHA-256: c971fa90cb787337e9df73773f3b43cd5621f035e53cded439bd927b3b759e0c. Source: https://github.com/electron/electron/releases/tag/v43.8.7
 CAD converter target: win-x64; ACadSharp undefined; ezdxf 1.4.4; Python version recorded by converter distribution.
 PyInstaller materials retain the upstream bootloader exception and file-specific license terms; no blanket GPL-only classification is applied to the frozen application.
 ================================================================================
@@ -38620,7 +38620,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ================================================================================
-Electron 43.7.7 (MIT)
+Electron 43.8.7 (MIT)
 Bundled material: resources/licenses/electron/LICENSE.txt
 SHA-256: 5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d
 --------------------------------------------------------------------------------

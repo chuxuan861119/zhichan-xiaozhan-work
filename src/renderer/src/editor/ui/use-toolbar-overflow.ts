@@ -1,4 +1,5 @@
 import { type RefObject, useLayoutEffect, useState } from "react";
+import { isTabletPortrait } from "../../shared/use-tablet-portrait";
 
 /** Collapse a suffix without moving controls or touching editor DOM. */
 export function useToolbarOverflow(ref: RefObject<HTMLElement | null>, enabled: boolean): string[] {
@@ -50,7 +51,7 @@ export function useToolbarOverflow(ref: RefObject<HTMLElement | null>, enabled: 
             });
         }
       };
-      const requiredWidth = () => {
+      const fitsToolbar = () => {
         const style = getComputedStyle(toolbar);
         const layoutItems = (parent: Element): HTMLElement[] =>
           [...parent.children].flatMap((child) => {
@@ -61,25 +62,39 @@ export function useToolbarOverflow(ref: RefObject<HTMLElement | null>, enabled: 
             return css.display === "contents" ? layoutItems(child) : [child];
           });
         const children = layoutItems(toolbar);
-        return (
-          children.reduce((sum, child) => {
-            const css = getComputedStyle(child);
-            return (
-              sum +
-              Math.max(child.offsetWidth, child.scrollWidth) +
-              (child === more
-                ? 0
-                : (parseFloat(css.marginLeft) || 0) + (parseFloat(css.marginRight) || 0))
-            );
-          }, 0) +
-          Math.max(0, children.length - 1) * (parseFloat(style.columnGap) || 0) +
-          (parseFloat(style.paddingLeft) || 0) +
-          (parseFloat(style.paddingRight) || 0)
-        );
+        const widths = children.map((child) => {
+          const css = getComputedStyle(child);
+          return (
+            Math.max(child.offsetWidth, child.scrollWidth) +
+            (child === more
+              ? 0
+              : (parseFloat(css.marginLeft) || 0) + (parseFloat(css.marginRight) || 0))
+          );
+        });
+        const gap = parseFloat(style.columnGap) || 0;
+        const available =
+          toolbar.clientWidth -
+          (parseFloat(style.paddingLeft) || 0) -
+          (parseFloat(style.paddingRight) || 0);
+        if (!isTabletPortrait())
+          return (
+            widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * gap <=
+            available
+          );
+        let rows = 1,
+          used = 0;
+        for (const width of widths) {
+          if (width > available) return false;
+          if (used > 0 && used + gap + width > available) {
+            rows++;
+            used = width;
+          } else used += (used > 0 ? gap : 0) + width;
+        }
+        return rows <= 2;
       };
       try {
         if (more) more.style.display = "none";
-        if (requiredWidth() > toolbar.clientWidth) {
+        if (!fitsToolbar()) {
           if (more) more.style.display = "grid";
           for (const button of collapseOrder) {
             button.dataset.overflowHidden = "true";
@@ -89,7 +104,7 @@ export function useToolbarOverflow(ref: RefObject<HTMLElement | null>, enabled: 
             const label = button.getAttribute("aria-label");
             if (label) hidden.unshift(label);
             syncSeparators();
-            if (requiredWidth() <= toolbar.clientWidth) break;
+            if (fitsToolbar()) break;
           }
         }
         setOverflow((previous) => (previous.join("\0") === hidden.join("\0") ? previous : hidden));
@@ -109,11 +124,13 @@ export function useToolbarOverflow(ref: RefObject<HTMLElement | null>, enabled: 
     });
     document.fonts?.addEventListener("loadingdone", measure);
     window.addEventListener("resize", measure);
+    window.addEventListener("workbench-tablet-metrics", measure);
     return () => {
       observer?.disconnect();
       mutations.disconnect();
       document.fonts?.removeEventListener("loadingdone", measure);
       window.removeEventListener("resize", measure);
+      window.removeEventListener("workbench-tablet-metrics", measure);
       toolbar.querySelectorAll("[data-overflow-hidden]").forEach((item) => {
         item.removeAttribute("data-overflow-hidden");
       });
