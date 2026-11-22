@@ -10,7 +10,7 @@ import {
 
 test("open-source builds never contribute to official production statistics by default", () => {
   const config = usageStatisticsConfig();
-  expect(APPLICATION_VERSION).toBe("1.1.8");
+  expect(APPLICATION_VERSION).toBe("2.2.0");
   expect(config.releaseChannel).toBe("preview");
   expect(usageConfigAvailable(config, "win32", APPLICATION_VERSION)).toBe(false);
   expect(config.releases).toEqual([]);

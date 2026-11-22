@@ -1,8 +1,8 @@
 {
   "name": "zhichan-xiaozhan-work",
-  "version": "1.1.8",
+  "version": "2.2.0",
   "private": true,
-  "description": "面向中国专利撰写的本地工作台（1.1.8 开源版）",
+  "description": "面向中国专利撰写的专业编辑器",
   "main": "./out/main/index.js",
   "type": "module",
   "scripts": {

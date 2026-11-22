@@ -1,5 +1,7 @@
 # 开源许可证与第三方声明索引
 
+项目源码采用 [GPL-3.0-only](../../LICENSE)。2.2.0 依赖版本见[锁文件](../../package-lock.json)，随包运行的修图组件保留原许可。
+
 完整汇总：[THIRD_PARTY_NOTICES.txt](../THIRD_PARTY_NOTICES.txt)。其中保留原始许可、版权和 NOTICE；界面中的组件说明是摘要。
 
 - [产品署名](PRODUCT_ATTRIBUTIONS.txt)；[选区光标 xbitmaps](xbitmaps/LICENSE.txt)。

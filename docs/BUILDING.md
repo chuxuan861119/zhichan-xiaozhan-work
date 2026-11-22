@@ -1,6 +1,6 @@
-# 1.1.8 源码构建
+# 2.2.0 源码构建
 
-本指南针对本仓库独立公开的 1.1.8。请先阅读 [公开范围](OPEN_SOURCE_RELEASE.md) 和 [使用手册](user-guide.md)。官网当前安装包可能包含更新功能，不是本次源码构建的验收依据。
+本指南适用于 GitHub 的 2.2.0 源码发行。另见[发行说明](releases/2.2.0-open-source.md)和[官网使用手册](official-user-guide.md)。
 
 ## Windows 开发环境
 
@@ -16,8 +16,9 @@
 ```powershell
 git clone https://github.com/chuxuan861119/zhichan-xiaozhan-work.git
 cd zhichan-xiaozhan-work
-git checkout v1.1.8
+git checkout v2.2.0
 npm ci
+npm ci --prefix vendor/klecks
 node node_modules/electron/install.js
 ```
 
@@ -46,7 +47,6 @@ npm run vendor:cad
 ## 检查、构建和启动
 
 ```powershell
-npm run verify:source-release
 npm run typecheck
 npm run test:unit
 npm run build:app
@@ -55,7 +55,7 @@ npm run dev
 
 typecheck 与完整 CAD 测试需要先准备 CAD WASM。dev 还会核验本工作目录的 CAD 和绘图转换器资源，缺失时明确报错；不能仅运行 npm ci 后跳过组件准备。
 
-build:app 生成 out/main、out/preload、out/renderer 及 CLI；它不安装软件、不替换官网包。开发启动会使用本机数据目录，建议通过测试数据和独立用户数据目录进行验收，勿直接操作正式业务文稿。
+`npm run build:app` 生成主进程、预加载脚本、界面和 CLI，并在 `out/design-editor` 生成小栈修图页面与许可证。`npm run build:design-editor` 可单独构建修图页面。开发启动会使用本机数据目录，建议通过测试数据和独立用户数据目录进行验收，勿直接操作正式业务文稿。
 
 ## 安装包与发行渠道
 
@@ -80,4 +80,4 @@ build:app 生成 out/main、out/preload、out/renderer 及 CLI；它不安装软
 - macOS：阅读 [对应构建说明](changes/macos-migration/build-and-acceptance.md)。原生依赖与目标架构、签名、系统权限需在 macOS 上验证，不能通过 Windows 构建代替。
 - HarmonyOS：阅读 [平台说明](../platforms/harmony/README.md)，使用相应工具链与设备完成验证。官方签名材料不在仓库中。
 
-具体平台范围和本次实测结果见 [验证记录](releases/1.1.8-open-source.md)。
+2.2.0 的核验范围见[本次发行说明](releases/2.2.0-open-source.md)。历史构建记录见 [1.1.8 发行记录](releases/1.1.8-open-source.md)。`npm run verify:source-release` 用于核验历史 1.1.8 快照，请在 `v1.1.8` 标签运行。
